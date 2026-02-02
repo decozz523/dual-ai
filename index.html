@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dual AI Chat (Bot R & Bot S)</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="header">
+        <div class="title">
+          <div class="h1">Dual AI Chat</div>
+          <div class="subtitle">Bot R (рациональный) + Bot S (творческий) через OpenRouter</div>
+        </div>
+      </header>
+
+      <section class="panel">
+        <div class="grid">
+          <label class="field">
+            <div class="label">OpenRouter API key (вводится в браузере)</div>
+            <input id="apiKey" type="password" placeholder="sk-or-..." autocomplete="off" />
+            <div class="hint">Ключ хранится только у тебя (localStorage). Не коммить ключ в GitHub.</div>
+          </label>
+
+          <label class="field">
+            <div class="label">Модель (OpenRouter slug)</div>
+            <input id="model" type="text" value="arcee-ai/trinity-large-preview:free" />
+            <div class="hint">Можно менять на любую доступную в твоём аккаунте.</div>
+          </label>
+
+          <label class="field">
+            <div class="label">Авто-диалог ботов (ходов после твоего сообщения)</div>
+            <input id="turns" type="number" min="0" max="10" value="0" />
+            <div class="hint">0 = только один ответ каждого бота на твоё сообщение.</div>
+          </label>
+
+          <div class="field">
+            <div class="label">Управление</div>
+            <div class="row">
+              <button id="saveBtn" class="btn">Сохранить настройки</button>
+              <button id="clearBtn" class="btn btn-secondary">Очистить чат</button>
+            </div>
+            <div id="status" class="status">Готов.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="chat">
+        <div id="messages" class="messages" aria-live="polite"></div>
+      </section>
+
+      <section class="composer">
+        <textarea
+          id="input"
+          rows="3"
+          placeholder="Напиши сообщение…"
+        ></textarea>
+        <div class="row">
+          <button id="sendBtn" class="btn btn-primary">Отправить</button>
+          <button id="demoBtn" class="btn btn-secondary">Демо-вопрос</button>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
+
+
