@@ -257,6 +257,7 @@ input:focus, textarea:focus { border-color: rgba(124, 92, 255, 0.55); box-shadow
   border: 1px solid var(--border);
   border-radius: 14px;
   overflow: hidden;
+  display: none;
 }
 
 .messages {
@@ -416,8 +417,8 @@ input:focus, textarea:focus { border-color: rgba(124, 92, 255, 0.55); box-shadow
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 14px 16px;
-  display: grid;
   gap: 10px;
+  display: none;
 }
 
 .composer-head {
@@ -440,6 +441,14 @@ input:focus, textarea:focus { border-color: rgba(124, 92, 255, 0.55); box-shadow
 .chat-mode .hero,
 .chat-mode .menu-sections {
   display: none;
+}
+
+.chat-mode .chat {
+  display: block;
+}
+
+.chat-mode .composer {
+  display: grid;
 }
 
 .chat-mode .app {
