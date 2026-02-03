@@ -199,7 +199,7 @@ input, textarea {
   outline: none;
 }
 
-textarea { resize: vertical; min-height: 76px; }
+textarea { resize: vertical; min-height: 60px; }
 input:focus, textarea:focus { border-color: rgba(124, 92, 255, 0.55); box-shadow: 0 0 0 3px rgba(124, 92, 255, 0.15); }
 
 .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
@@ -509,7 +509,7 @@ input:focus, textarea:focus { border-color: rgba(124, 92, 255, 0.55); box-shadow
   }
 
   textarea {
-    min-height: 96px;
+    min-height: 84px;
   }
 
   .drawer {
