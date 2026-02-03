@@ -322,11 +322,11 @@ async function onSend() {
   const text = inputEl.value.trim();
   if (!text) return;
 
+  inputEl.value = "";
   sendBtn.disabled = true;
   demoBtn.disabled = true;
   try {
     await sendUserMessage(text);
-    inputEl.value = "";
   } catch (e) {
     setStatus(String(e?.message || e), "error");
   } finally {
