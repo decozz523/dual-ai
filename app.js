@@ -23,6 +23,12 @@ const authBtn = $("authBtn");
 const googleAuthBtn = $("googleAuthBtn");
 const logoutBtn = $("logoutBtn");
 const authStatus = $("authStatus");
+const authCard = $("authCard");
+const authAvatar = $("authAvatar");
+const authName = $("authName");
+const authEmail = $("authEmail");
+const authMeta = $("authMeta");
+const authBirthday = $("authBirthday");
 const googleClientIdEl = $("googleClientId");
 
 const PERSONAS = {
@@ -58,91 +64,252 @@ function setStatus(text, kind = "muted") {
   if (kind === "ok") statusEl.classList.add("ok");
 }
 
-function parseJwt(token) {
+function formatAuthDate(ts) {
+  if (!ts) return "Привязка активна";
+  return `Привязано ${new Date(ts).toLocaleDateString("ru-RU")}`;
+}
+
+function getAvatarPlaceholder(label = "G") {
+  const safeLabel = encodeURIComponent(label.slice(0, 1).toUpperCase());
+  return (
+    "data:image/svg+xml;utf8," +
+    `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48">` +
+    `<rect width="100%" height="100%" fill="%23131a2a"/>` +
+    `<text x="50%" y="54%" font-size="20" fill="%23ffffff" text-anchor="middle" font-family="Arial">${safeLabel}</text>` +
+    "</svg>"
+  );
+}
+
+function getStoredAuth() {
+  const authRaw = localStorage.getItem(AUTH_KEY);
+  if (!authRaw) return null;
   try {
-    const payload = token.split(".")[1];
-    if (!payload) return null;
-    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
-    const json = decodeURIComponent(
-      atob(base64)
-        .split("")
-        .map((c) => `%${c.charCodeAt(0).toString(16).padStart(2, "0")}`)
-        .join("")
-    );
-    return JSON.parse(json);
+    return JSON.parse(authRaw);
   } catch {
     return null;
   }
 }
 
-let googleScriptPromise = null;
 const VIEW_MODE_KEY = "dual-ai-view-mode";
 const CHAT_MODE_CLASS = "chat-mode";
 
-function loadGoogleScript() {
-  if (googleScriptPromise) return googleScriptPromise;
-  googleScriptPromise = new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = "https://accounts.google.com/gsi/client";
-    script.async = true;
-    script.defer = true;
-    script.onload = resolve;
-    script.onerror = reject;
-    document.head.appendChild(script);
+const OAUTH_STATE_KEY = "dual-ai-oauth-state-v1";
+const OAUTH_SCOPES = [
+  "openid",
+  "email",
+  "profile",
+  "https://www.googleapis.com/auth/user.birthday.readonly",
+];
+
+function getRedirectUri() {
+  return `${window.location.origin}${window.location.pathname}`;
+}
+
+function generateRandomString(length = 64) {
+  const array = new Uint8Array(length);
+  window.crypto.getRandomValues(array);
+  return Array.from(array, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function sha256(plain) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(plain);
+  const digest = await window.crypto.subtle.digest("SHA-256", data);
+  return new Uint8Array(digest);
+}
+
+function base64UrlEncode(bytes) {
+  let binary = "";
+  bytes.forEach((b) => {
+    binary += String.fromCharCode(b);
   });
-  return googleScriptPromise;
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+async function createCodeChallenge(verifier) {
+  const hashed = await sha256(verifier);
+  return base64UrlEncode(hashed);
+}
+
+function formatBirthday(birthday) {
+  if (!birthday) return "Дата рождения: не указана";
+  const { day, month, year } = birthday;
+  const parts = [];
+  if (day) parts.push(String(day).padStart(2, "0"));
+  if (month) parts.push(String(month).padStart(2, "0"));
+  if (year) parts.push(year);
+  return parts.length ? `Дата рождения: ${parts.join(".")}` : "Дата рождения: не указана";
 }
 
 function updateAuthUI() {
-  const authRaw = localStorage.getItem(AUTH_KEY);
-  if (!authRaw) {
-    authStatus.textContent = "Не выполнен вход";
+  const auth = getStoredAuth();
+  if (!auth) {
+    authStatus.textContent = "Аккаунт не привязан";
     authBtn.textContent = "Войти";
+    googleAuthBtn.textContent = "Войти через Google";
+    authCard.hidden = true;
     logoutBtn.hidden = true;
     return;
   }
-  const auth = JSON.parse(authRaw);
-  authStatus.textContent = auth?.name
-    ? `Вход выполнен: ${auth.name}`
-    : "Вход выполнен";
-  authBtn.textContent = "Выйти";
+
+  authStatus.textContent = "Аккаунт привязан";
+  authBtn.textContent = "Профиль";
+  googleAuthBtn.textContent = "Обновить привязку Google";
+  authCard.hidden = false;
+  authAvatar.src = auth.picture || getAvatarPlaceholder(auth.name || "G");
+  authAvatar.alt = auth.name || "Google avatar";
+  authName.textContent = auth.name || "Google User";
+  authEmail.textContent = auth.email || "Google account";
+  authMeta.textContent = formatAuthDate(auth.linkedAt);
+  authBirthday.textContent = formatBirthday(auth.birthday);
   logoutBtn.hidden = false;
 }
 
-async function signInWithGoogle() {
+async function startGoogleOAuth() {
   const clientId = googleClientIdEl.value.trim();
   if (!clientId) {
     setStatus("Укажи Google Client ID в настройках.", "error");
     return;
   }
 
-  await loadGoogleScript();
-  if (!window.google?.accounts?.id) {
-    setStatus("Google Identity Services недоступен.", "error");
-    return;
-  }
+  const codeVerifier = generateRandomString(64);
+  const codeChallenge = await createCodeChallenge(codeVerifier);
+  const state = generateRandomString(24);
+  const redirectUri = getRedirectUri();
 
-  window.google.accounts.id.initialize({
+  sessionStorage.setItem(
+    OAUTH_STATE_KEY,
+    JSON.stringify({ state, codeVerifier, createdAt: Date.now() })
+  );
+
+  const params = new URLSearchParams({
     client_id: clientId,
-    callback: (response) => {
-      const payload = parseJwt(response.credential);
-      const profile = {
-        token: response.credential,
-        name: payload?.name || payload?.email || "Google User",
-        email: payload?.email || "",
-      };
-      localStorage.setItem(AUTH_KEY, JSON.stringify(profile));
-      updateAuthUI();
-      setStatus("Авторизация выполнена.", "ok");
-    },
+    redirect_uri: redirectUri,
+    response_type: "code",
+    scope: OAUTH_SCOPES.join(" "),
+    code_challenge: codeChallenge,
+    code_challenge_method: "S256",
+    state,
+    prompt: "consent",
+    access_type: "online",
+    include_granted_scopes: "true",
   });
-  window.google.accounts.id.prompt();
+
+  window.location.assign(`https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`);
 }
 
 function signOut() {
+  const auth = getStoredAuth();
+  if (auth?.accessToken) {
+    fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(auth.accessToken)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    }).catch(() => {});
+  }
   localStorage.removeItem(AUTH_KEY);
   updateAuthUI();
-  setStatus("Вы вышли из аккаунта.", "ok");
+  setStatus("Привязка Google аккаунта удалена.", "ok");
+}
+
+async function exchangeCodeForToken({ code, codeVerifier, clientId }) {
+  const params = new URLSearchParams({
+    client_id: clientId,
+    grant_type: "authorization_code",
+    code,
+    code_verifier: codeVerifier,
+    redirect_uri: getRedirectUri(),
+  });
+  const resp = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: params.toString(),
+  });
+  if (!resp.ok) {
+    const text = await resp.text().catch(() => "");
+    throw new Error(`Google OAuth: ${text || resp.statusText}`);
+  }
+  return resp.json();
+}
+
+async function fetchGoogleProfile(accessToken) {
+  const resp = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!resp.ok) {
+    throw new Error("Google OAuth: не удалось получить профиль.");
+  }
+  return resp.json();
+}
+
+async function fetchGoogleBirthday(accessToken) {
+  const resp = await fetch(
+    "https://people.googleapis.com/v1/people/me?personFields=birthdays",
+    {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    }
+  );
+  if (!resp.ok) return null;
+  const data = await resp.json();
+  const birthday =
+    data?.birthdays?.find((item) => item?.metadata?.primary)?.date ||
+    data?.birthdays?.[0]?.date ||
+    null;
+  return birthday;
+}
+
+async function handleOAuthRedirect() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get("code");
+  const state = params.get("state");
+  if (!code) return;
+
+  const storedRaw = sessionStorage.getItem(OAUTH_STATE_KEY);
+  sessionStorage.removeItem(OAUTH_STATE_KEY);
+  let stored = null;
+  if (storedRaw) {
+    try {
+      stored = JSON.parse(storedRaw);
+    } catch {
+      stored = null;
+    }
+  }
+  if (!stored || stored.state !== state) {
+    setStatus("Ошибка проверки OAuth состояния.", "error");
+    window.history.replaceState({}, document.title, getRedirectUri());
+    return;
+  }
+
+  try {
+    const clientId = googleClientIdEl.value.trim();
+    if (!clientId) {
+      throw new Error("Укажи Google Client ID в настройках.");
+    }
+    const tokenData = await exchangeCodeForToken({
+      code,
+      codeVerifier: stored.codeVerifier,
+      clientId,
+    });
+    const accessToken = tokenData.access_token;
+    const profile = await fetchGoogleProfile(accessToken);
+    const birthday = await fetchGoogleBirthday(accessToken);
+    const authProfile = {
+      accessToken,
+      expiresAt: Date.now() + (tokenData.expires_in || 0) * 1000,
+      name: profile?.name || profile?.email || "Google User",
+      email: profile?.email || "",
+      picture: profile?.picture || "",
+      provider: "google",
+      linkedAt: Date.now(),
+      birthday,
+    };
+    localStorage.setItem(AUTH_KEY, JSON.stringify(authProfile));
+    updateAuthUI();
+    setStatus("Google аккаунт привязан.", "ok");
+  } catch (e) {
+    setStatus(String(e?.message || e), "error");
+  } finally {
+    window.history.replaceState({}, document.title, getRedirectUri());
+  }
 }
 
 function openDrawer() {
@@ -374,15 +541,12 @@ loadSettings();
 render();
 updateAuthUI();
 setChatMode(localStorage.getItem(VIEW_MODE_KEY) === "chat", { scroll: false });
+handleOAuthRedirect();
 
-googleAuthBtn.addEventListener("click", signInWithGoogle);
+googleAuthBtn.addEventListener("click", startGoogleOAuth);
 logoutBtn.addEventListener("click", signOut);
 authBtn.addEventListener("click", () => {
-  if (localStorage.getItem(AUTH_KEY)) {
-    signOut();
-  } else {
-    openDrawer();
-  }
+  openDrawer();
 });
 
 
