@@ -131,20 +131,21 @@
             <div class="auth-name" id="authName">Google User</div>
             <div class="auth-email" id="authEmail">user@gmail.com</div>
             <div class="auth-meta" id="authMeta">Привязка активна</div>
+            <div class="auth-meta" id="authBirthday">Дата рождения: не указана</div>
           </div>
         </div>
         <button id="googleAuthBtn" class="btn btn-primary btn-google" type="button">
           <span class="icon">G</span>
-          Привязать Google аккаунт
+          Войти через Google
         </button>
         <button id="logoutBtn" class="btn btn-secondary" type="button" hidden>Отвязать аккаунт</button>
         <label class="field">
           <div class="label">Google Client ID</div>
           <input id="googleClientId" type="text" placeholder="xxxxx.apps.googleusercontent.com" />
-          <div class="hint">Нужен для работы Google Identity Services.</div>
+          <div class="hint">Нужен для OAuth 2.0 (кнопка ведёт на экран согласия Google).</div>
         </label>
         <div class="hint">
-          Привязка даёт персонализацию и быстрый вход. Данные сохраняются локально в браузере.
+          Мы запрашиваем имя, почту, аватар и дату рождения (People API). Данные сохраняются локально в браузере.
         </div>
       </section>
 
