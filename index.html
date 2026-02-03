@@ -20,7 +20,7 @@
         </div>
         <div class="topbar-right">
           <div class="status-pill" id="status">Готов.</div>
-          <button class="btn btn-secondary">Войти</button>
+          <button id="authBtn" class="btn btn-secondary">Войти</button>
         </div>
       </header>
 
@@ -95,10 +95,17 @@
 
       <section class="drawer-section">
         <div class="section-title">Авторизация</div>
-        <button class="btn btn-primary btn-google">
+        <div class="auth-status" id="authStatus">Не выполнен вход</div>
+        <button id="googleAuthBtn" class="btn btn-primary btn-google">
           <span class="icon">G</span>
           Войти через Google
         </button>
+        <button id="logoutBtn" class="btn btn-secondary" type="button" hidden>Выйти</button>
+        <label class="field">
+          <div class="label">Google Client ID</div>
+          <input id="googleClientId" type="text" placeholder="xxxxx.apps.googleusercontent.com" />
+          <div class="hint">Нужен для работы Google Identity Services.</div>
+        </label>
         <div class="hint">Авторизация опциональна. Можно работать без входа.</div>
       </section>
 
