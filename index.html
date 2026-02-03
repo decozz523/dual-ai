@@ -20,6 +20,7 @@
         </div>
         <div class="topbar-right">
           <div class="status-pill" id="status">Готов.</div>
+          <button id="toggleViewBtn" class="btn btn-secondary">Перейти в чат</button>
           <button id="authBtn" class="btn btn-secondary">Войти</button>
         </div>
       </header>
@@ -34,6 +35,7 @@
             </div>
           <div class="hero-actions">
               <button id="openDrawerBtn" class="btn btn-secondary">Открыть настройки</button>
+              <button id="enterChatBtn" class="btn btn-primary">Перейти в чат</button>
               <button id="newChatBtn" class="btn btn-primary">Новый диалог</button>
           </div>
           </div>
@@ -56,7 +58,34 @@
           </div>
         </section>
 
-        <section class="chat">
+        <section class="menu-sections">
+          <div class="menu-card">
+            <div class="menu-title">Сценарии работы</div>
+            <div class="menu-text">
+              Обсуждай стратегии, развивай идеи и быстро проверяй гипотезы в диалоге двух ИИ.
+            </div>
+          </div>
+          <div class="menu-card">
+            <div class="menu-title">Структурирование мыслей</div>
+            <div class="menu-text">
+              Bot R собирает логику и факты, а Bot S добавляет альтернативы и креативные варианты.
+            </div>
+          </div>
+          <div class="menu-card">
+            <div class="menu-title">Гибкие настройки</div>
+            <div class="menu-text">
+              В боковом меню ты управляешь авторизацией, моделью и количеством ходов ботов.
+            </div>
+          </div>
+          <div class="menu-card">
+            <div class="menu-title">Чат без отвлечений</div>
+            <div class="menu-text">
+              Переключайся в чистый режим мессенджера и возвращайся к главному меню в один клик.
+            </div>
+          </div>
+        </section>
+
+        <section class="chat" id="chatSection">
           <div id="messages" class="messages" aria-live="polite"></div>
         </section>
 
