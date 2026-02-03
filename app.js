@@ -2,7 +2,6 @@ const STORAGE_KEY = "dual-ai-chat-settings-v1";
 const AUTH_KEY = "dual-ai-chat-auth-v1";
 
 const $ = (id) => document.getElementById(id);
-const apiKeyEl = $("apiKey");
 const modelEl = $("model");
 const turnsEl = $("turns");
 const messagesEl = $("messages");
@@ -205,7 +204,6 @@ function loadSettings() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return;
     const s = JSON.parse(raw);
-    if (typeof s.apiKey === "string") apiKeyEl.value = s.apiKey;
     if (typeof s.model === "string") modelEl.value = s.model;
     if (typeof s.turns === "number") turnsEl.value = String(s.turns);
     if (typeof s.googleClientId === "string") googleClientIdEl.value = s.googleClientId;
@@ -215,11 +213,10 @@ function loadSettings() {
 }
 
 function saveSettings() {
-  const apiKey = apiKeyEl.value.trim();
   const model = modelEl.value.trim();
   const turns = Number(turnsEl.value || 0);
   const googleClientId = googleClientIdEl.value.trim();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ apiKey, model, turns, googleClientId }));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ model, turns, googleClientId }));
   setStatus("Настройки сохранены.", "ok");
 }
 
@@ -239,20 +236,15 @@ function toOpenRouterMessages() {
   });
 }
 
-async function callOpenRouter({ apiKey, model, persona, messages }) {
+async function callOpenRouter({ model, persona, messages }) {
   const payload = {
     model,
     messages: [{ role: "system", content: persona.system }, ...messages],
   };
 
-  const resp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+  const resp = await fetch("/api/chat", {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-      "HTTP-Referer": location.origin,
-      "X-Title": "Dual AI Chat (GitHub Pages)",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
 
@@ -270,12 +262,7 @@ async function callOpenRouter({ apiKey, model, persona, messages }) {
 }
 
 async function runTurn(speaker) {
-  const apiKey = apiKeyEl.value.trim();
   const model = modelEl.value.trim();
-  if (!apiKey) {
-    setStatus("Введи OpenRouter API key.", "error");
-    return;
-  }
   if (!model) {
     setStatus("Укажи модель (OpenRouter slug).", "error");
     return;
@@ -284,7 +271,6 @@ async function runTurn(speaker) {
   const messages = toOpenRouterMessages();
   setStatus(`${speaker === "R" ? "Bot R" : "Bot S"} думает…`);
   const text = await callOpenRouter({
-    apiKey,
     model,
     persona: PERSONAS[speaker],
     messages,

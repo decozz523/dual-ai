@@ -111,11 +111,12 @@
 
       <section class="drawer-section">
         <div class="section-title">Подключение OpenRouter</div>
-        <label class="field">
+        <div class="field">
           <div class="label">OpenRouter API key</div>
-          <input id="apiKey" type="password" placeholder="sk-or-..." autocomplete="off" />
-          <div class="hint">Ключ хранится только у тебя (localStorage). Не коммить ключ в GitHub.</div>
-        </label>
+          <div class="hint">
+            Ключ хранится на сервере через Vercel Environment Variables и не вводится пользователем.
+          </div>
+        </div>
 
         <label class="field">
           <div class="label">Модель (OpenRouter slug)</div>
