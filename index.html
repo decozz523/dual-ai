@@ -124,18 +124,28 @@
 
       <section class="drawer-section">
         <div class="section-title">Авторизация</div>
-        <div class="auth-status" id="authStatus">Не выполнен вход</div>
-        <button id="googleAuthBtn" class="btn btn-primary btn-google">
+        <div class="auth-status" id="authStatus">Аккаунт не привязан</div>
+        <div class="auth-card" id="authCard" hidden>
+          <img id="authAvatar" class="auth-avatar" alt="Google avatar" />
+          <div class="auth-details">
+            <div class="auth-name" id="authName">Google User</div>
+            <div class="auth-email" id="authEmail">user@gmail.com</div>
+            <div class="auth-meta" id="authMeta">Привязка активна</div>
+          </div>
+        </div>
+        <button id="googleAuthBtn" class="btn btn-primary btn-google" type="button">
           <span class="icon">G</span>
-          Войти через Google
+          Привязать Google аккаунт
         </button>
-        <button id="logoutBtn" class="btn btn-secondary" type="button" hidden>Выйти</button>
+        <button id="logoutBtn" class="btn btn-secondary" type="button" hidden>Отвязать аккаунт</button>
         <label class="field">
           <div class="label">Google Client ID</div>
           <input id="googleClientId" type="text" placeholder="xxxxx.apps.googleusercontent.com" />
           <div class="hint">Нужен для работы Google Identity Services.</div>
         </label>
-        <div class="hint">Авторизация опциональна. Можно работать без входа.</div>
+        <div class="hint">
+          Привязка даёт персонализацию и быстрый вход. Данные сохраняются локально в браузере.
+        </div>
       </section>
 
       <section class="drawer-section">

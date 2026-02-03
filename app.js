@@ -23,6 +23,11 @@ const authBtn = $("authBtn");
 const googleAuthBtn = $("googleAuthBtn");
 const logoutBtn = $("logoutBtn");
 const authStatus = $("authStatus");
+const authCard = $("authCard");
+const authAvatar = $("authAvatar");
+const authName = $("authName");
+const authEmail = $("authEmail");
+const authMeta = $("authMeta");
 const googleClientIdEl = $("googleClientId");
 
 const PERSONAS = {
@@ -75,6 +80,32 @@ function parseJwt(token) {
   }
 }
 
+function formatAuthDate(ts) {
+  if (!ts) return "Привязка активна";
+  return `Привязано ${new Date(ts).toLocaleDateString("ru-RU")}`;
+}
+
+function getAvatarPlaceholder(label = "G") {
+  const safeLabel = encodeURIComponent(label.slice(0, 1).toUpperCase());
+  return (
+    "data:image/svg+xml;utf8," +
+    `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48">` +
+    `<rect width="100%" height="100%" fill="%23131a2a"/>` +
+    `<text x="50%" y="54%" font-size="20" fill="%23ffffff" text-anchor="middle" font-family="Arial">${safeLabel}</text>` +
+    "</svg>"
+  );
+}
+
+function getStoredAuth() {
+  const authRaw = localStorage.getItem(AUTH_KEY);
+  if (!authRaw) return null;
+  try {
+    return JSON.parse(authRaw);
+  } catch {
+    return null;
+  }
+}
+
 let googleScriptPromise = null;
 const VIEW_MODE_KEY = "dual-ai-view-mode";
 const CHAT_MODE_CLASS = "chat-mode";
@@ -94,18 +125,25 @@ function loadGoogleScript() {
 }
 
 function updateAuthUI() {
-  const authRaw = localStorage.getItem(AUTH_KEY);
-  if (!authRaw) {
-    authStatus.textContent = "Не выполнен вход";
+  const auth = getStoredAuth();
+  if (!auth) {
+    authStatus.textContent = "Аккаунт не привязан";
     authBtn.textContent = "Войти";
+    googleAuthBtn.textContent = "Привязать Google аккаунт";
+    authCard.hidden = true;
     logoutBtn.hidden = true;
     return;
   }
-  const auth = JSON.parse(authRaw);
-  authStatus.textContent = auth?.name
-    ? `Вход выполнен: ${auth.name}`
-    : "Вход выполнен";
-  authBtn.textContent = "Выйти";
+
+  authStatus.textContent = "Аккаунт привязан";
+  authBtn.textContent = "Профиль";
+  googleAuthBtn.textContent = "Обновить привязку Google";
+  authCard.hidden = false;
+  authAvatar.src = auth.picture || getAvatarPlaceholder(auth.name || "G");
+  authAvatar.alt = auth.name || "Google avatar";
+  authName.textContent = auth.name || "Google User";
+  authEmail.textContent = auth.email || "Google account";
+  authMeta.textContent = formatAuthDate(auth.linkedAt);
   logoutBtn.hidden = false;
 }
 
@@ -130,19 +168,31 @@ async function signInWithGoogle() {
         token: response.credential,
         name: payload?.name || payload?.email || "Google User",
         email: payload?.email || "",
+        picture: payload?.picture || "",
+        provider: "google",
+        linkedAt: Date.now(),
       };
       localStorage.setItem(AUTH_KEY, JSON.stringify(profile));
       updateAuthUI();
-      setStatus("Авторизация выполнена.", "ok");
+      setStatus("Google аккаунт привязан.", "ok");
     },
   });
   window.google.accounts.id.prompt();
 }
 
 function signOut() {
+  const auth = getStoredAuth();
+  if (auth?.email && window.google?.accounts?.id?.revoke) {
+    window.google.accounts.id.revoke(auth.email, () => {
+      localStorage.removeItem(AUTH_KEY);
+      updateAuthUI();
+      setStatus("Привязка Google аккаунта удалена.", "ok");
+    });
+    return;
+  }
   localStorage.removeItem(AUTH_KEY);
   updateAuthUI();
-  setStatus("Вы вышли из аккаунта.", "ok");
+  setStatus("Привязка Google аккаунта удалена.", "ok");
 }
 
 function openDrawer() {
@@ -378,11 +428,7 @@ setChatMode(localStorage.getItem(VIEW_MODE_KEY) === "chat", { scroll: false });
 googleAuthBtn.addEventListener("click", signInWithGoogle);
 logoutBtn.addEventListener("click", signOut);
 authBtn.addEventListener("click", () => {
-  if (localStorage.getItem(AUTH_KEY)) {
-    signOut();
-  } else {
-    openDrawer();
-  }
+  openDrawer();
 });
 
 
