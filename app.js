@@ -11,6 +11,12 @@ const demoBtn = $("demoBtn");
 const saveBtn = $("saveBtn");
 const clearBtn = $("clearBtn");
 const statusEl = $("status");
+const menuBtn = $("menuBtn");
+const openDrawerBtn = $("openDrawerBtn");
+const newChatBtn = $("newChatBtn");
+const drawer = $("drawer");
+const drawerOverlay = $("drawerOverlay");
+const closeDrawerBtn = $("closeDrawerBtn");
 
 const PERSONAS = {
   R: {
@@ -39,6 +45,18 @@ function setStatus(text, kind = "muted") {
   statusEl.classList.remove("error", "ok");
   if (kind === "error") statusEl.classList.add("error");
   if (kind === "ok") statusEl.classList.add("ok");
+}
+
+function openDrawer() {
+  drawer.classList.add("open");
+  drawerOverlay.hidden = false;
+  drawerOverlay.classList.add("visible");
+}
+
+function closeDrawer() {
+  drawer.classList.remove("open");
+  drawerOverlay.hidden = true;
+  drawerOverlay.classList.remove("visible");
 }
 
 function escapeHtml(s) {
@@ -216,11 +234,25 @@ demoBtn.addEventListener("click", () => {
 });
 saveBtn.addEventListener("click", saveSettings);
 clearBtn.addEventListener("click", clearChat);
+menuBtn.addEventListener("click", openDrawer);
+openDrawerBtn.addEventListener("click", openDrawer);
+closeDrawerBtn.addEventListener("click", closeDrawer);
+drawerOverlay.addEventListener("click", closeDrawer);
+newChatBtn.addEventListener("click", () => {
+  inputEl.value = "";
+  clearChat();
+});
 
 inputEl.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
     onSend();
+  }
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    closeDrawer();
   }
 });
 

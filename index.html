@@ -7,78 +7,133 @@
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
-    <main class="app">
-      <header class="header">
-        <div class="title">
-          <div class="h1">Dual AI Chat</div>
-          <div class="subtitle">Bot R (рациональный) + Bot S (творческий) через OpenRouter</div>
+    <div class="layout">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button id="menuBtn" class="icon-btn" aria-label="Открыть меню">
+            <span class="icon">☰</span>
+          </button>
+          <div class="title">
+            <div class="h1">Dual AI Chat</div>
+            <div class="subtitle">Bot R (рациональный) + Bot S (творческий) через OpenRouter</div>
+          </div>
         </div>
-        <div class="meta-cards">
-          <div class="meta-card">
-            <div class="meta-label">Горячая клавиша</div>
-            <div class="meta-value">Ctrl / ⌘ + Enter</div>
-          </div>
-          <div class="meta-card">
-            <div class="meta-label">Локальное хранение</div>
-            <div class="meta-value">Только в браузере</div>
-          </div>
+        <div class="topbar-right">
+          <div class="status-pill" id="status">Готов.</div>
+          <button class="btn btn-secondary">Войти</button>
         </div>
       </header>
 
-      <section class="panel">
-        <div class="grid">
-          <label class="field">
-            <div class="label">OpenRouter API key (вводится в браузере)</div>
-            <input id="apiKey" type="password" placeholder="sk-or-..." autocomplete="off" />
-            <div class="hint">Ключ хранится только у тебя (localStorage). Не коммить ключ в GitHub.</div>
-          </label>
-
-          <label class="field">
-            <div class="label">Модель (OpenRouter slug)</div>
-            <input id="model" type="text" value="arcee-ai/trinity-large-preview:free" />
-            <div class="hint">Можно менять на любую доступную в твоём аккаунте.</div>
-          </label>
-
-          <label class="field">
-            <div class="label">Авто-диалог ботов (ходов после твоего сообщения)</div>
-            <input id="turns" type="number" min="0" max="10" value="0" />
-            <div class="hint">0 = только один ответ каждого бота на твоё сообщение.</div>
-          </label>
-
-          <div class="field">
-            <div class="label">Управление</div>
-            <div class="row">
-              <button id="saveBtn" class="btn">Сохранить настройки</button>
-              <button id="clearBtn" class="btn btn-secondary">Очистить чат</button>
-            </div>
-            <div id="status" class="status">Готов.</div>
-          </div>
-        </div>
-      </section>
-
-      <section class="chat">
-        <div id="messages" class="messages" aria-live="polite"></div>
-      </section>
-
-      <section class="composer">
-        <div class="composer-head">
+      <main class="app">
+        <section class="hero">
           <div>
-            <div class="label">Сообщение</div>
-            <div class="hint">Опиши задачу, контекст и ожидания — так ответы будут точнее.</div>
+            <div class="hero-title">Профессиональный чат для стратегий и идей</div>
+            <div class="hero-subtitle">
+              Пара ботов ведёт дискуссию с тобой: рациональный бот структурирует, творческий — расширяет
+              варианты. Управляй настройками через меню.
+            </div>
+          <div class="hero-actions">
+              <button id="openDrawerBtn" class="btn btn-secondary">Открыть настройки</button>
+              <button id="newChatBtn" class="btn btn-primary">Новый диалог</button>
           </div>
-          <div class="chip">Dual AI Mode</div>
+          </div>
+          <div class="hero-cards">
+            <div class="info-card">
+              <div class="info-title">Горячая клавиша</div>
+              <div class="info-value">Ctrl / ⌘ + Enter</div>
+              <div class="info-hint">Отправляй сообщение без мыши.</div>
+            </div>
+            <div class="info-card">
+              <div class="info-title">Конфиденциальность</div>
+              <div class="info-value">Только локально</div>
+              <div class="info-hint">Настройки сохраняются в браузере.</div>
+            </div>
+            <div class="info-card">
+              <div class="info-title">Режим диалога</div>
+              <div class="info-value">Dual AI</div>
+              <div class="info-hint">Bot R + Bot S ведут сессию.</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="chat">
+          <div id="messages" class="messages" aria-live="polite"></div>
+        </section>
+
+        <section class="composer">
+          <div class="composer-head">
+            <div>
+              <div class="label">Сообщение</div>
+              <div class="hint">Опиши задачу, контекст и ожидания — так ответы будут точнее.</div>
+            </div>
+            <div class="chip">Dual AI Mode</div>
+          </div>
+          <textarea
+            id="input"
+            rows="3"
+            placeholder="Напиши сообщение…"
+          ></textarea>
+          <div class="row">
+            <button id="sendBtn" class="btn btn-primary">Отправить</button>
+            <button id="demoBtn" class="btn btn-secondary">Демо-вопрос</button>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div id="drawerOverlay" class="drawer-overlay" hidden></div>
+    <aside id="drawer" class="drawer" aria-label="Настройки">
+      <div class="drawer-head">
+        <div>
+          <div class="drawer-title">Меню</div>
+          <div class="drawer-subtitle">Настройки, авторизация и управление</div>
         </div>
-        <textarea
-          id="input"
-          rows="3"
-          placeholder="Напиши сообщение…"
-        ></textarea>
+        <button id="closeDrawerBtn" class="icon-btn" aria-label="Закрыть меню">
+          <span class="icon">✕</span>
+        </button>
+      </div>
+
+      <section class="drawer-section">
+        <div class="section-title">Авторизация</div>
+        <button class="btn btn-primary btn-google">
+          <span class="icon">G</span>
+          Войти через Google
+        </button>
+        <div class="hint">Авторизация опциональна. Можно работать без входа.</div>
+      </section>
+
+      <section class="drawer-section">
+        <div class="section-title">Подключение OpenRouter</div>
+        <label class="field">
+          <div class="label">OpenRouter API key</div>
+          <input id="apiKey" type="password" placeholder="sk-or-..." autocomplete="off" />
+          <div class="hint">Ключ хранится только у тебя (localStorage). Не коммить ключ в GitHub.</div>
+        </label>
+
+        <label class="field">
+          <div class="label">Модель (OpenRouter slug)</div>
+          <input id="model" type="text" value="arcee-ai/trinity-large-preview:free" />
+          <div class="hint">Можно менять на любую доступную в твоём аккаунте.</div>
+        </label>
+      </section>
+
+      <section class="drawer-section">
+        <div class="section-title">Диалог</div>
+        <label class="field">
+          <div class="label">Авто-диалог ботов (ходов после твоего сообщения)</div>
+          <input id="turns" type="number" min="0" max="10" value="0" />
+          <div class="hint">0 = только один ответ каждого бота на твоё сообщение.</div>
+        </label>
+      </section>
+
+      <section class="drawer-section">
+        <div class="section-title">Управление</div>
         <div class="row">
-          <button id="sendBtn" class="btn btn-primary">Отправить</button>
-          <button id="demoBtn" class="btn btn-secondary">Демо-вопрос</button>
+          <button id="saveBtn" class="btn">Сохранить настройки</button>
+          <button id="clearBtn" class="btn btn-secondary">Очистить чат</button>
         </div>
       </section>
-    </main>
+    </aside>
 
     <script type="module" src="./app.js"></script>
   </body>
