@@ -1,7 +1,7 @@
 const STORAGE_KEY = "dual-ai-chat-settings-v1";
+const AUTH_KEY = "dual-ai-chat-auth-v1";
 
 const $ = (id) => document.getElementById(id);
-const apiKeyEl = $("apiKey");
 const modelEl = $("model");
 const turnsEl = $("turns");
 const messagesEl = $("messages");
@@ -11,13 +11,26 @@ const demoBtn = $("demoBtn");
 const saveBtn = $("saveBtn");
 const clearBtn = $("clearBtn");
 const statusEl = $("status");
+const menuBtn = $("menuBtn");
+const openDrawerBtn = $("openDrawerBtn");
+const newChatBtn = $("newChatBtn");
+const drawer = $("drawer");
+const drawerOverlay = $("drawerOverlay");
+const closeDrawerBtn = $("closeDrawerBtn");
+const authBtn = $("authBtn");
+const googleAuthBtn = $("googleAuthBtn");
+const logoutBtn = $("logoutBtn");
+const authStatus = $("authStatus");
+const googleClientIdEl = $("googleClientId");
 
 const PERSONAS = {
   R: {
     label: "Bot R",
     system:
-      "Ты — Bot R, рациональный, аналитический ИИ-собеседник. " +
-      "Говоришь структурированно и логично, уточняешь вводные и допущения. " +
+      "Ты — Bot R, рациональный и аналитический ИИ-собеседник. " +
+      "В этом чате есть только три участника: Человек, Bot R и Bot S. " +
+      "Ты — Bot R и остаёшься им; не выдумывай других ролей или участников. " +
+      "Говори структурированно и логично, уточняй вводные и допущения. " +
       "Без лишней эмоциональности. " +
       "Ты общаешься с человеком и Bot S как равноправный участник.",
   },
@@ -25,7 +38,9 @@ const PERSONAS = {
     label: "Bot S",
     system:
       "Ты — Bot S, эмоциональный и творческий ИИ-собеседник. " +
-      "Говоришь живо, образно и поддерживающе. " +
+      "В этом чате есть только три участника: Человек, Bot R и Bot S. " +
+      "Ты — Bot S и остаёшься им; не выдумывай других ролей или участников. " +
+      "Говори живо, образно и поддерживающе. " +
       "Можно немного метафор. " +
       "Ты общаешься с человеком и Bot R как равноправный участник.",
   },
@@ -41,6 +56,103 @@ function setStatus(text, kind = "muted") {
   if (kind === "ok") statusEl.classList.add("ok");
 }
 
+function parseJwt(token) {
+  try {
+    const payload = token.split(".")[1];
+    if (!payload) return null;
+    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const json = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => `%${c.charCodeAt(0).toString(16).padStart(2, "0")}`)
+        .join("")
+    );
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+
+let googleScriptPromise = null;
+
+function loadGoogleScript() {
+  if (googleScriptPromise) return googleScriptPromise;
+  googleScriptPromise = new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+    script.onload = resolve;
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+  return googleScriptPromise;
+}
+
+function updateAuthUI() {
+  const authRaw = localStorage.getItem(AUTH_KEY);
+  if (!authRaw) {
+    authStatus.textContent = "Не выполнен вход";
+    authBtn.textContent = "Войти";
+    logoutBtn.hidden = true;
+    return;
+  }
+  const auth = JSON.parse(authRaw);
+  authStatus.textContent = auth?.name
+    ? `Вход выполнен: ${auth.name}`
+    : "Вход выполнен";
+  authBtn.textContent = "Выйти";
+  logoutBtn.hidden = false;
+}
+
+async function signInWithGoogle() {
+  const clientId = googleClientIdEl.value.trim();
+  if (!clientId) {
+    setStatus("Укажи Google Client ID в настройках.", "error");
+    return;
+  }
+
+  await loadGoogleScript();
+  if (!window.google?.accounts?.id) {
+    setStatus("Google Identity Services недоступен.", "error");
+    return;
+  }
+
+  window.google.accounts.id.initialize({
+    client_id: clientId,
+    callback: (response) => {
+      const payload = parseJwt(response.credential);
+      const profile = {
+        token: response.credential,
+        name: payload?.name || payload?.email || "Google User",
+        email: payload?.email || "",
+      };
+      localStorage.setItem(AUTH_KEY, JSON.stringify(profile));
+      updateAuthUI();
+      setStatus("Авторизация выполнена.", "ok");
+    },
+  });
+  window.google.accounts.id.prompt();
+}
+
+function signOut() {
+  localStorage.removeItem(AUTH_KEY);
+  updateAuthUI();
+  setStatus("Вы вышли из аккаунта.", "ok");
+}
+
+function openDrawer() {
+  drawer.classList.add("open");
+  drawerOverlay.hidden = false;
+  drawerOverlay.classList.add("visible");
+}
+
+function closeDrawer() {
+  drawer.classList.remove("open");
+  drawerOverlay.hidden = true;
+  drawerOverlay.classList.remove("visible");
+}
+
 function escapeHtml(s) {
   return s
     .replaceAll("&", "&amp;")
@@ -50,9 +162,18 @@ function escapeHtml(s) {
 
 function render() {
   messagesEl.innerHTML = "";
+  if (transcript.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state";
+    empty.innerHTML =
+      "<strong>Диалог ещё пуст.</strong><br />" +
+      "Напишите сообщение или воспользуйтесь демо-вопросом, чтобы запустить разговор.";
+    messagesEl.appendChild(empty);
+    return;
+  }
   for (const m of transcript) {
     const wrap = document.createElement("div");
-    wrap.className = "msg";
+    wrap.className = `msg msg-${m.speaker}`;
     const meta = document.createElement("div");
     meta.className = "meta";
     const left = document.createElement("div");
@@ -83,19 +204,19 @@ function loadSettings() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return;
     const s = JSON.parse(raw);
-    if (typeof s.apiKey === "string") apiKeyEl.value = s.apiKey;
     if (typeof s.model === "string") modelEl.value = s.model;
     if (typeof s.turns === "number") turnsEl.value = String(s.turns);
+    if (typeof s.googleClientId === "string") googleClientIdEl.value = s.googleClientId;
   } catch {
     // ignore
   }
 }
 
 function saveSettings() {
-  const apiKey = apiKeyEl.value.trim();
   const model = modelEl.value.trim();
   const turns = Number(turnsEl.value || 0);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ apiKey, model, turns }));
+  const googleClientId = googleClientIdEl.value.trim();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ model, turns, googleClientId }));
   setStatus("Настройки сохранены.", "ok");
 }
 
@@ -115,20 +236,15 @@ function toOpenRouterMessages() {
   });
 }
 
-async function callOpenRouter({ apiKey, model, persona, messages }) {
+async function callOpenRouter({ model, persona, messages }) {
   const payload = {
     model,
     messages: [{ role: "system", content: persona.system }, ...messages],
   };
 
-  const resp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+  const resp = await fetch("/api/chat", {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-      "HTTP-Referer": location.origin,
-      "X-Title": "Dual AI Chat (GitHub Pages)",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
 
@@ -146,12 +262,7 @@ async function callOpenRouter({ apiKey, model, persona, messages }) {
 }
 
 async function runTurn(speaker) {
-  const apiKey = apiKeyEl.value.trim();
   const model = modelEl.value.trim();
-  if (!apiKey) {
-    setStatus("Введи OpenRouter API key.", "error");
-    return;
-  }
   if (!model) {
     setStatus("Укажи модель (OpenRouter slug).", "error");
     return;
@@ -160,7 +271,6 @@ async function runTurn(speaker) {
   const messages = toOpenRouterMessages();
   setStatus(`${speaker === "R" ? "Bot R" : "Bot S"} думает…`);
   const text = await callOpenRouter({
-    apiKey,
     model,
     persona: PERSONAS[speaker],
     messages,
@@ -207,15 +317,40 @@ demoBtn.addEventListener("click", () => {
 });
 saveBtn.addEventListener("click", saveSettings);
 clearBtn.addEventListener("click", clearChat);
+menuBtn.addEventListener("click", openDrawer);
+openDrawerBtn.addEventListener("click", openDrawer);
+closeDrawerBtn.addEventListener("click", closeDrawer);
+drawerOverlay.addEventListener("click", closeDrawer);
+newChatBtn.addEventListener("click", () => {
+  inputEl.value = "";
+  clearChat();
+});
 
 inputEl.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+  if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
     onSend();
   }
 });
 
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    closeDrawer();
+  }
+});
+
 loadSettings();
 render();
+updateAuthUI();
+
+googleAuthBtn.addEventListener("click", signInWithGoogle);
+logoutBtn.addEventListener("click", signOut);
+authBtn.addEventListener("click", () => {
+  if (localStorage.getItem(AUTH_KEY)) {
+    signOut();
+  } else {
+    openDrawer();
+  }
+});
 
 
