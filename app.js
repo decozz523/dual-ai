@@ -14,6 +14,8 @@ const statusEl = $("status");
 const menuBtn = $("menuBtn");
 const openDrawerBtn = $("openDrawerBtn");
 const newChatBtn = $("newChatBtn");
+const toggleViewBtn = $("toggleViewBtn");
+const enterChatBtn = $("enterChatBtn");
 const drawer = $("drawer");
 const drawerOverlay = $("drawerOverlay");
 const closeDrawerBtn = $("closeDrawerBtn");
@@ -74,6 +76,8 @@ function parseJwt(token) {
 }
 
 let googleScriptPromise = null;
+const VIEW_MODE_KEY = "dual-ai-view-mode";
+const CHAT_MODE_CLASS = "chat-mode";
 
 function loadGoogleScript() {
   if (googleScriptPromise) return googleScriptPromise;
@@ -151,6 +155,27 @@ function closeDrawer() {
   drawer.classList.remove("open");
   drawerOverlay.hidden = true;
   drawerOverlay.classList.remove("visible");
+}
+
+function isChatMode() {
+  return document.body.classList.contains(CHAT_MODE_CLASS);
+}
+
+function updateViewToggleLabel() {
+  if (isChatMode()) {
+    toggleViewBtn.textContent = "Главное меню";
+  } else {
+    toggleViewBtn.textContent = "Перейти в чат";
+  }
+}
+
+function setChatMode(enabled, { scroll } = { scroll: true }) {
+  document.body.classList.toggle(CHAT_MODE_CLASS, enabled);
+  localStorage.setItem(VIEW_MODE_KEY, enabled ? "chat" : "menu");
+  updateViewToggleLabel();
+  if (enabled && scroll) {
+    document.getElementById("chatSection")?.scrollIntoView({ behavior: "smooth" });
+  }
 }
 
 function escapeHtml(s) {
@@ -297,11 +322,11 @@ async function onSend() {
   const text = inputEl.value.trim();
   if (!text) return;
 
+  inputEl.value = "";
   sendBtn.disabled = true;
   demoBtn.disabled = true;
   try {
     await sendUserMessage(text);
-    inputEl.value = "";
   } catch (e) {
     setStatus(String(e?.message || e), "error");
   } finally {
@@ -325,6 +350,12 @@ newChatBtn.addEventListener("click", () => {
   inputEl.value = "";
   clearChat();
 });
+toggleViewBtn.addEventListener("click", () => {
+  setChatMode(!isChatMode(), { scroll: true });
+});
+enterChatBtn.addEventListener("click", () => {
+  setChatMode(true, { scroll: true });
+});
 
 inputEl.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey) {
@@ -342,6 +373,7 @@ document.addEventListener("keydown", (e) => {
 loadSettings();
 render();
 updateAuthUI();
+setChatMode(localStorage.getItem(VIEW_MODE_KEY) === "chat", { scroll: false });
 
 googleAuthBtn.addEventListener("click", signInWithGoogle);
 logoutBtn.addEventListener("click", signOut);
