@@ -125,6 +125,37 @@ body {
   flex-wrap: wrap;
 }
 
+.hero-actions .btn {
+  min-width: 170px;
+}
+
+.menu-sections {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.menu-card {
+  background: rgba(8, 12, 22, 0.65);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px 18px;
+  display: grid;
+  gap: 8px;
+  box-shadow: var(--shadow);
+}
+
+.menu-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.menu-text {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
 .hero-cards {
   display: grid;
   gap: 12px;
@@ -168,7 +199,7 @@ input, textarea {
   outline: none;
 }
 
-textarea { resize: vertical; min-height: 76px; }
+textarea { resize: vertical; min-height: 60px; }
 input:focus, textarea:focus { border-color: rgba(124, 92, 255, 0.55); box-shadow: 0 0 0 3px rgba(124, 92, 255, 0.15); }
 
 .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
@@ -203,6 +234,15 @@ input:focus, textarea:focus { border-color: rgba(124, 92, 255, 0.55); box-shadow
   justify-content: center;
 }
 
+.google-signin {
+  display: flex;
+  justify-content: center;
+}
+
+.google-signin > div {
+  width: 100%;
+}
+
 .auth-status {
   font-size: 12px;
   padding: 10px 12px;
@@ -226,6 +266,7 @@ input:focus, textarea:focus { border-color: rgba(124, 92, 255, 0.55); box-shadow
   border: 1px solid var(--border);
   border-radius: 14px;
   overflow: hidden;
+  display: none;
 }
 
 .messages {
@@ -385,8 +426,8 @@ input:focus, textarea:focus { border-color: rgba(124, 92, 255, 0.55); box-shadow
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 14px 16px;
-  display: grid;
   gap: 10px;
+  display: none;
 }
 
 .composer-head {
@@ -406,11 +447,88 @@ input:focus, textarea:focus { border-color: rgba(124, 92, 255, 0.55); box-shadow
   color: rgba(255, 255, 255, 0.9);
 }
 
+.chat-mode .hero,
+.chat-mode .menu-sections {
+  display: none;
+}
+
+.chat-mode .chat {
+  display: block;
+}
+
+.chat-mode .composer {
+  display: grid;
+}
+
+.chat-mode .app {
+  padding-top: 16px;
+}
+
 @media (max-width: 860px) {
   .hero { grid-template-columns: 1fr; }
   .composer-head { flex-direction: column; }
   .topbar { flex-direction: column; align-items: flex-start; }
   .topbar-right { width: 100%; justify-content: space-between; }
+  .menu-sections { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 680px) {
+  .topbar {
+    padding: 14px 16px;
+    gap: 12px;
+  }
+
+  .topbar-right {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .app {
+    padding: 20px 16px 32px;
+  }
+
+  .hero {
+    padding: 18px;
+  }
+
+  .hero-title {
+    font-size: 22px;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hero-actions .btn {
+    width: 100%;
+  }
+
+  .row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .row .btn {
+    width: 100%;
+  }
+
+  .menu-sections {
+    grid-template-columns: 1fr;
+  }
+
+  textarea {
+    min-height: 84px;
+  }
+
+  .drawer {
+    width: 100%;
+    border-left: none;
+  }
+
+  .messages {
+    max-height: 50vh;
+  }
 }
 
 

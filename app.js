@@ -14,6 +14,8 @@ const statusEl = $("status");
 const menuBtn = $("menuBtn");
 const openDrawerBtn = $("openDrawerBtn");
 const newChatBtn = $("newChatBtn");
+const toggleViewBtn = $("toggleViewBtn");
+const enterChatBtn = $("enterChatBtn");
 const drawer = $("drawer");
 const drawerOverlay = $("drawerOverlay");
 const closeDrawerBtn = $("closeDrawerBtn");
@@ -22,6 +24,9 @@ const googleAuthBtn = $("googleAuthBtn");
 const logoutBtn = $("logoutBtn");
 const authStatus = $("authStatus");
 const googleClientIdEl = $("googleClientId");
+const supabaseUrlEl = $("supabaseUrl");
+const supabaseAnonKeyEl = $("supabaseAnonKey");
+const googleSignInEl = $("googleSignIn");
 
 const PERSONAS = {
   R: {
@@ -74,6 +79,10 @@ function parseJwt(token) {
 }
 
 let googleScriptPromise = null;
+let googleInitializedClientId = null;
+const VIEW_MODE_KEY = "dual-ai-view-mode";
+const CHAT_MODE_CLASS = "chat-mode";
+const CONVERSATION_KEY = "dual-ai-conversation-id";
 
 function loadGoogleScript() {
   if (googleScriptPromise) return googleScriptPromise;
@@ -100,7 +109,9 @@ function updateAuthUI() {
   const auth = JSON.parse(authRaw);
   authStatus.textContent = auth?.name
     ? `Вход выполнен: ${auth.name}`
-    : "Вход выполнен";
+    : auth?.email
+      ? `Вход выполнен: ${auth.email}`
+      : "Вход выполнен";
   authBtn.textContent = "Выйти";
   logoutBtn.hidden = false;
 }
@@ -126,6 +137,7 @@ async function signInWithGoogle() {
         token: response.credential,
         name: payload?.name || payload?.email || "Google User",
         email: payload?.email || "",
+        sub: payload?.sub || "",
       };
       localStorage.setItem(AUTH_KEY, JSON.stringify(profile));
       updateAuthUI();
@@ -135,8 +147,46 @@ async function signInWithGoogle() {
   window.google.accounts.id.prompt();
 }
 
+async function initGoogleButton() {
+  const clientId = googleClientIdEl.value.trim();
+  if (!clientId || !googleSignInEl) return;
+
+  await loadGoogleScript();
+  if (!window.google?.accounts?.id) {
+    setStatus("Google Identity Services недоступен.", "error");
+    return;
+  }
+
+  if (googleInitializedClientId !== clientId) {
+    window.google.accounts.id.initialize({
+      client_id: clientId,
+      callback: (response) => {
+        const payload = parseJwt(response.credential);
+        const profile = {
+          token: response.credential,
+          name: payload?.name || payload?.email || "Google User",
+          email: payload?.email || "",
+          sub: payload?.sub || "",
+        };
+        localStorage.setItem(AUTH_KEY, JSON.stringify(profile));
+        updateAuthUI();
+        setStatus("Авторизация выполнена.", "ok");
+      },
+    });
+    googleInitializedClientId = clientId;
+  }
+
+  googleSignInEl.innerHTML = "";
+  window.google.accounts.id.renderButton(googleSignInEl, {
+    theme: "outline",
+    size: "large",
+    width: 320,
+  });
+}
+
 function signOut() {
   localStorage.removeItem(AUTH_KEY);
+  localStorage.removeItem(CONVERSATION_KEY);
   updateAuthUI();
   setStatus("Вы вышли из аккаунта.", "ok");
 }
@@ -151,6 +201,27 @@ function closeDrawer() {
   drawer.classList.remove("open");
   drawerOverlay.hidden = true;
   drawerOverlay.classList.remove("visible");
+}
+
+function isChatMode() {
+  return document.body.classList.contains(CHAT_MODE_CLASS);
+}
+
+function updateViewToggleLabel() {
+  if (isChatMode()) {
+    toggleViewBtn.textContent = "Главное меню";
+  } else {
+    toggleViewBtn.textContent = "Перейти в чат";
+  }
+}
+
+function setChatMode(enabled, { scroll } = { scroll: true }) {
+  document.body.classList.toggle(CHAT_MODE_CLASS, enabled);
+  localStorage.setItem(VIEW_MODE_KEY, enabled ? "chat" : "menu");
+  updateViewToggleLabel();
+  if (enabled && scroll) {
+    document.getElementById("chatSection")?.scrollIntoView({ behavior: "smooth" });
+  }
 }
 
 function escapeHtml(s) {
@@ -207,6 +278,8 @@ function loadSettings() {
     if (typeof s.model === "string") modelEl.value = s.model;
     if (typeof s.turns === "number") turnsEl.value = String(s.turns);
     if (typeof s.googleClientId === "string") googleClientIdEl.value = s.googleClientId;
+    if (typeof s.supabaseUrl === "string") supabaseUrlEl.value = s.supabaseUrl;
+    if (typeof s.supabaseAnonKey === "string") supabaseAnonKeyEl.value = s.supabaseAnonKey;
   } catch {
     // ignore
   }
@@ -216,14 +289,109 @@ function saveSettings() {
   const model = modelEl.value.trim();
   const turns = Number(turnsEl.value || 0);
   const googleClientId = googleClientIdEl.value.trim();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ model, turns, googleClientId }));
+  const supabaseUrl = supabaseUrlEl.value.trim();
+  const supabaseAnonKey = supabaseAnonKeyEl.value.trim();
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({ model, turns, googleClientId, supabaseUrl, supabaseAnonKey })
+  );
   setStatus("Настройки сохранены.", "ok");
+  initGoogleButton();
 }
 
 function clearChat() {
   transcript = [];
   render();
   setStatus("Чат очищен.", "ok");
+}
+
+function getSupabaseConfig() {
+  const supabaseUrl = supabaseUrlEl.value.trim();
+  const supabaseAnonKey = supabaseAnonKeyEl.value.trim();
+  if (!supabaseUrl || !supabaseAnonKey) return null;
+  return { supabaseUrl, supabaseAnonKey };
+}
+
+function getAuthProfile() {
+  const authRaw = localStorage.getItem(AUTH_KEY);
+  if (!authRaw) return null;
+  try {
+    return JSON.parse(authRaw);
+  } catch {
+    return null;
+  }
+}
+
+async function supabaseRequest(path, options = {}) {
+  const config = getSupabaseConfig();
+  if (!config) return null;
+  const headers = {
+    apikey: config.supabaseAnonKey,
+    Authorization: `Bearer ${config.supabaseAnonKey}`,
+    "Content-Type": "application/json",
+    ...options.headers,
+  };
+  const resp = await fetch(`${config.supabaseUrl}${path}`, {
+    ...options,
+    headers,
+  });
+  if (!resp.ok) {
+    const text = await resp.text().catch(() => "");
+    throw new Error(`Supabase ${resp.status}: ${text || resp.statusText}`);
+  }
+  if (resp.status === 204) return null;
+  return resp.json();
+}
+
+async function ensureConversationId(title) {
+  const profile = getAuthProfile();
+  if (!profile?.sub) return null;
+  const existing = localStorage.getItem(CONVERSATION_KEY);
+  if (existing) return existing;
+
+  const payload = [
+    {
+      user_sub: profile.sub,
+      title,
+      created_at: new Date().toISOString(),
+    },
+  ];
+  const data = await supabaseRequest("/rest/v1/conversations?select=id", {
+    method: "POST",
+    headers: { Prefer: "return=representation" },
+    body: JSON.stringify(payload),
+  });
+  const id = data?.[0]?.id;
+  if (id) {
+    localStorage.setItem(CONVERSATION_KEY, id);
+  }
+  return id || null;
+}
+
+async function saveMessageToSupabase(message) {
+  const profile = getAuthProfile();
+  if (!profile?.sub) return;
+  const config = getSupabaseConfig();
+  if (!config) return;
+
+  const conversationId =
+    (await ensureConversationId(message.content.slice(0, 80))) ||
+    localStorage.getItem(CONVERSATION_KEY);
+  if (!conversationId) return;
+
+  const payload = [
+    {
+      conversation_id: conversationId,
+      user_sub: profile.sub,
+      speaker: message.speaker,
+      content: message.content,
+      ts: new Date(message.ts).toISOString(),
+    },
+  ];
+  await supabaseRequest("/rest/v1/messages", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }
 
 function toOpenRouterMessages() {
@@ -275,14 +443,22 @@ async function runTurn(speaker) {
     persona: PERSONAS[speaker],
     messages,
   });
-  transcript.push({ speaker, content: text, ts: Date.now() });
+  const message = { speaker, content: text, ts: Date.now() };
+  transcript.push(message);
   render();
   setStatus("Готов.", "ok");
+  saveMessageToSupabase(message).catch((e) => {
+    setStatus(String(e?.message || e), "error");
+  });
 }
 
 async function sendUserMessage(text) {
-  transcript.push({ speaker: "user", content: text, ts: Date.now() });
+  const message = { speaker: "user", content: text, ts: Date.now() };
+  transcript.push(message);
   render();
+  saveMessageToSupabase(message).catch((e) => {
+    setStatus(String(e?.message || e), "error");
+  });
   await runTurn("R");
   await runTurn("S");
 
@@ -297,11 +473,11 @@ async function onSend() {
   const text = inputEl.value.trim();
   if (!text) return;
 
+  inputEl.value = "";
   sendBtn.disabled = true;
   demoBtn.disabled = true;
   try {
     await sendUserMessage(text);
-    inputEl.value = "";
   } catch (e) {
     setStatus(String(e?.message || e), "error");
   } finally {
@@ -324,6 +500,13 @@ drawerOverlay.addEventListener("click", closeDrawer);
 newChatBtn.addEventListener("click", () => {
   inputEl.value = "";
   clearChat();
+  localStorage.removeItem(CONVERSATION_KEY);
+});
+toggleViewBtn.addEventListener("click", () => {
+  setChatMode(!isChatMode(), { scroll: true });
+});
+enterChatBtn.addEventListener("click", () => {
+  setChatMode(true, { scroll: true });
 });
 
 inputEl.addEventListener("keydown", (e) => {
@@ -342,8 +525,10 @@ document.addEventListener("keydown", (e) => {
 loadSettings();
 render();
 updateAuthUI();
+setChatMode(localStorage.getItem(VIEW_MODE_KEY) === "chat", { scroll: false });
+initGoogleButton();
 
-googleAuthBtn.addEventListener("click", signInWithGoogle);
+googleAuthBtn.addEventListener("click", initGoogleButton);
 logoutBtn.addEventListener("click", signOut);
 authBtn.addEventListener("click", () => {
   if (localStorage.getItem(AUTH_KEY)) {
