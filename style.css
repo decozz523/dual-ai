@@ -2,12 +2,14 @@
   --bg: #0b1220;
   --panel: rgba(255, 255, 255, 0.06);
   --panel-2: rgba(255, 255, 255, 0.09);
+  --panel-strong: rgba(18, 24, 40, 0.95);
   --text: rgba(255, 255, 255, 0.92);
   --muted: rgba(255, 255, 255, 0.68);
   --border: rgba(255, 255, 255, 0.12);
   --shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
   --accent: #7c5cff;
   --accent-2: #15c39a;
+  --accent-3: #ff9f6e;
   --danger: #ff5c7a;
   --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji",
@@ -45,6 +47,31 @@ body {
   border: 1px solid var(--border);
   border-radius: 14px;
   box-shadow: var(--shadow);
+}
+
+.meta-cards {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.meta-card {
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.05);
+  min-width: 150px;
+}
+
+.meta-label {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.meta-value {
+  font-size: 12px;
+  margin-top: 4px;
 }
 
 .h1 {
@@ -143,6 +170,54 @@ input:focus, textarea:focus { border-color: rgba(124, 92, 255, 0.55); box-shadow
   border-radius: 12px;
   border: 1px solid var(--border);
   background: rgba(0, 0, 0, 0.22);
+  position: relative;
+  overflow: hidden;
+}
+
+.msg::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--panel-2);
+}
+
+.msg-user {
+  background: rgba(124, 92, 255, 0.12);
+  border-color: rgba(124, 92, 255, 0.35);
+}
+
+.msg-user::before {
+  background: var(--accent);
+}
+
+.msg-r {
+  background: rgba(21, 195, 154, 0.12);
+  border-color: rgba(21, 195, 154, 0.35);
+}
+
+.msg-r::before {
+  background: var(--accent-2);
+}
+
+.msg-s {
+  background: rgba(255, 159, 110, 0.12);
+  border-color: rgba(255, 159, 110, 0.35);
+}
+
+.msg-s::before {
+  background: var(--accent-3);
+}
+
+.empty-state {
+  border-radius: 14px;
+  border: 1px dashed var(--border);
+  padding: 22px;
+  text-align: center;
+  color: var(--muted);
+  background: rgba(0, 0, 0, 0.2);
 }
 
 .msg .meta {
@@ -180,8 +255,28 @@ input:focus, textarea:focus { border-color: rgba(124, 92, 255, 0.55); box-shadow
   gap: 10px;
 }
 
+.composer-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.chip {
+  font-size: 11px;
+  font-family: var(--mono);
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(124, 92, 255, 0.5);
+  background: rgba(124, 92, 255, 0.16);
+  color: rgba(255, 255, 255, 0.9);
+}
+
 @media (max-width: 860px) {
   .grid { grid-template-columns: 1fr; }
+  .header { flex-direction: column; align-items: flex-start; }
+  .meta-cards { justify-content: flex-start; }
+  .composer-head { flex-direction: column; }
 }
 
 

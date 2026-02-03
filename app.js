@@ -50,9 +50,18 @@ function escapeHtml(s) {
 
 function render() {
   messagesEl.innerHTML = "";
+  if (transcript.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state";
+    empty.innerHTML =
+      "<strong>Диалог ещё пуст.</strong><br />" +
+      "Напишите сообщение или воспользуйтесь демо-вопросом, чтобы запустить разговор.";
+    messagesEl.appendChild(empty);
+    return;
+  }
   for (const m of transcript) {
     const wrap = document.createElement("div");
-    wrap.className = "msg";
+    wrap.className = `msg msg-${m.speaker}`;
     const meta = document.createElement("div");
     meta.className = "meta";
     const left = document.createElement("div");
