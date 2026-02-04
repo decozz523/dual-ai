@@ -364,9 +364,9 @@ async function onSend() {
 
   sendBtn.disabled = true;
   demoBtn.disabled = true;
+  inputEl.value = "";
   try {
     await sendUserMessage(text);
-    inputEl.value = "";
   } catch (e) {
     setStatus(String(e?.message || e), "error");
   } finally {
