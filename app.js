@@ -95,7 +95,7 @@ function getStoredAuth() {
 const VIEW_MODE_KEY = "dual-ai-view-mode";
 const CHAT_MODE_CLASS = "chat-mode";
 const ANON_ID_KEY = "dual-ai-anon-id-v1";
-const CHAT_TABLE = "chats";
+const CHAT_TABLE = "chat";
 
 let supabaseClient = null;
 let currentUser = null;

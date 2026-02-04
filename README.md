@@ -12,11 +12,11 @@
   - `http://localhost:3000`
   - `https://<your-vercel-domain>.vercel.app`
 
-### 3) Create the `chats` table
+### 3) Create the `chat` table
 Use the schema below:
 
 ```sql
-create table if not exists chats (
+create table if not exists chat (
   id uuid primary key default gen_random_uuid(),
   user_id uuid null,
   anon_id uuid null,
@@ -27,16 +27,16 @@ create table if not exists chats (
 
 ### 4) Enable RLS and policies
 ```sql
-alter table chats enable row level security;
+alter table chat enable row level security;
 
 create policy "users can access their chats"
-on chats
+on chat
 for all
 using (auth.uid() = user_id)
 with check (auth.uid() = user_id);
 
 create policy "anon can access anon chats"
-on chats
+on chat
 for all
 using (auth.uid() is null and anon_id is not null)
 with check (auth.uid() is null and anon_id is not null);
