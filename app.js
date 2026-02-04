@@ -634,15 +634,12 @@ ensureAnonId();
 setupSupabase();
 
 authModalOpenBtn.addEventListener("click", openAuthModal);
+authBtn.addEventListener("click", openAuthModal);
 authModalCloseBtn.addEventListener("click", closeAuthModal);
 sendOtpBtn.addEventListener("click", sendOtpEmail);
 verifyOtpBtn.addEventListener("click", verifyOtpCode);
 backToEmailBtn.addEventListener("click", showEmailStep);
 logoutBtn.addEventListener("click", signOut);
-authBtn.addEventListener("click", () => {
-  openDrawer();
-});
-
 authModal.addEventListener("click", (event) => {
   if (event.target === authModal) {
     closeAuthModal();
