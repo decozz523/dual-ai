@@ -268,7 +268,10 @@ function loadSettings() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return;
     const s = JSON.parse(raw);
-    if (typeof s.model === "string") modelEl.value = s.model;
+    if (typeof s.model === "string") {
+      const exists = Array.from(modelEl.options).some((option) => option.value === s.model);
+      modelEl.value = exists ? s.model : modelEl.options[0]?.value || "";
+    }
     if (typeof s.turns === "number") turnsEl.value = String(s.turns);
   } catch {
     // ignore
@@ -277,7 +280,7 @@ function loadSettings() {
 
 function saveSettings() {
   const model = modelEl.value.trim();
-  const turns = Number(turnsEl.value || 0);
+  const turns = getExtraTurns();
   localStorage.setItem(STORAGE_KEY, JSON.stringify({ model, turns }));
   setStatus("Настройки сохранены.", "ok");
 }
@@ -345,17 +348,23 @@ async function runTurn(speaker) {
 }
 
 async function sendUserMessage(text) {
+  const extraTurns = getExtraTurns();
   transcript.push({ speaker: "user", content: text, ts: Date.now() });
   render();
   persistActiveDialog();
   await runTurn("R");
   await runTurn("S");
 
-  const extraTurns = Math.max(0, Math.min(10, Number(turnsEl.value || 0)));
   // Авто-диалог: R<->S. Последний говорил S, значит следующий R.
   for (let i = 0; i < extraTurns; i++) {
     await runTurn(i % 2 === 0 ? "R" : "S");
   }
+}
+
+function getExtraTurns() {
+  const parsed = Number(turnsEl.value || 0);
+  if (!Number.isFinite(parsed)) return 0;
+  return Math.max(0, Math.min(10, parsed));
 }
 
 async function onSend() {
