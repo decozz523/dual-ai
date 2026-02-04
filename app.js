@@ -1,12 +1,6 @@
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-
 const STORAGE_KEY = "dual-ai-chat-settings-v1";
 const DIALOGS_KEY = "dual-ai-chat-dialogs-v1";
 const ACTIVE_DIALOG_KEY = "dual-ai-chat-active-dialog-v1";
-
-const SUPABASE_URL = "https://obfbhlzjrpqwsenybetk.supabase.co";
-const SUPABASE_ANON_KEY = "";
-// Use the public anon key from Supabase (Project Settings → API). Do not use service-role keys here.
 
 const $ = (id) => document.getElementById(id);
 const modelEl = $("model");
@@ -40,12 +34,9 @@ const authMessageEl = $("authMessage");
 const authSignInBtn = $("authSignInBtn");
 const authSignUpBtn = $("authSignUpBtn");
 
-const supabase =
-  SUPABASE_ANON_KEY && SUPABASE_ANON_KEY !== "REPLACE_WITH_SUPABASE_ANON_KEY"
-    ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-    : null;
-
+let supabase = null;
 let authSession = null;
+let supabaseReady = null;
 
 const PERSONAS = {
   R: {
@@ -92,7 +83,7 @@ function setAuthMessage(text, kind = "muted") {
 
 function openAuthModal() {
   if (!supabase) {
-    setStatus("Supabase ключи не настроены.", "error");
+    setStatus("Supabase не настроен или ещё инициализируется.", "error");
     return;
   }
   authOverlay.hidden = false;
@@ -117,9 +108,42 @@ function updateAuthUI(session) {
 
 function requireAuth() {
   if (authSession) return true;
+  if (!supabase) {
+    setStatus("Supabase не настроен или ещё инициализируется.", "error");
+    return false;
+  }
   setStatus("Нужен вход в аккаунт.", "error");
   openAuthModal();
   return false;
+}
+
+async function initSupabase() {
+  if (supabaseReady) return supabaseReady;
+  supabaseReady = (async () => {
+    try {
+      const resp = await fetch("/api/supabase-config", { method: "GET" });
+      if (!resp.ok) throw new Error(`Supabase config ${resp.status}`);
+      const data = await resp.json();
+      if (!data?.url || !data?.anonKey) {
+        throw new Error("Supabase config missing");
+      }
+      const { createClient } = await import(
+        "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"
+      );
+      supabase = createClient(data.url, data.anonKey);
+      const { data: sessionData } = await supabase.auth.getSession();
+      updateAuthUI(sessionData?.session || null);
+      supabase.auth.onAuthStateChange((_event, session) => {
+        updateAuthUI(session);
+      });
+      return true;
+    } catch (e) {
+      setStatus("Supabase ключи не настроены.", "error");
+      loginBtn.disabled = true;
+      return false;
+    }
+  })();
+  return supabaseReady;
 }
 
 function openDrawer() {
@@ -474,7 +498,13 @@ drawerNewChatBtn.addEventListener("click", () => {
   closeDrawer();
 });
 homeBtn.addEventListener("click", () => setMode("home"));
-loginBtn.addEventListener("click", openAuthModal);
+loginBtn.addEventListener("click", () => {
+  if (!supabase) {
+    initSupabase().then(() => openAuthModal());
+    return;
+  }
+  openAuthModal();
+});
 logoutBtn.addEventListener("click", async () => {
   if (!supabase) return;
   await supabase.auth.signOut();
@@ -545,18 +575,7 @@ ensureActiveDialog();
 render();
 renderDialogList();
 setMode("home");
-
-if (supabase) {
-  supabase.auth.getSession().then(({ data }) => {
-    updateAuthUI(data?.session || null);
-  });
-  supabase.auth.onAuthStateChange((_event, session) => {
-    updateAuthUI(session);
-  });
-} else {
-  setStatus("Supabase ключи не настроены.", "error");
-  loginBtn.disabled = true;
-}
+initSupabase();
 
 
 
