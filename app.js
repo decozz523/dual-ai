@@ -1,3 +1,5 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
 const STORAGE_KEY = "dual-ai-chat-settings-v1";
 const AUTH_KEY = "dual-ai-chat-auth-v1";
 
@@ -30,6 +32,14 @@ const authEmail = $("authEmail");
 const authMeta = $("authMeta");
 const authBirthday = $("authBirthday");
 const googleClientIdEl = $("googleClientId");
+const supabaseStatus = $("supabaseStatus");
+const supabaseEmailEl = $("supabaseEmail");
+const emailAuthBtn = $("emailAuthBtn");
+const supabaseLogoutBtn = $("supabaseLogoutBtn");
+const saveDialogBtn = $("saveDialogBtn");
+
+let supabaseClient = null;
+let supabaseSession = null;
 
 const PERSONAS = {
   R: {
@@ -163,6 +173,84 @@ function updateAuthUI() {
   authMeta.textContent = formatAuthDate(auth.linkedAt);
   authBirthday.textContent = formatBirthday(auth.birthday);
   logoutBtn.hidden = false;
+}
+
+function updateSupabaseSaveState() {
+  const isReady = Boolean(supabaseClient && supabaseSession && transcript.length > 0);
+  saveDialogBtn.disabled = !isReady;
+}
+
+function getSupabaseConfig() {
+  const env = window.__ENV__ || {};
+  return {
+    url: window.SUPABASE_URL || env.SUPABASE_URL || "",
+    anonKey: window.SUPABASE_ANON_KEY || env.SUPABASE_ANON_KEY || "",
+  };
+}
+
+async function updateSupabaseUI() {
+  if (!supabaseClient) {
+    supabaseStatus.textContent = "Supabase не настроен (нет ENV)";
+    supabaseLogoutBtn.hidden = true;
+    emailAuthBtn.disabled = true;
+    supabaseSession = null;
+    updateSupabaseSaveState();
+    return;
+  }
+
+  const { data, error } = await supabaseClient.auth.getSession();
+  if (error) {
+    supabaseStatus.textContent = "Ошибка авторизации Supabase";
+    supabaseSession = null;
+    supabaseLogoutBtn.hidden = true;
+    updateSupabaseSaveState();
+    return;
+  }
+
+  if (data.session) {
+    supabaseSession = data.session;
+    supabaseStatus.textContent = `Вошли как ${data.session.user.email || "пользователь"}`;
+    supabaseLogoutBtn.hidden = false;
+    emailAuthBtn.disabled = true;
+  } else {
+    supabaseSession = null;
+    supabaseStatus.textContent = "Нет активной сессии";
+    supabaseLogoutBtn.hidden = true;
+    emailAuthBtn.disabled = false;
+  }
+  updateSupabaseSaveState();
+}
+
+async function handleSupabaseRedirect() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get("code");
+  if (!code || !supabaseClient) return;
+
+  const { error } = await supabaseClient.auth.exchangeCodeForSession(code);
+  if (error) {
+    setStatus(`Supabase: ${error.message}`, "error");
+  } else {
+    setStatus("Supabase: вход подтверждён.", "ok");
+  }
+  window.history.replaceState({}, document.title, getRedirectUri());
+}
+
+async function initSupabaseClient() {
+  const { url, anonKey } = getSupabaseConfig();
+
+  if (!url || !anonKey) {
+    supabaseClient = null;
+    supabaseStatus.textContent = "Supabase не настроен (нет ENV)";
+    updateSupabaseUI();
+    return;
+  }
+
+  supabaseClient = createClient(url, anonKey);
+  supabaseClient.auth.onAuthStateChange(() => {
+    updateSupabaseUI();
+  });
+  await handleSupabaseRedirect();
+  updateSupabaseUI();
 }
 
 async function startGoogleOAuth() {
@@ -361,6 +449,7 @@ function render() {
       "<strong>Диалог ещё пуст.</strong><br />" +
       "Напишите сообщение или воспользуйтесь демо-вопросом, чтобы запустить разговор.";
     messagesEl.appendChild(empty);
+    updateSupabaseSaveState();
     return;
   }
   for (const m of transcript) {
@@ -389,6 +478,7 @@ function render() {
     messagesEl.appendChild(wrap);
   }
   messagesEl.scrollTop = messagesEl.scrollHeight;
+  updateSupabaseSaveState();
 }
 
 function loadSettings() {
@@ -399,6 +489,7 @@ function loadSettings() {
     if (typeof s.model === "string") modelEl.value = s.model;
     if (typeof s.turns === "number") turnsEl.value = String(s.turns);
     if (typeof s.googleClientId === "string") googleClientIdEl.value = s.googleClientId;
+    if (typeof s.supabaseEmail === "string") supabaseEmailEl.value = s.supabaseEmail;
   } catch {
     // ignore
   }
@@ -408,7 +499,12 @@ function saveSettings() {
   const model = modelEl.value.trim();
   const turns = Number(turnsEl.value || 0);
   const googleClientId = googleClientIdEl.value.trim();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ model, turns, googleClientId }));
+  const supabaseEmail = supabaseEmailEl.value.trim();
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({ model, turns, googleClientId, supabaseEmail })
+  );
+  void initSupabaseClient();
   setStatus("Настройки сохранены.", "ok");
 }
 
@@ -502,6 +598,74 @@ async function onSend() {
   }
 }
 
+async function signInWithEmail() {
+  if (!supabaseClient) {
+    setStatus("Supabase не настроен: нет ENV переменных.", "error");
+    return;
+  }
+  const email = supabaseEmailEl.value.trim();
+  if (!email) {
+    setStatus("Укажи email для входа.", "error");
+    return;
+  }
+  const { error } = await supabaseClient.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: getRedirectUri() },
+  });
+  if (error) {
+    setStatus(`Supabase: ${error.message}`, "error");
+    return;
+  }
+  setStatus("Письмо с подтверждением отправлено.", "ok");
+}
+
+async function supabaseSignOut() {
+  if (!supabaseClient) return;
+  const { error } = await supabaseClient.auth.signOut();
+  if (error) {
+    setStatus(`Supabase: ${error.message}`, "error");
+    return;
+  }
+  setStatus("Вы вышли из Supabase.", "ok");
+}
+
+function getDialogTitle() {
+  const firstUserMessage = transcript.find((message) => message.speaker === "user");
+  if (!firstUserMessage) return `Диалог от ${new Date().toLocaleDateString("ru-RU")}`;
+  return firstUserMessage.content.slice(0, 60);
+}
+
+async function saveDialogToSupabase() {
+  if (!supabaseClient) {
+    setStatus("Supabase не настроен (нет ENV).", "error");
+    return;
+  }
+  if (!supabaseSession) {
+    setStatus("Сначала авторизуйся в Supabase.", "error");
+    return;
+  }
+  if (transcript.length === 0) {
+    setStatus("Диалог пустой — нечего сохранять.", "error");
+    return;
+  }
+
+  const payload = {
+    user_id: supabaseSession.user.id,
+    created_at: new Date().toISOString(),
+    title: getDialogTitle(),
+    model: modelEl.value.trim(),
+    turns: Number(turnsEl.value || 0),
+    messages: transcript,
+  };
+
+  const { error } = await supabaseClient.from("dialogs").insert(payload);
+  if (error) {
+    setStatus(`Supabase: ${error.message}`, "error");
+    return;
+  }
+  setStatus("Диалог сохранён в Supabase.", "ok");
+}
+
 sendBtn.addEventListener("click", onSend);
 demoBtn.addEventListener("click", () => {
   inputEl.value = "Что думаете о будущем ИИ?";
@@ -540,6 +704,7 @@ document.addEventListener("keydown", (e) => {
 loadSettings();
 render();
 updateAuthUI();
+void initSupabaseClient();
 setChatMode(localStorage.getItem(VIEW_MODE_KEY) === "chat", { scroll: false });
 handleOAuthRedirect();
 
@@ -548,5 +713,9 @@ logoutBtn.addEventListener("click", signOut);
 authBtn.addEventListener("click", () => {
   openDrawer();
 });
+
+emailAuthBtn.addEventListener("click", signInWithEmail);
+supabaseLogoutBtn.addEventListener("click", supabaseSignOut);
+saveDialogBtn.addEventListener("click", saveDialogToSupabase);
 
 

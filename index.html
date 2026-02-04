@@ -123,13 +123,13 @@
       </div>
 
       <section class="drawer-section">
-        <div class="section-title">Авторизация</div>
+        <div class="section-title">Авторизация (Google)</div>
         <div class="auth-status" id="authStatus">Аккаунт не привязан</div>
         <div class="auth-card" id="authCard" hidden>
           <img id="authAvatar" class="auth-avatar" alt="Google avatar" />
           <div class="auth-details">
-            <div class="auth-name" id="authName">Google User</div>
-            <div class="auth-email" id="authEmail">user@gmail.com</div>
+            <div class="auth-name" id="authName"></div>
+            <div class="auth-email" id="authEmail"></div>
             <div class="auth-meta" id="authMeta">Привязка активна</div>
             <div class="auth-meta" id="authBirthday">Дата рождения: не указана</div>
           </div>
@@ -146,6 +146,26 @@
         </label>
         <div class="hint">
           Мы запрашиваем имя, почту, аватар и дату рождения (People API). Данные сохраняются локально в браузере.
+        </div>
+      </section>
+
+      <section class="drawer-section">
+        <div class="section-title">Авторизация по почте (Supabase)</div>
+        <div class="auth-status" id="supabaseStatus">Supabase не настроен</div>
+        <label class="field">
+          <div class="label">Email для входа</div>
+          <input id="supabaseEmail" type="email" placeholder="you@example.com" />
+          <div class="hint">Вход через magic link. Проверь почту и перейди по ссылке.</div>
+        </label>
+        <div class="row">
+          <button id="emailAuthBtn" class="btn btn-primary" type="button">Войти по почте</button>
+          <button id="supabaseLogoutBtn" class="btn btn-secondary" type="button" hidden>Выйти</button>
+          <button id="saveDialogBtn" class="btn" type="button" disabled>Сохранить диалог в Supabase</button>
+        </div>
+        <div class="hint">
+          Укажи <code>SUPABASE_URL</code> и <code>SUPABASE_ANON_KEY</code> в Vercel Environment Variables.
+          Для сохранения нужен стол <code>dialogs</code> с колонками <code>id</code>, <code>user_id</code>,
+          <code>created_at</code>, <code>title</code>, <code>model</code>, <code>turns</code>, <code>messages</code> (JSONB).
         </div>
       </section>
 
