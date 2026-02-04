@@ -448,13 +448,15 @@ async function migrateAnonChats() {
   try {
     const resp = await fetch("/api/migrate", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${supabaseSession.access_token}`
+      },
       body: JSON.stringify({ anon_id: anonId }),
     });
 
     if (!resp.ok) {
       const text = await resp.text().catch(() => "");
-      // не делаем fatal — просто покажем в статусе
       setStatus(`Миграция чатов: ${resp.status} ${text || resp.statusText}`, "error");
       return;
     }
@@ -467,6 +469,7 @@ async function migrateAnonChats() {
     setStatus(`Миграция чатов: ${String(e?.message || e)}`, "error");
   }
 }
+
 
 // Drawer
 function openDrawer() {
@@ -534,3 +537,4 @@ loadSettings();
 render();
 void initSupabaseClient();
 setChatMode(localStorage.getItem(VIEW_MODE_KEY) === "chat", { scroll: false });
+
