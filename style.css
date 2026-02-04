@@ -195,22 +195,6 @@ input:focus, textarea:focus { border-color: rgba(124, 92, 255, 0.55); box-shadow
   background: rgba(255, 255, 255, 0.06);
 }
 
-.btn-google {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  justify-content: center;
-}
-
-.auth-status {
-  font-size: 12px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.05);
-}
-
 .status-pill {
   font-size: 12px;
   padding: 6px 10px;
@@ -234,6 +218,87 @@ input:focus, textarea:focus { border-color: rgba(124, 92, 255, 0.55); box-shadow
   gap: 10px;
   max-height: 60vh;
   overflow: auto;
+}
+
+.mode-chat .app {
+  max-width: 980px;
+}
+
+.mode-chat .hero {
+  display: none;
+}
+
+.mode-home .chat,
+.mode-home .composer {
+  display: none;
+}
+
+.mode-chat .messages {
+  max-height: 68vh;
+}
+
+.dialog-list {
+  display: grid;
+  gap: 10px;
+}
+
+.dialog-item {
+  display: grid;
+  gap: 6px;
+  text-align: left;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  cursor: pointer;
+  position: relative;
+}
+
+.dialog-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.dialog-item.active {
+  border-color: rgba(124, 92, 255, 0.6);
+  background: rgba(124, 92, 255, 0.18);
+}
+
+.dialog-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.dialog-meta {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.dialog-remove {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  border: 1px solid transparent;
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 2px 6px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.dialog-remove:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.dialog-empty {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px dashed var(--border);
+  color: var(--muted);
+  text-align: center;
 }
 
 .drawer {
