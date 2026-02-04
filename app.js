@@ -225,14 +225,41 @@ function renderDialogList() {
       day: "2-digit",
       month: "short",
     });
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "dialog-remove";
+    removeBtn.setAttribute("aria-label", "Удалить диалог");
+    removeBtn.textContent = "🗑️";
+    removeBtn.addEventListener("click", (event) => {
+      event.stopPropagation();
+      deleteDialog(dialog.id);
+    });
     btn.appendChild(title);
     btn.appendChild(meta);
+    btn.appendChild(removeBtn);
     btn.addEventListener("click", () => {
       setActiveDialog(dialog.id);
       setMode("chat");
       closeDrawer();
     });
     dialogListEl.appendChild(btn);
+  }
+}
+
+function deleteDialog(id) {
+  const index = dialogs.findIndex((dialog) => dialog.id === id);
+  if (index === -1) return;
+  const wasActive = dialogs[index].id === activeDialogId;
+  dialogs.splice(index, 1);
+  saveDialogs();
+  if (wasActive) {
+    if (dialogs.length > 0) {
+      setActiveDialog(dialogs[0].id);
+    } else {
+      createDialog({ activate: true });
+    }
+  } else {
+    renderDialogList();
   }
 }
 
