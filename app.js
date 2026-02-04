@@ -585,6 +585,13 @@ authCloseBtn?.addEventListener("click", (event) => {
   closeAuthModal();
 });
 authOverlay?.addEventListener("click", closeAuthModal);
+authModal?.addEventListener("click", (event) => {
+  const target = event.target;
+  if (target instanceof Element && target.closest("[data-close-auth]")) {
+    event.preventDefault();
+    closeAuthModal();
+  }
+});
 authSignInBtn.addEventListener("click", async () => {
   if (!supabase) return;
   const email = authEmailEl.value.trim();
