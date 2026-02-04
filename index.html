@@ -20,7 +20,6 @@
         </div>
         <div class="topbar-right">
           <div class="status-pill" id="status">Готов.</div>
-          <button id="toggleViewBtn" class="btn btn-secondary">Перейти в чат</button>
           <button id="authBtn" class="btn btn-secondary">Войти</button>
         </div>
       </header>
@@ -35,7 +34,6 @@
             </div>
           <div class="hero-actions">
               <button id="openDrawerBtn" class="btn btn-secondary">Открыть настройки</button>
-              <button id="enterChatBtn" class="btn btn-primary">Перейти в чат</button>
               <button id="newChatBtn" class="btn btn-primary">Новый диалог</button>
           </div>
           </div>
@@ -58,34 +56,7 @@
           </div>
         </section>
 
-        <section class="menu-sections">
-          <div class="menu-card">
-            <div class="menu-title">Сценарии работы</div>
-            <div class="menu-text">
-              Обсуждай стратегии, развивай идеи и быстро проверяй гипотезы в диалоге двух ИИ.
-            </div>
-          </div>
-          <div class="menu-card">
-            <div class="menu-title">Структурирование мыслей</div>
-            <div class="menu-text">
-              Bot R собирает логику и факты, а Bot S добавляет альтернативы и креативные варианты.
-            </div>
-          </div>
-          <div class="menu-card">
-            <div class="menu-title">Гибкие настройки</div>
-            <div class="menu-text">
-              В боковом меню ты управляешь авторизацией, моделью и количеством ходов ботов.
-            </div>
-          </div>
-          <div class="menu-card">
-            <div class="menu-title">Чат без отвлечений</div>
-            <div class="menu-text">
-              Переключайся в чистый режим мессенджера и возвращайся к главному меню в один клик.
-            </div>
-          </div>
-        </section>
-
-        <section class="chat" id="chatSection">
+        <section class="chat">
           <div id="messages" class="messages" aria-live="polite"></div>
         </section>
 
@@ -99,7 +70,7 @@
           </div>
           <textarea
             id="input"
-            rows="2"
+            rows="3"
             placeholder="Напиши сообщение…"
           ></textarea>
           <div class="row">
@@ -123,50 +94,19 @@
       </div>
 
       <section class="drawer-section">
-        <div class="section-title">Авторизация (Google)</div>
-        <div class="auth-status" id="authStatus">Аккаунт не привязан</div>
-        <div class="auth-card" id="authCard" hidden>
-          <img id="authAvatar" class="auth-avatar" alt="Google avatar" />
-          <div class="auth-details">
-            <div class="auth-name" id="authName"></div>
-            <div class="auth-email" id="authEmail"></div>
-            <div class="auth-meta" id="authMeta">Привязка активна</div>
-            <div class="auth-meta" id="authBirthday">Дата рождения: не указана</div>
-          </div>
-        </div>
-        <button id="googleAuthBtn" class="btn btn-primary btn-google" type="button">
+        <div class="section-title">Авторизация</div>
+        <div class="auth-status" id="authStatus">Не выполнен вход</div>
+        <button id="googleAuthBtn" class="btn btn-primary btn-google">
           <span class="icon">G</span>
           Войти через Google
         </button>
-        <button id="logoutBtn" class="btn btn-secondary" type="button" hidden>Отвязать аккаунт</button>
+        <button id="logoutBtn" class="btn btn-secondary" type="button" hidden>Выйти</button>
         <label class="field">
           <div class="label">Google Client ID</div>
           <input id="googleClientId" type="text" placeholder="xxxxx.apps.googleusercontent.com" />
-          <div class="hint">Нужен для OAuth 2.0 (кнопка ведёт на экран согласия Google).</div>
+          <div class="hint">Нужен для работы Google Identity Services.</div>
         </label>
-        <div class="hint">
-          Мы запрашиваем имя, почту, аватар и дату рождения (People API). Данные сохраняются локально в браузере.
-        </div>
-      </section>
-
-      <section class="drawer-section">
-        <div class="section-title">Авторизация по почте (Supabase)</div>
-        <div class="auth-status" id="supabaseStatus">Supabase не настроен</div>
-        <label class="field">
-          <div class="label">Email для входа</div>
-          <input id="supabaseEmail" type="email" placeholder="you@example.com" />
-          <div class="hint">Вход через magic link. Проверь почту и перейди по ссылке.</div>
-        </label>
-        <div class="row">
-          <button id="emailAuthBtn" class="btn btn-primary" type="button">Войти по почте</button>
-          <button id="supabaseLogoutBtn" class="btn btn-secondary" type="button" hidden>Выйти</button>
-          <button id="saveDialogBtn" class="btn" type="button" disabled>Сохранить диалог в Supabase</button>
-        </div>
-        <div class="hint">
-          Укажи <code>SUPABASE_URL</code> и <code>SUPABASE_ANON_KEY</code> в Vercel Environment Variables.
-          Для сохранения нужен стол <code>dialogs</code> с колонками <code>id</code>, <code>user_id</code>,
-          <code>created_at</code>, <code>title</code>, <code>model</code>, <code>turns</code>, <code>messages</code> (JSONB).
-        </div>
+        <div class="hint">Авторизация опциональна. Можно работать без входа.</div>
       </section>
 
       <section class="drawer-section">
@@ -206,5 +146,6 @@
     <script type="module" src="./app.js"></script>
   </body>
 </html>
+
 
 
