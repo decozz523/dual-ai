@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
-    <div class="layout">
+    <div class="layout mode-home">
       <header class="topbar">
         <div class="topbar-left">
           <button id="menuBtn" class="icon-btn" aria-label="Открыть меню">
@@ -20,7 +20,10 @@
         </div>
         <div class="topbar-right">
           <div class="status-pill" id="status">Готов.</div>
-          <button id="authBtn" class="btn btn-secondary">Войти</button>
+          <div class="auth-pill" id="authStatus" hidden></div>
+          <button id="loginBtn" class="btn btn-secondary">Войти</button>
+          <button id="logoutBtn" class="btn btn-secondary" hidden>Выйти</button>
+          <button id="homeBtn" class="btn btn-secondary">Главное меню</button>
         </div>
       </header>
 
@@ -86,7 +89,7 @@
       <div class="drawer-head">
         <div>
           <div class="drawer-title">Меню</div>
-          <div class="drawer-subtitle">Настройки, авторизация и управление</div>
+          <div class="drawer-subtitle">История диалогов и настройки</div>
         </div>
         <button id="closeDrawerBtn" class="icon-btn" aria-label="Закрыть меню">
           <span class="icon">✕</span>
@@ -94,19 +97,9 @@
       </div>
 
       <section class="drawer-section">
-        <div class="section-title">Авторизация</div>
-        <div class="auth-status" id="authStatus">Не выполнен вход</div>
-        <button id="googleAuthBtn" class="btn btn-primary btn-google">
-          <span class="icon">G</span>
-          Войти через Google
-        </button>
-        <button id="logoutBtn" class="btn btn-secondary" type="button" hidden>Выйти</button>
-        <label class="field">
-          <div class="label">Google Client ID</div>
-          <input id="googleClientId" type="text" placeholder="xxxxx.apps.googleusercontent.com" />
-          <div class="hint">Нужен для работы Google Identity Services.</div>
-        </label>
-        <div class="hint">Авторизация опциональна. Можно работать без входа.</div>
+        <div class="section-title">Диалоги</div>
+        <div id="dialogList" class="dialog-list" aria-live="polite"></div>
+        <button id="drawerNewChatBtn" class="btn btn-primary">Новый диалог</button>
       </section>
 
       <section class="drawer-section">
@@ -120,8 +113,12 @@
 
         <label class="field">
           <div class="label">Модель (OpenRouter slug)</div>
-          <input id="model" type="text" value="arcee-ai/trinity-large-preview:free" />
-          <div class="hint">Можно менять на любую доступную в твоём аккаунте.</div>
+          <select id="model">
+            <option value="arcee-ai/trinity-large-preview:free">arcee-ai/trinity-large-preview:free</option>
+            <option value="deepseek/deepseek-r1-0528:free">deepseek/deepseek-r1-0528:free</option>
+            <option value="stepfun/step-3.5-flash:free">stepfun/step-3.5-flash:free</option>
+          </select>
+          <div class="hint">Выберите одну из предустановленных моделей.</div>
         </label>
       </section>
 
@@ -142,6 +139,34 @@
         </div>
       </section>
     </aside>
+
+    <div id="authOverlay" class="modal-overlay" hidden></div>
+    <div id="authModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="authTitle" hidden>
+      <div class="modal-head">
+        <div>
+          <div class="modal-title" id="authTitle">Вход в аккаунт</div>
+          <div class="modal-subtitle">Используем Supabase Email/Password.</div>
+        </div>
+        <button id="authCloseBtn" class="icon-btn" aria-label="Закрыть окно">
+          <span class="icon">✕</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <label class="field">
+          <div class="label">Email</div>
+          <input id="authEmail" type="email" placeholder="you@example.com" autocomplete="email" />
+        </label>
+        <label class="field">
+          <div class="label">Пароль</div>
+          <input id="authPassword" type="password" placeholder="••••••••" autocomplete="current-password" />
+        </label>
+        <div id="authMessage" class="auth-message" role="status"></div>
+        <div class="row">
+          <button id="authSignInBtn" class="btn btn-primary">Войти</button>
+          <button id="authSignUpBtn" class="btn btn-secondary">Создать аккаунт</button>
+        </div>
+      </div>
+    </div>
 
     <script type="module" src="./app.js"></script>
   </body>
