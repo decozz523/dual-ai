@@ -205,6 +205,15 @@ input:focus, textarea:focus { border-color: rgba(124, 92, 255, 0.55); box-shadow
 .status-pill.error { color: rgba(255, 92, 122, 0.95); }
 .status-pill.ok { color: rgba(21, 195, 154, 0.95); }
 
+.auth-pill {
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--muted);
+}
+
 .chat {
   background: var(--panel);
   border: 1px solid var(--border);
@@ -355,6 +364,78 @@ input:focus, textarea:focus { border-color: rgba(124, 92, 255, 0.55); box-shadow
   margin-top: 16px;
   display: grid;
   gap: 12px;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 8, 16, 0.7);
+  backdrop-filter: blur(2px);
+  z-index: 20;
+  display: none;
+}
+
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(420px, 92vw);
+  background: var(--panel-strong);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  z-index: 21;
+  display: none;
+  gap: 16px;
+  padding: 18px;
+}
+
+.auth-open .modal-overlay,
+.auth-open .modal {
+  display: grid;
+}
+
+.modal-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.modal-title {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.modal-subtitle {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.modal-body {
+  display: grid;
+  gap: 12px;
+}
+
+.auth-message {
+  min-height: 18px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.auth-hint {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.auth-message.error {
+  color: var(--danger);
+}
+
+.auth-message.ok {
+  color: var(--accent-2);
 }
 
 .section-title {

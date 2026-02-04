@@ -12,6 +12,9 @@ const demoBtn = $("demoBtn");
 const saveBtn = $("saveBtn");
 const clearBtn = $("clearBtn");
 const statusEl = $("status");
+const authStatusEl = $("authStatus");
+const loginBtn = $("loginBtn");
+const logoutBtn = $("logoutBtn");
 const layoutEl = document.querySelector(".layout");
 const homeBtn = $("homeBtn");
 const menuBtn = $("menuBtn");
@@ -22,6 +25,19 @@ const dialogListEl = $("dialogList");
 const drawer = $("drawer");
 const drawerOverlay = $("drawerOverlay");
 const closeDrawerBtn = $("closeDrawerBtn");
+const authOverlay = $("authOverlay");
+const authModal = $("authModal");
+const authCloseBtn = $("authCloseBtn");
+const authEmailEl = $("authEmail");
+const authPasswordEl = $("authPassword");
+const authMessageEl = $("authMessage");
+const authSignInBtn = $("authSignInBtn");
+const authSignUpBtn = $("authSignUpBtn");
+const authResendBtn = $("authResendBtn");
+
+let supabase = null;
+let authSession = null;
+let supabaseReady = null;
 
 const PERSONAS = {
   R: {
@@ -57,6 +73,91 @@ function setStatus(text, kind = "muted") {
   statusEl.classList.remove("error", "ok");
   if (kind === "error") statusEl.classList.add("error");
   if (kind === "ok") statusEl.classList.add("ok");
+}
+
+function setAuthMessage(text, kind = "muted") {
+  authMessageEl.textContent = text;
+  authMessageEl.classList.remove("error", "ok");
+  if (kind === "error") authMessageEl.classList.add("error");
+  if (kind === "ok") authMessageEl.classList.add("ok");
+}
+
+function openAuthModal() {
+  if (!supabase) {
+    setStatus("Supabase не настроен или ещё инициализируется.", "error");
+    return;
+  }
+  setAuthScene(true);
+  authEmailEl.focus();
+}
+
+function closeAuthModal() {
+  setAuthScene(false);
+  setAuthMessage("");
+}
+
+function updateAuthUI(session) {
+  authSession = session;
+  const email = session?.user?.email;
+  authStatusEl.hidden = !email;
+  authStatusEl.textContent = email ? `Вы вошли как ${email}` : "";
+  loginBtn.hidden = !!email;
+  logoutBtn.hidden = !email;
+  if (email) {
+    setAuthScene(false);
+  }
+  if (email) {
+    void syncDialogsFromSupabase();
+  } else {
+    dialogs = loadDialogsLocal();
+    ensureActiveDialog();
+    render();
+    renderDialogList();
+  }
+}
+
+function requireAuth() {
+  if (authSession) return true;
+  if (!supabase) {
+    setStatus("Supabase не настроен или ещё инициализируется.", "error");
+    return false;
+  }
+  setStatus("Нужен вход в аккаунт.", "error");
+  openAuthModal();
+  return false;
+}
+
+function setAuthScene(isOpen) {
+  document.body.classList.toggle("auth-open", isOpen);
+}
+
+async function initSupabase() {
+  if (supabaseReady) return supabaseReady;
+  supabaseReady = (async () => {
+    try {
+      const resp = await fetch("/api/supabase-config", { method: "GET" });
+      if (!resp.ok) throw new Error(`Supabase config ${resp.status}`);
+      const data = await resp.json();
+      if (!data?.url || !data?.anonKey) {
+        throw new Error("Supabase config missing");
+      }
+      const { createClient } = await import(
+        "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"
+      );
+      supabase = createClient(data.url, data.anonKey);
+      const { data: sessionData } = await supabase.auth.getSession();
+      updateAuthUI(sessionData?.session || null);
+      supabase.auth.onAuthStateChange((_event, session) => {
+        updateAuthUI(session);
+      });
+      return true;
+    } catch (e) {
+      setStatus("Supabase ключи не настроены.", "error");
+      loginBtn.disabled = true;
+      return false;
+    }
+  })();
+  return supabaseReady;
 }
 
 function openDrawer() {
@@ -140,7 +241,11 @@ function loadDialogs() {
   }
 }
 
-function saveDialogs() {
+function loadDialogsLocal() {
+  return loadDialogs();
+}
+
+function saveDialogsLocal() {
   localStorage.setItem(DIALOGS_KEY, JSON.stringify(dialogs));
 }
 
@@ -156,8 +261,9 @@ function persistActiveDialog() {
   dialog.messages = [...transcript];
   dialog.updatedAt = Date.now();
   dialog.title = deriveTitle(dialog.messages);
-  saveDialogs();
+  saveDialogsLocal();
   renderDialogList();
+  void upsertDialogRemote(dialog);
 }
 
 function setActiveDialog(id) {
@@ -180,12 +286,13 @@ function createDialog({ activate = true } = {}) {
     updatedAt: now,
   };
   dialogs.unshift(dialog);
-  saveDialogs();
+  saveDialogsLocal();
   if (activate) {
     setActiveDialog(dialog.id);
   } else {
     renderDialogList();
   }
+  void upsertDialogRemote(dialog);
   return dialog;
 }
 
@@ -251,7 +358,8 @@ function deleteDialog(id) {
   if (index === -1) return;
   const wasActive = dialogs[index].id === activeDialogId;
   dialogs.splice(index, 1);
-  saveDialogs();
+  saveDialogsLocal();
+  void deleteDialogRemote(id);
   if (wasActive) {
     if (dialogs.length > 0) {
       setActiveDialog(dialogs[0].id);
@@ -290,6 +398,61 @@ function clearChat() {
   persistActiveDialog();
   render();
   setStatus("Чат очищен.", "ok");
+}
+
+async function syncDialogsFromSupabase() {
+  if (!supabase || !authSession?.user?.id) return;
+  const { data, error } = await supabase
+    .from("dialogs")
+    .select("id,title,messages,created_at,updated_at")
+    .eq("user_id", authSession.user.id)
+    .order("updated_at", { ascending: false });
+  if (error) {
+    setStatus(`Supabase dialogs: ${error.message}`, "error");
+    return;
+  }
+  dialogs = (data || []).map((row) => ({
+    id: row.id,
+    title: row.title || "Новый диалог",
+    messages: Array.isArray(row.messages) ? row.messages : [],
+    createdAt: row.created_at ? Date.parse(row.created_at) : Date.now(),
+    updatedAt: row.updated_at ? Date.parse(row.updated_at) : Date.now(),
+  }));
+  if (dialogs.length === 0) {
+    createDialog({ activate: true });
+  } else {
+    activeDialogId = dialogs[0].id;
+    setActiveDialog(activeDialogId);
+  }
+  renderDialogList();
+}
+
+async function upsertDialogRemote(dialog) {
+  if (!supabase || !authSession?.user?.id) return;
+  const payload = {
+    id: dialog.id,
+    user_id: authSession.user.id,
+    title: dialog.title,
+    messages: dialog.messages,
+    created_at: new Date(dialog.createdAt).toISOString(),
+    updated_at: new Date(dialog.updatedAt).toISOString(),
+  };
+  const { error } = await supabase.from("dialogs").upsert(payload);
+  if (error) {
+    setStatus(`Supabase dialogs: ${error.message}`, "error");
+  }
+}
+
+async function deleteDialogRemote(id) {
+  if (!supabase || !authSession?.user?.id) return;
+  const { error } = await supabase
+    .from("dialogs")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", authSession.user.id);
+  if (error) {
+    setStatus(`Supabase dialogs: ${error.message}`, "error");
+  }
 }
 
 function toOpenRouterMessages() {
@@ -370,6 +533,7 @@ function getExtraTurns() {
 async function onSend() {
   const text = inputEl.value.trim();
   if (!text) return;
+  if (!requireAuth()) return;
 
   sendBtn.disabled = true;
   demoBtn.disabled = true;
@@ -386,6 +550,7 @@ async function onSend() {
 
 sendBtn.addEventListener("click", onSend);
 demoBtn.addEventListener("click", () => {
+  if (!requireAuth()) return;
   inputEl.value = "Что думаете о будущем ИИ?";
   inputEl.focus();
 });
@@ -396,17 +561,116 @@ openDrawerBtn.addEventListener("click", openDrawer);
 closeDrawerBtn.addEventListener("click", closeDrawer);
 drawerOverlay.addEventListener("click", closeDrawer);
 newChatBtn.addEventListener("click", () => {
+  if (!requireAuth()) return;
   inputEl.value = "";
   createDialog({ activate: true });
   render();
   setMode("chat");
 });
 drawerNewChatBtn.addEventListener("click", () => {
+  if (!requireAuth()) return;
   createDialog({ activate: true });
   setMode("chat");
   closeDrawer();
 });
 homeBtn.addEventListener("click", () => setMode("home"));
+loginBtn.addEventListener("click", () => {
+  if (!supabase) {
+    initSupabase().then(() => openAuthModal());
+    return;
+  }
+  if (authSession) {
+    setAuthScene(false);
+    return;
+  }
+  openAuthModal();
+});
+logoutBtn.addEventListener("click", async () => {
+  if (!supabase) return;
+  await supabase.auth.signOut();
+});
+authCloseBtn?.addEventListener("click", (event) => {
+  event.preventDefault();
+  closeAuthModal();
+});
+authOverlay?.addEventListener("click", closeAuthModal);
+authModal?.addEventListener("click", (event) => {
+  const target = event.target;
+  if (target instanceof Element && target.closest("[data-close-auth]")) {
+    event.preventDefault();
+    closeAuthModal();
+  }
+});
+authSignInBtn.addEventListener("click", async () => {
+  if (!supabase) return;
+  const email = authEmailEl.value.trim();
+  const password = authPasswordEl.value;
+  if (!email || !password) {
+    setAuthMessage("Введите email и пароль.", "error");
+    return;
+  }
+  authSignInBtn.disabled = true;
+  authSignUpBtn.disabled = true;
+  try {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    setAuthMessage("Успешный вход.", "ok");
+    closeAuthModal();
+  } catch (e) {
+    setAuthMessage(String(e?.message || e), "error");
+  } finally {
+    authSignInBtn.disabled = false;
+    authSignUpBtn.disabled = false;
+  }
+});
+authSignUpBtn.addEventListener("click", async () => {
+  if (!supabase) return;
+  const email = authEmailEl.value.trim();
+  const password = authPasswordEl.value;
+  if (!email || !password) {
+    setAuthMessage("Введите email и пароль.", "error");
+    return;
+  }
+  authSignInBtn.disabled = true;
+  authSignUpBtn.disabled = true;
+  authResendBtn.disabled = true;
+  try {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: window.location.origin,
+      },
+    });
+    if (error) throw error;
+    setAuthMessage("Аккаунт создан. Проверьте почту для подтверждения.", "ok");
+  } catch (e) {
+    setAuthMessage(String(e?.message || e), "error");
+  } finally {
+    authSignInBtn.disabled = false;
+    authSignUpBtn.disabled = false;
+    authResendBtn.disabled = false;
+  }
+});
+
+authResendBtn.addEventListener("click", async () => {
+  if (!supabase) return;
+  const email = authEmailEl.value.trim();
+  if (!email) {
+    setAuthMessage("Введите email для повторной отправки.", "error");
+    return;
+  }
+  authResendBtn.disabled = true;
+  try {
+    const { error } = await supabase.auth.resend({ type: "signup", email });
+    if (error) throw error;
+    setAuthMessage("Письмо отправлено повторно.", "ok");
+  } catch (e) {
+    setAuthMessage(String(e?.message || e), "error");
+  } finally {
+    authResendBtn.disabled = false;
+  }
+});
 
 inputEl.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey) {
@@ -418,6 +682,7 @@ inputEl.addEventListener("keydown", (e) => {
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     closeDrawer();
+    closeAuthModal();
   }
 });
 
@@ -427,6 +692,7 @@ ensureActiveDialog();
 render();
 renderDialogList();
 setMode("home");
+initSupabase();
 
 
 
