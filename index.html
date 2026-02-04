@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
-    <div class="layout">
+    <div class="layout mode-home">
       <header class="topbar">
         <div class="topbar-left">
           <button id="menuBtn" class="icon-btn" aria-label="Открыть меню">
@@ -20,7 +20,7 @@
         </div>
         <div class="topbar-right">
           <div class="status-pill" id="status">Готов.</div>
-          <button id="authBtn" class="btn btn-secondary">Войти</button>
+          <button id="homeBtn" class="btn btn-secondary">Главное меню</button>
         </div>
       </header>
 
@@ -86,7 +86,7 @@
       <div class="drawer-head">
         <div>
           <div class="drawer-title">Меню</div>
-          <div class="drawer-subtitle">Настройки, авторизация и управление</div>
+          <div class="drawer-subtitle">История диалогов и настройки</div>
         </div>
         <button id="closeDrawerBtn" class="icon-btn" aria-label="Закрыть меню">
           <span class="icon">✕</span>
@@ -94,19 +94,9 @@
       </div>
 
       <section class="drawer-section">
-        <div class="section-title">Авторизация</div>
-        <div class="auth-status" id="authStatus">Не выполнен вход</div>
-        <button id="googleAuthBtn" class="btn btn-primary btn-google">
-          <span class="icon">G</span>
-          Войти через Google
-        </button>
-        <button id="logoutBtn" class="btn btn-secondary" type="button" hidden>Выйти</button>
-        <label class="field">
-          <div class="label">Google Client ID</div>
-          <input id="googleClientId" type="text" placeholder="xxxxx.apps.googleusercontent.com" />
-          <div class="hint">Нужен для работы Google Identity Services.</div>
-        </label>
-        <div class="hint">Авторизация опциональна. Можно работать без входа.</div>
+        <div class="section-title">Диалоги</div>
+        <div id="dialogList" class="dialog-list" aria-live="polite"></div>
+        <button id="drawerNewChatBtn" class="btn btn-primary">Новый диалог</button>
       </section>
 
       <section class="drawer-section">
