@@ -44,16 +44,11 @@ with check (auth.uid() is null and anon_id is not null);
 
 ### 5) Configure Vercel Environment Variables
 Add these environment variables in Vercel (Project Settings → Environment Variables):
-- `SUPABASE_PROJECT_URL`
-- `SUPABASE_ANON_PUBLIC_KEY`
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
 
 The app reads them through `/api/config`, which serves the public Supabase config
 from the serverless environment.
-
-> Если у тебя Supabase отдаёт значения как `SUPABASE_URL` и `SUPABASE_ANON_KEY`,
-> то просто прокинь их в Vercel как:
-> - `SUPABASE_PROJECT_URL = SUPABASE_URL`
-> - `SUPABASE_ANON_PUBLIC_KEY = SUPABASE_ANON_KEY`
 
 ### 6) Sign in via the app
 - Open the app, go to **Меню → Авторизация**.
