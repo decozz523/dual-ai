@@ -1,9 +1,14 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const STORAGE_KEY = "dual-ai-chat-settings-v1";
-const AUTH_KEY = "dual-ai-chat-auth-v1";
+const VIEW_MODE_KEY = "dual-ai-view-mode";
+const CHAT_MODE_CLASS = "chat-mode";
+
+const ANON_ID_KEY = "dual-ai-anon-id-v1";
+const CURRENT_CHAT_ID_KEY = "dual-ai-current-chat-id-v1";
 
 const $ = (id) => document.getElementById(id);
+
 const modelEl = $("model");
 const turnsEl = $("turns");
 const messagesEl = $("messages");
@@ -21,25 +26,26 @@ const enterChatBtn = $("enterChatBtn");
 const drawer = $("drawer");
 const drawerOverlay = $("drawerOverlay");
 const closeDrawerBtn = $("closeDrawerBtn");
-const authBtn = $("authBtn");
+
+// Auth UI (Supabase)
 const googleAuthBtn = $("googleAuthBtn");
-const logoutBtn = $("logoutBtn");
-const authStatus = $("authStatus");
-const authCard = $("authCard");
-const authAvatar = $("authAvatar");
-const authName = $("authName");
-const authEmail = $("authEmail");
-const authMeta = $("authMeta");
-const authBirthday = $("authBirthday");
-const googleClientIdEl = $("googleClientId");
 const supabaseStatus = $("supabaseStatus");
 const supabaseEmailEl = $("supabaseEmail");
 const emailAuthBtn = $("emailAuthBtn");
 const supabaseLogoutBtn = $("supabaseLogoutBtn");
 const saveDialogBtn = $("saveDialogBtn");
 
+// (оставляем, если они есть в HTML)
+const authBtn = $("authBtn");
+const authStatus = $("authStatus");
+const authCard = $("authCard");
+const logoutBtn = $("logoutBtn");
+
 let supabaseClient = null;
 let supabaseSession = null;
+
+/** @type {{speaker: 'user'|'R'|'S', content: string, ts: number}[]} */
+let transcript = [];
 
 const PERSONAS = {
   R: {
@@ -64,9 +70,6 @@ const PERSONAS = {
   },
 };
 
-/** @type {{speaker: 'user'|'R'|'S', content: string, ts: number}[]} */
-let transcript = [];
-
 function setStatus(text, kind = "muted") {
   statusEl.textContent = text;
   statusEl.classList.remove("error", "ok");
@@ -74,342 +77,30 @@ function setStatus(text, kind = "muted") {
   if (kind === "ok") statusEl.classList.add("ok");
 }
 
-function formatAuthDate(ts) {
-  if (!ts) return "Привязка активна";
-  return `Привязано ${new Date(ts).toLocaleDateString("ru-RU")}`;
-}
-
-function getAvatarPlaceholder(label = "G") {
-  const safeLabel = encodeURIComponent(label.slice(0, 1).toUpperCase());
-  return (
-    "data:image/svg+xml;utf8," +
-    `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48">` +
-    `<rect width="100%" height="100%" fill="%23131a2a"/>` +
-    `<text x="50%" y="54%" font-size="20" fill="%23ffffff" text-anchor="middle" font-family="Arial">${safeLabel}</text>` +
-    "</svg>"
-  );
-}
-
-function getStoredAuth() {
-  const authRaw = localStorage.getItem(AUTH_KEY);
-  if (!authRaw) return null;
-  try {
-    return JSON.parse(authRaw);
-  } catch {
-    return null;
-  }
-}
-
-const VIEW_MODE_KEY = "dual-ai-view-mode";
-const CHAT_MODE_CLASS = "chat-mode";
-
-const OAUTH_STATE_KEY = "dual-ai-oauth-state-v1";
-const OAUTH_SCOPES = [
-  "openid",
-  "email",
-  "profile",
-  "https://www.googleapis.com/auth/user.birthday.readonly",
-];
-
 function getRedirectUri() {
   return `${window.location.origin}${window.location.pathname}`;
 }
 
-function generateRandomString(length = 64) {
-  const array = new Uint8Array(length);
-  window.crypto.getRandomValues(array);
-  return Array.from(array, (b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-async function sha256(plain) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(plain);
-  const digest = await window.crypto.subtle.digest("SHA-256", data);
-  return new Uint8Array(digest);
-}
-
-function base64UrlEncode(bytes) {
-  let binary = "";
-  bytes.forEach((b) => {
-    binary += String.fromCharCode(b);
-  });
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
-
-async function createCodeChallenge(verifier) {
-  const hashed = await sha256(verifier);
-  return base64UrlEncode(hashed);
-}
-
-function formatBirthday(birthday) {
-  if (!birthday) return "Дата рождения: не указана";
-  const { day, month, year } = birthday;
-  const parts = [];
-  if (day) parts.push(String(day).padStart(2, "0"));
-  if (month) parts.push(String(month).padStart(2, "0"));
-  if (year) parts.push(year);
-  return parts.length ? `Дата рождения: ${parts.join(".")}` : "Дата рождения: не указана";
-}
-
-function updateAuthUI() {
-  const auth = getStoredAuth();
-  if (!auth) {
-    authStatus.textContent = "Аккаунт не привязан";
-    authBtn.textContent = "Войти";
-    googleAuthBtn.textContent = "Войти через Google";
-    authCard.hidden = true;
-    logoutBtn.hidden = true;
-    return;
+function getOrCreateAnonId() {
+  let id = localStorage.getItem(ANON_ID_KEY);
+  if (!id) {
+    id = (crypto.randomUUID && crypto.randomUUID()) || String(Date.now()) + "-" + Math.random().toString(16).slice(2);
+    localStorage.setItem(ANON_ID_KEY, id);
   }
-
-  authStatus.textContent = "Аккаунт привязан";
-  authBtn.textContent = "Профиль";
-  googleAuthBtn.textContent = "Обновить привязку Google";
-  authCard.hidden = false;
-  authAvatar.src = auth.picture || getAvatarPlaceholder(auth.name || "G");
-  authAvatar.alt = auth.name || "Google avatar";
-  authName.textContent = auth.name || "Google User";
-  authEmail.textContent = auth.email || "Google account";
-  authMeta.textContent = formatAuthDate(auth.linkedAt);
-  authBirthday.textContent = formatBirthday(auth.birthday);
-  logoutBtn.hidden = false;
+  return id;
 }
 
-function updateSupabaseSaveState() {
-  const isReady = Boolean(supabaseClient && supabaseSession && transcript.length > 0);
-  saveDialogBtn.disabled = !isReady;
-}
-
-function getSupabaseConfig() {
-  const env = window.__ENV__ || {};
-  return {
-    url: window.SUPABASE_URL || env.SUPABASE_URL || "",
-    anonKey: window.SUPABASE_ANON_KEY || env.SUPABASE_ANON_KEY || "",
-  };
-}
-
-async function updateSupabaseUI() {
-  if (!supabaseClient) {
-    supabaseStatus.textContent = "Supabase не настроен (нет ENV)";
-    supabaseLogoutBtn.hidden = true;
-    emailAuthBtn.disabled = true;
-    supabaseSession = null;
-    updateSupabaseSaveState();
-    return;
+function getOrCreateChatId() {
+  let id = localStorage.getItem(CURRENT_CHAT_ID_KEY);
+  if (!id) {
+    id = (crypto.randomUUID && crypto.randomUUID()) || String(Date.now()) + "-" + Math.random().toString(16).slice(2);
+    localStorage.setItem(CURRENT_CHAT_ID_KEY, id);
   }
-
-  const { data, error } = await supabaseClient.auth.getSession();
-  if (error) {
-    supabaseStatus.textContent = "Ошибка авторизации Supabase";
-    supabaseSession = null;
-    supabaseLogoutBtn.hidden = true;
-    updateSupabaseSaveState();
-    return;
-  }
-
-  if (data.session) {
-    supabaseSession = data.session;
-    supabaseStatus.textContent = `Вошли как ${data.session.user.email || "пользователь"}`;
-    supabaseLogoutBtn.hidden = false;
-    emailAuthBtn.disabled = true;
-  } else {
-    supabaseSession = null;
-    supabaseStatus.textContent = "Нет активной сессии";
-    supabaseLogoutBtn.hidden = true;
-    emailAuthBtn.disabled = false;
-  }
-  updateSupabaseSaveState();
+  return id;
 }
 
-async function handleSupabaseRedirect() {
-  const params = new URLSearchParams(window.location.search);
-  const code = params.get("code");
-  if (!code || !supabaseClient) return;
-
-  const { error } = await supabaseClient.auth.exchangeCodeForSession(code);
-  if (error) {
-    setStatus(`Supabase: ${error.message}`, "error");
-  } else {
-    setStatus("Supabase: вход подтверждён.", "ok");
-  }
-  window.history.replaceState({}, document.title, getRedirectUri());
-}
-
-async function initSupabaseClient() {
-  const { url, anonKey } = getSupabaseConfig();
-
-  if (!url || !anonKey) {
-    supabaseClient = null;
-    supabaseStatus.textContent = "Supabase не настроен (нет ENV)";
-    updateSupabaseUI();
-    return;
-  }
-
-  supabaseClient = createClient(url, anonKey);
-  supabaseClient.auth.onAuthStateChange(() => {
-    updateSupabaseUI();
-  });
-  await handleSupabaseRedirect();
-  updateSupabaseUI();
-}
-
-async function startGoogleOAuth() {
-  const clientId = googleClientIdEl.value.trim();
-  if (!clientId) {
-    setStatus("Укажи Google Client ID в настройках.", "error");
-    return;
-  }
-
-  const codeVerifier = generateRandomString(64);
-  const codeChallenge = await createCodeChallenge(codeVerifier);
-  const state = generateRandomString(24);
-  const redirectUri = getRedirectUri();
-
-  sessionStorage.setItem(
-    OAUTH_STATE_KEY,
-    JSON.stringify({ state, codeVerifier, createdAt: Date.now() })
-  );
-
-  const params = new URLSearchParams({
-    client_id: clientId,
-    redirect_uri: redirectUri,
-    response_type: "code",
-    scope: OAUTH_SCOPES.join(" "),
-    code_challenge: codeChallenge,
-    code_challenge_method: "S256",
-    state,
-    prompt: "consent",
-    access_type: "online",
-    include_granted_scopes: "true",
-  });
-
-  window.location.assign(`https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`);
-}
-
-function signOut() {
-  const auth = getStoredAuth();
-  if (auth?.accessToken) {
-    fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(auth.accessToken)}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    }).catch(() => {});
-  }
-  localStorage.removeItem(AUTH_KEY);
-  updateAuthUI();
-  setStatus("Привязка Google аккаунта удалена.", "ok");
-}
-
-async function exchangeCodeForToken({ code, codeVerifier, clientId }) {
-  const params = new URLSearchParams({
-    client_id: clientId,
-    grant_type: "authorization_code",
-    code,
-    code_verifier: codeVerifier,
-    redirect_uri: getRedirectUri(),
-  });
-  const resp = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: params.toString(),
-  });
-  if (!resp.ok) {
-    const text = await resp.text().catch(() => "");
-    throw new Error(`Google OAuth: ${text || resp.statusText}`);
-  }
-  return resp.json();
-}
-
-async function fetchGoogleProfile(accessToken) {
-  const resp = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-  if (!resp.ok) {
-    throw new Error("Google OAuth: не удалось получить профиль.");
-  }
-  return resp.json();
-}
-
-async function fetchGoogleBirthday(accessToken) {
-  const resp = await fetch(
-    "https://people.googleapis.com/v1/people/me?personFields=birthdays",
-    {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    }
-  );
-  if (!resp.ok) return null;
-  const data = await resp.json();
-  const birthday =
-    data?.birthdays?.find((item) => item?.metadata?.primary)?.date ||
-    data?.birthdays?.[0]?.date ||
-    null;
-  return birthday;
-}
-
-async function handleOAuthRedirect() {
-  const params = new URLSearchParams(window.location.search);
-  const code = params.get("code");
-  const state = params.get("state");
-  if (!code) return;
-
-  const storedRaw = sessionStorage.getItem(OAUTH_STATE_KEY);
-  sessionStorage.removeItem(OAUTH_STATE_KEY);
-  let stored = null;
-  if (storedRaw) {
-    try {
-      stored = JSON.parse(storedRaw);
-    } catch {
-      stored = null;
-    }
-  }
-  if (!stored || stored.state !== state) {
-    setStatus("Ошибка проверки OAuth состояния.", "error");
-    window.history.replaceState({}, document.title, getRedirectUri());
-    return;
-  }
-
-  try {
-    const clientId = googleClientIdEl.value.trim();
-    if (!clientId) {
-      throw new Error("Укажи Google Client ID в настройках.");
-    }
-    const tokenData = await exchangeCodeForToken({
-      code,
-      codeVerifier: stored.codeVerifier,
-      clientId,
-    });
-    const accessToken = tokenData.access_token;
-    const profile = await fetchGoogleProfile(accessToken);
-    const birthday = await fetchGoogleBirthday(accessToken);
-    const authProfile = {
-      accessToken,
-      expiresAt: Date.now() + (tokenData.expires_in || 0) * 1000,
-      name: profile?.name || profile?.email || "Google User",
-      email: profile?.email || "",
-      picture: profile?.picture || "",
-      provider: "google",
-      linkedAt: Date.now(),
-      birthday,
-    };
-    localStorage.setItem(AUTH_KEY, JSON.stringify(authProfile));
-    updateAuthUI();
-    setStatus("Google аккаунт привязан.", "ok");
-  } catch (e) {
-    setStatus(String(e?.message || e), "error");
-  } finally {
-    window.history.replaceState({}, document.title, getRedirectUri());
-  }
-}
-
-function openDrawer() {
-  drawer.classList.add("open");
-  drawerOverlay.hidden = false;
-  drawerOverlay.classList.add("visible");
-}
-
-function closeDrawer() {
-  drawer.classList.remove("open");
-  drawerOverlay.hidden = true;
-  drawerOverlay.classList.remove("visible");
+function resetChatId() {
+  localStorage.removeItem(CURRENT_CHAT_ID_KEY);
 }
 
 function isChatMode() {
@@ -417,11 +108,8 @@ function isChatMode() {
 }
 
 function updateViewToggleLabel() {
-  if (isChatMode()) {
-    toggleViewBtn.textContent = "Главное меню";
-  } else {
-    toggleViewBtn.textContent = "Перейти в чат";
-  }
+  if (isChatMode()) toggleViewBtn.textContent = "Главное меню";
+  else toggleViewBtn.textContent = "Перейти в чат";
 }
 
 function setChatMode(enabled, { scroll } = { scroll: true }) {
@@ -434,10 +122,7 @@ function setChatMode(enabled, { scroll } = { scroll: true }) {
 }
 
 function escapeHtml(s) {
-  return s
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;");
+  return s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 }
 
 function render() {
@@ -452,11 +137,13 @@ function render() {
     updateSupabaseSaveState();
     return;
   }
+
   for (const m of transcript) {
     const wrap = document.createElement("div");
     wrap.className = `msg msg-${m.speaker}`;
     const meta = document.createElement("div");
     meta.className = "meta";
+
     const left = document.createElement("div");
     const right = document.createElement("div");
     right.textContent = new Date(m.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -477,6 +164,7 @@ function render() {
     wrap.appendChild(content);
     messagesEl.appendChild(wrap);
   }
+
   messagesEl.scrollTop = messagesEl.scrollHeight;
   updateSupabaseSaveState();
 }
@@ -488,7 +176,6 @@ function loadSettings() {
     const s = JSON.parse(raw);
     if (typeof s.model === "string") modelEl.value = s.model;
     if (typeof s.turns === "number") turnsEl.value = String(s.turns);
-    if (typeof s.googleClientId === "string") googleClientIdEl.value = s.googleClientId;
     if (typeof s.supabaseEmail === "string") supabaseEmailEl.value = s.supabaseEmail;
   } catch {
     // ignore
@@ -498,13 +185,8 @@ function loadSettings() {
 function saveSettings() {
   const model = modelEl.value.trim();
   const turns = Number(turnsEl.value || 0);
-  const googleClientId = googleClientIdEl.value.trim();
   const supabaseEmail = supabaseEmailEl.value.trim();
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify({ model, turns, googleClientId, supabaseEmail })
-  );
-  void initSupabaseClient();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ model, turns, supabaseEmail }));
   setStatus("Настройки сохранены.", "ok");
 }
 
@@ -515,20 +197,14 @@ function clearChat() {
 }
 
 function toOpenRouterMessages() {
-  // Транскрипт -> messages для OpenRouter. Мы маркируем "кто сказал" в тексте,
-  // чтобы модель понимала контекст, т.к. реальных ролей несколько.
   return transcript.map((m) => {
-    const prefix =
-      m.speaker === "user" ? "Человек" : m.speaker === "R" ? "Bot R" : "Bot S";
+    const prefix = m.speaker === "user" ? "Человек" : m.speaker === "R" ? "Bot R" : "Bot S";
     return { role: "user", content: `${prefix}: ${m.content}` };
   });
 }
 
 async function callOpenRouter({ model, persona, messages }) {
-  const payload = {
-    model,
-    messages: [{ role: "system", content: persona.system }, ...messages],
-  };
+  const payload = { model, messages: [{ role: "system", content: persona.system }, ...messages] };
 
   const resp = await fetch("/api/chat", {
     method: "POST",
@@ -543,9 +219,7 @@ async function callOpenRouter({ model, persona, messages }) {
 
   const data = await resp.json();
   const content = data?.choices?.[0]?.message?.content;
-  if (!content || typeof content !== "string") {
-    throw new Error("OpenRouter: invalid response");
-  }
+  if (!content || typeof content !== "string") throw new Error("OpenRouter: invalid response");
   return content;
 }
 
@@ -558,11 +232,7 @@ async function runTurn(speaker) {
 
   const messages = toOpenRouterMessages();
   setStatus(`${speaker === "R" ? "Bot R" : "Bot S"} думает…`);
-  const text = await callOpenRouter({
-    model,
-    persona: PERSONAS[speaker],
-    messages,
-  });
+  const text = await callOpenRouter({ model, persona: PERSONAS[speaker], messages });
   transcript.push({ speaker, content: text, ts: Date.now() });
   render();
   setStatus("Готов.", "ok");
@@ -571,11 +241,11 @@ async function runTurn(speaker) {
 async function sendUserMessage(text) {
   transcript.push({ speaker: "user", content: text, ts: Date.now() });
   render();
+
   await runTurn("R");
   await runTurn("S");
 
   const extraTurns = Math.max(0, Math.min(10, Number(turnsEl.value || 0)));
-  // Авто-диалог: R<->S. Последний говорил S, значит следующий R.
   for (let i = 0; i < extraTurns; i++) {
     await runTurn(i % 2 === 0 ? "R" : "S");
   }
@@ -588,6 +258,7 @@ async function onSend() {
   inputEl.value = "";
   sendBtn.disabled = true;
   demoBtn.disabled = true;
+
   try {
     await sendUserMessage(text);
   } catch (e) {
@@ -598,50 +269,145 @@ async function onSend() {
   }
 }
 
+function updateSupabaseSaveState() {
+  // Сохранять можно и гостем (anon_id), и авторизованным
+  const isReady = Boolean(supabaseClient && transcript.length > 0);
+  saveDialogBtn.disabled = !isReady;
+}
+
+function getSupabaseConfig() {
+  const env = window.__ENV__ || {};
+  return {
+    url: window.SUPABASE_URL || env.SUPABASE_URL || "",
+    anonKey: window.SUPABASE_ANON_KEY || env.SUPABASE_ANON_KEY || "",
+  };
+}
+
+async function handleSupabaseRedirect() {
+  // Supabase email magic-link / OAuth возвращают ?code=...
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get("code");
+  if (!code || !supabaseClient) return;
+
+  const { error } = await supabaseClient.auth.exchangeCodeForSession(code);
+  if (error) setStatus(`Supabase: ${error.message}`, "error");
+  else setStatus("Supabase: вход подтверждён.", "ok");
+
+  window.history.replaceState({}, document.title, getRedirectUri());
+}
+
+async function updateSupabaseUI() {
+  if (!supabaseClient) {
+    supabaseStatus.textContent = "Supabase не настроен (нет ENV)";
+    supabaseLogoutBtn.hidden = true;
+    emailAuthBtn.disabled = true;
+    googleAuthBtn.disabled = true;
+    supabaseSession = null;
+    updateSupabaseSaveState();
+    return;
+  }
+
+  const { data, error } = await supabaseClient.auth.getSession();
+  if (error) {
+    supabaseStatus.textContent = "Ошибка авторизации Supabase";
+    supabaseSession = null;
+    supabaseLogoutBtn.hidden = true;
+    updateSupabaseSaveState();
+    return;
+  }
+
+  if (data.session) {
+    supabaseSession = data.session;
+    supabaseStatus.textContent = `Вошли как ${data.session.user.email || "пользователь"}`;
+    supabaseLogoutBtn.hidden = false;
+    emailAuthBtn.disabled = true;
+    googleAuthBtn.disabled = true;
+
+    // После логина пробуем мигрировать гостевые чаты на аккаунт (через /api/migrate)
+    await migrateAnonChats();
+  } else {
+    supabaseSession = null;
+    supabaseStatus.textContent = "Нет активной сессии";
+    supabaseLogoutBtn.hidden = true;
+    emailAuthBtn.disabled = false;
+    googleAuthBtn.disabled = false;
+  }
+
+  updateSupabaseSaveState();
+}
+
+async function initSupabaseClient() {
+  const { url, anonKey } = getSupabaseConfig();
+  if (!url || !anonKey) {
+    supabaseClient = null;
+    await updateSupabaseUI();
+    return;
+  }
+
+  supabaseClient = createClient(url, anonKey);
+
+  supabaseClient.auth.onAuthStateChange(async () => {
+    await updateSupabaseUI();
+  });
+
+  await handleSupabaseRedirect();
+  await updateSupabaseUI();
+}
+
 async function signInWithEmail() {
   if (!supabaseClient) {
     setStatus("Supabase не настроен: нет ENV переменных.", "error");
     return;
   }
+
   const email = supabaseEmailEl.value.trim();
   if (!email) {
     setStatus("Укажи email для входа.", "error");
     return;
   }
+
   const { error } = await supabaseClient.auth.signInWithOtp({
     email,
     options: { emailRedirectTo: getRedirectUri() },
   });
+
   if (error) {
     setStatus(`Supabase: ${error.message}`, "error");
     return;
   }
-  setStatus("Письмо с подтверждением отправлено.", "ok");
+
+  setStatus("Письмо со ссылкой для входа отправлено.", "ok");
+}
+
+async function signInWithGoogleSupabase() {
+  if (!supabaseClient) {
+    setStatus("Supabase не настроен: нет ENV переменных.", "error");
+    return;
+  }
+
+  const { error } = await supabaseClient.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: getRedirectUri() },
+  });
+
+  if (error) setStatus(`Supabase: ${error.message}`, "error");
 }
 
 async function supabaseSignOut() {
   if (!supabaseClient) return;
+
   const { error } = await supabaseClient.auth.signOut();
   if (error) {
     setStatus(`Supabase: ${error.message}`, "error");
     return;
   }
-  setStatus("Вы вышли из Supabase.", "ok");
+
+  setStatus("Вы вышли из аккаунта.", "ok");
 }
 
-function getDialogTitle() {
-  const firstUserMessage = transcript.find((message) => message.speaker === "user");
-  if (!firstUserMessage) return `Диалог от ${new Date().toLocaleDateString("ru-RU")}`;
-  return firstUserMessage.content.slice(0, 60);
-}
-
-async function saveDialogToSupabase() {
+async function saveChatToSupabase() {
   if (!supabaseClient) {
     setStatus("Supabase не настроен (нет ENV).", "error");
-    return;
-  }
-  if (!supabaseSession) {
-    setStatus("Сначала авторизуйся в Supabase.", "error");
     return;
   }
   if (transcript.length === 0) {
@@ -649,44 +415,97 @@ async function saveDialogToSupabase() {
     return;
   }
 
-  const payload = {
-    user_id: supabaseSession.user.id,
-    created_at: new Date().toISOString(),
-    title: getDialogTitle(),
-    model: modelEl.value.trim(),
-    turns: Number(turnsEl.value || 0),
+  const chatId = getOrCreateChatId();
+  const anonId = getOrCreateAnonId();
+  const userId = supabaseSession?.user?.id || null;
+
+  // Пишем в таблицу chats как в README: id, user_id|null, anon_id|null, messages, updated_at
+  const row = {
+    id: chatId,
+    user_id: userId,
+    anon_id: userId ? null : anonId,
     messages: transcript,
+    updated_at: new Date().toISOString(),
   };
 
-  const { error } = await supabaseClient.from("dialogs").insert(payload);
+  const { error } = await supabaseClient.from("chats").upsert(row);
   if (error) {
     setStatus(`Supabase: ${error.message}`, "error");
     return;
   }
-  setStatus("Диалог сохранён в Supabase.", "ok");
+
+  setStatus("Диалог сохранён в Supabase (chats).", "ok");
 }
 
+async function migrateAnonChats() {
+  // Миграция гостевых чатов на user_id должна идти через serverless (service role),
+  // иначе RLS не даст обновить строки с user_id=null.
+  if (!supabaseSession?.access_token) return;
+
+  const anonId = localStorage.getItem(ANON_ID_KEY);
+  if (!anonId) return;
+
+  try {
+    const resp = await fetch("/api/migrate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ anon_id: anonId }),
+    });
+
+    if (!resp.ok) {
+      const text = await resp.text().catch(() => "");
+      // не делаем fatal — просто покажем в статусе
+      setStatus(`Миграция чатов: ${resp.status} ${text || resp.statusText}`, "error");
+      return;
+    }
+
+    const data = await resp.json().catch(() => ({}));
+    if (typeof data?.migrated === "number") {
+      setStatus(`Миграция чатов завершена. Перенесено: ${data.migrated}`, "ok");
+    }
+  } catch (e) {
+    setStatus(`Миграция чатов: ${String(e?.message || e)}`, "error");
+  }
+}
+
+// Drawer
+function openDrawer() {
+  drawer.classList.add("open");
+  drawerOverlay.hidden = false;
+  drawerOverlay.classList.add("visible");
+}
+function closeDrawer() {
+  drawer.classList.remove("open");
+  drawerOverlay.hidden = true;
+  drawerOverlay.classList.remove("visible");
+}
+
+// UI events
 sendBtn.addEventListener("click", onSend);
 demoBtn.addEventListener("click", () => {
   inputEl.value = "Что думаете о будущем ИИ?";
   inputEl.focus();
 });
 saveBtn.addEventListener("click", saveSettings);
-clearBtn.addEventListener("click", clearChat);
+
+clearBtn.addEventListener("click", () => {
+  resetChatId();
+  clearChat();
+});
+
 menuBtn.addEventListener("click", openDrawer);
 openDrawerBtn.addEventListener("click", openDrawer);
 closeDrawerBtn.addEventListener("click", closeDrawer);
 drawerOverlay.addEventListener("click", closeDrawer);
+
 newChatBtn.addEventListener("click", () => {
+  resetChatId();
   inputEl.value = "";
   clearChat();
 });
-toggleViewBtn.addEventListener("click", () => {
-  setChatMode(!isChatMode(), { scroll: true });
-});
-enterChatBtn.addEventListener("click", () => {
-  setChatMode(true, { scroll: true });
-});
+
+toggleViewBtn.addEventListener("click", () => setChatMode(!isChatMode(), { scroll: true }));
+enterChatBtn.addEventListener("click", () => setChatMode(true, { scroll: true }));
 
 inputEl.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey) {
@@ -696,26 +515,22 @@ inputEl.addEventListener("keydown", (e) => {
 });
 
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") {
-    closeDrawer();
-  }
+  if (e.key === "Escape") closeDrawer();
 });
 
-loadSettings();
-render();
-updateAuthUI();
-void initSupabaseClient();
-setChatMode(localStorage.getItem(VIEW_MODE_KEY) === "chat", { scroll: false });
-handleOAuthRedirect();
-
-googleAuthBtn.addEventListener("click", startGoogleOAuth);
-logoutBtn.addEventListener("click", signOut);
-authBtn.addEventListener("click", () => {
-  openDrawer();
-});
+// Optional legacy UI elements (если есть)
+if (authBtn) authBtn.addEventListener("click", openDrawer);
+if (authStatus) authStatus.textContent = "Авторизация через Supabase";
+if (authCard) authCard.hidden = true;
+if (logoutBtn) logoutBtn.hidden = true;
 
 emailAuthBtn.addEventListener("click", signInWithEmail);
+googleAuthBtn.addEventListener("click", signInWithGoogleSupabase);
 supabaseLogoutBtn.addEventListener("click", supabaseSignOut);
-saveDialogBtn.addEventListener("click", saveDialogToSupabase);
+saveDialogBtn.addEventListener("click", saveChatToSupabase);
 
-
+// init
+loadSettings();
+render();
+void initSupabaseClient();
+setChatMode(localStorage.getItem(VIEW_MODE_KEY) === "chat", { scroll: false });
