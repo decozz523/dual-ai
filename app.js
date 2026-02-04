@@ -33,6 +33,7 @@ const authPasswordEl = $("authPassword");
 const authMessageEl = $("authMessage");
 const authSignInBtn = $("authSignInBtn");
 const authSignUpBtn = $("authSignUpBtn");
+const authResendBtn = $("authResendBtn");
 
 let supabase = null;
 let authSession = null;
@@ -104,6 +105,14 @@ function updateAuthUI(session) {
   authStatusEl.textContent = email ? `Вы вошли как ${email}` : "";
   loginBtn.hidden = !!email;
   logoutBtn.hidden = !email;
+  if (email) {
+    void syncDialogsFromSupabase();
+  } else {
+    dialogs = loadDialogsLocal();
+    ensureActiveDialog();
+    render();
+    renderDialogList();
+  }
 }
 
 function requireAuth() {
@@ -227,7 +236,11 @@ function loadDialogs() {
   }
 }
 
-function saveDialogs() {
+function loadDialogsLocal() {
+  return loadDialogs();
+}
+
+function saveDialogsLocal() {
   localStorage.setItem(DIALOGS_KEY, JSON.stringify(dialogs));
 }
 
@@ -243,8 +256,9 @@ function persistActiveDialog() {
   dialog.messages = [...transcript];
   dialog.updatedAt = Date.now();
   dialog.title = deriveTitle(dialog.messages);
-  saveDialogs();
+  saveDialogsLocal();
   renderDialogList();
+  void upsertDialogRemote(dialog);
 }
 
 function setActiveDialog(id) {
@@ -267,12 +281,13 @@ function createDialog({ activate = true } = {}) {
     updatedAt: now,
   };
   dialogs.unshift(dialog);
-  saveDialogs();
+  saveDialogsLocal();
   if (activate) {
     setActiveDialog(dialog.id);
   } else {
     renderDialogList();
   }
+  void upsertDialogRemote(dialog);
   return dialog;
 }
 
@@ -338,7 +353,8 @@ function deleteDialog(id) {
   if (index === -1) return;
   const wasActive = dialogs[index].id === activeDialogId;
   dialogs.splice(index, 1);
-  saveDialogs();
+  saveDialogsLocal();
+  void deleteDialogRemote(id);
   if (wasActive) {
     if (dialogs.length > 0) {
       setActiveDialog(dialogs[0].id);
@@ -377,6 +393,61 @@ function clearChat() {
   persistActiveDialog();
   render();
   setStatus("Чат очищен.", "ok");
+}
+
+async function syncDialogsFromSupabase() {
+  if (!supabase || !authSession?.user?.id) return;
+  const { data, error } = await supabase
+    .from("dialogs")
+    .select("id,title,messages,created_at,updated_at")
+    .eq("user_id", authSession.user.id)
+    .order("updated_at", { ascending: false });
+  if (error) {
+    setStatus(`Supabase dialogs: ${error.message}`, "error");
+    return;
+  }
+  dialogs = (data || []).map((row) => ({
+    id: row.id,
+    title: row.title || "Новый диалог",
+    messages: Array.isArray(row.messages) ? row.messages : [],
+    createdAt: row.created_at ? Date.parse(row.created_at) : Date.now(),
+    updatedAt: row.updated_at ? Date.parse(row.updated_at) : Date.now(),
+  }));
+  if (dialogs.length === 0) {
+    createDialog({ activate: true });
+  } else {
+    activeDialogId = dialogs[0].id;
+    setActiveDialog(activeDialogId);
+  }
+  renderDialogList();
+}
+
+async function upsertDialogRemote(dialog) {
+  if (!supabase || !authSession?.user?.id) return;
+  const payload = {
+    id: dialog.id,
+    user_id: authSession.user.id,
+    title: dialog.title,
+    messages: dialog.messages,
+    created_at: new Date(dialog.createdAt).toISOString(),
+    updated_at: new Date(dialog.updatedAt).toISOString(),
+  };
+  const { error } = await supabase.from("dialogs").upsert(payload);
+  if (error) {
+    setStatus(`Supabase dialogs: ${error.message}`, "error");
+  }
+}
+
+async function deleteDialogRemote(id) {
+  if (!supabase || !authSession?.user?.id) return;
+  const { error } = await supabase
+    .from("dialogs")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", authSession.user.id);
+  if (error) {
+    setStatus(`Supabase dialogs: ${error.message}`, "error");
+  }
 }
 
 function toOpenRouterMessages() {
@@ -543,8 +614,15 @@ authSignUpBtn.addEventListener("click", async () => {
   }
   authSignInBtn.disabled = true;
   authSignUpBtn.disabled = true;
+  authResendBtn.disabled = true;
   try {
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: window.location.origin,
+      },
+    });
     if (error) throw error;
     setAuthMessage("Аккаунт создан. Проверьте почту для подтверждения.", "ok");
   } catch (e) {
@@ -552,6 +630,26 @@ authSignUpBtn.addEventListener("click", async () => {
   } finally {
     authSignInBtn.disabled = false;
     authSignUpBtn.disabled = false;
+    authResendBtn.disabled = false;
+  }
+});
+
+authResendBtn.addEventListener("click", async () => {
+  if (!supabase) return;
+  const email = authEmailEl.value.trim();
+  if (!email) {
+    setAuthMessage("Введите email для повторной отправки.", "error");
+    return;
+  }
+  authResendBtn.disabled = true;
+  try {
+    const { error } = await supabase.auth.resend({ type: "signup", email });
+    if (error) throw error;
+    setAuthMessage("Письмо отправлено повторно.", "ok");
+  } catch (e) {
+    setAuthMessage(String(e?.message || e), "error");
+  } finally {
+    authResendBtn.disabled = false;
   }
 });
 

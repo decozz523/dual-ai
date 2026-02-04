@@ -419,6 +419,11 @@ input:focus, textarea:focus { border-color: rgba(124, 92, 255, 0.55); box-shadow
   color: var(--muted);
 }
 
+.auth-hint {
+  font-size: 12px;
+  color: var(--muted);
+}
+
 .auth-message.error {
   color: var(--danger);
 }
