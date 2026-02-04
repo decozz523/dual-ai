@@ -158,10 +158,11 @@
           <button id="saveDialogBtn" class="btn" type="button" disabled>Сохранить диалог в Supabase</button>
         </div>
         <div class="hint">
-          Укажи <code>SUPABASE_ANON_KEY</code> и <code>POSTGRES_URL</code> (или <code>SUPABASE_URL</code>)
+          Укажи <code>SUPABASE_ANON_KEY</code> (или <code>SUPABASE_ANON_PUBLIC_KEY</code>) и
+          <code>POSTGRES_URL</code> (или <code>SUPABASE_URL</code>/<code>SUPABASE_PROJECT_URL</code>)
           в Vercel Environment Variables.
-          Для сохранения нужен стол <code>dialogs</code> с колонками <code>id</code>, <code>user_id</code>,
-          <code>created_at</code>, <code>title</code>, <code>model</code>, <code>turns</code>, <code>messages</code> (JSONB).
+          Для сохранения нужен стол <code>chats</code> с колонками <code>id</code>, <code>user_id</code>,
+          <code>anon_id</code>, <code>messages</code>, <code>updated_at</code>.
         </div>
       </section>
 

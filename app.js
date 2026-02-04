@@ -2,6 +2,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const STORAGE_KEY = "dual-ai-chat-settings-v1";
 const AUTH_KEY = "dual-ai-chat-auth-v1";
+const ANON_ID_KEY = "dual-ai-chat-anon-id-v1";
+const CHAT_ID_KEY = "dual-ai-chat-id-v1";
 
 const $ = (id) => document.getElementById(id);
 const modelEl = $("model");
@@ -99,6 +101,31 @@ function getStoredAuth() {
   }
 }
 
+function getAnonId() {
+  let anonId = localStorage.getItem(ANON_ID_KEY);
+  if (!anonId) {
+    anonId = window.crypto?.randomUUID?.() || generateRandomString(16);
+    localStorage.setItem(ANON_ID_KEY, anonId);
+  }
+  return anonId;
+}
+
+function clearAnonId() {
+  localStorage.removeItem(ANON_ID_KEY);
+}
+
+function getStoredChatId() {
+  return localStorage.getItem(CHAT_ID_KEY);
+}
+
+function setStoredChatId(id) {
+  if (id) {
+    localStorage.setItem(CHAT_ID_KEY, id);
+  } else {
+    localStorage.removeItem(CHAT_ID_KEY);
+  }
+}
+
 const VIEW_MODE_KEY = "dual-ai-view-mode";
 const CHAT_MODE_CLASS = "chat-mode";
 
@@ -178,7 +205,7 @@ function updateAuthUI() {
 }
 
 function updateSupabaseSaveState() {
-  const isReady = Boolean(supabaseClient && supabaseSession && transcript.length > 0);
+  const isReady = Boolean(supabaseClient && transcript.length > 0);
   saveDialogBtn.disabled = !isReady;
 }
 
@@ -201,8 +228,18 @@ function getSupabaseConfig() {
     }
   }
   return {
-    url: window.SUPABASE_URL || env.SUPABASE_URL || derivedUrl,
-    anonKey: window.SUPABASE_ANON_KEY || env.SUPABASE_ANON_KEY || "",
+    url:
+      window.SUPABASE_URL ||
+      env.SUPABASE_URL ||
+      window.SUPABASE_PROJECT_URL ||
+      env.SUPABASE_PROJECT_URL ||
+      derivedUrl,
+    anonKey:
+      window.SUPABASE_ANON_KEY ||
+      env.SUPABASE_ANON_KEY ||
+      window.SUPABASE_ANON_PUBLIC_KEY ||
+      env.SUPABASE_ANON_PUBLIC_KEY ||
+      "",
   };
 }
 
@@ -235,11 +272,15 @@ async function updateSupabaseUI() {
     supabaseStatus.textContent = `Вошли как ${data.session.user.email || "пользователь"}`;
     supabaseLogoutBtn.hidden = false;
     emailAuthBtn.disabled = true;
+    clearAnonId();
   } else {
     supabaseSession = null;
     supabaseStatus.textContent = "Нет активной сессии";
     supabaseLogoutBtn.hidden = true;
     emailAuthBtn.disabled = false;
+    if (!localStorage.getItem(ANON_ID_KEY)) {
+      getAnonId();
+    }
   }
   updateSupabaseSaveState();
 }
@@ -269,11 +310,17 @@ async function initSupabaseClient() {
   }
 
   supabaseClient = createClient(url, anonKey);
-  supabaseClient.auth.onAuthStateChange(() => {
+  supabaseClient.auth.onAuthStateChange(async (event, session) => {
+    supabaseSession = session;
+    if (session?.user?.id) {
+      await migrateAnonChats(session.user.id);
+    }
     updateSupabaseUI();
+    await loadLatestChat();
   });
   await handleSupabaseRedirect();
-  updateSupabaseUI();
+  await updateSupabaseUI();
+  await loadLatestChat();
 }
 
 async function startGoogleOAuth() {
@@ -531,6 +578,7 @@ function saveSettings() {
 
 function clearChat() {
   transcript = [];
+  setStoredChatId(null);
   render();
   setStatus("Чат очищен.", "ok");
 }
@@ -586,12 +634,14 @@ async function runTurn(speaker) {
   });
   transcript.push({ speaker, content: text, ts: Date.now() });
   render();
+  await persistChat();
   setStatus("Готов.", "ok");
 }
 
 async function sendUserMessage(text) {
   transcript.push({ speaker: "user", content: text, ts: Date.now() });
   render();
+  await persistChat();
   await runTurn("R");
   await runTurn("S");
 
@@ -647,13 +697,95 @@ async function supabaseSignOut() {
     setStatus(`Supabase: ${error.message}`, "error");
     return;
   }
+  setStoredChatId(null);
   setStatus("Вы вышли из Supabase.", "ok");
 }
 
-function getDialogTitle() {
-  const firstUserMessage = transcript.find((message) => message.speaker === "user");
-  if (!firstUserMessage) return `Диалог от ${new Date().toLocaleDateString("ru-RU")}`;
-  return firstUserMessage.content.slice(0, 60);
+async function migrateAnonChats(userId) {
+  if (!supabaseClient || !userId) return;
+  const anonId = localStorage.getItem(ANON_ID_KEY);
+  if (!anonId) return;
+  const { error } = await supabaseClient
+    .from("chats")
+    .update({ user_id: userId, anon_id: null, updated_at: new Date().toISOString() })
+    .eq("anon_id", anonId);
+  if (!error) {
+    clearAnonId();
+  }
+}
+
+async function persistChat() {
+  if (!supabaseClient) return;
+  if (transcript.length === 0) return;
+
+  const chatId = getStoredChatId();
+  const userId = supabaseSession?.user?.id || null;
+  const anonId = userId ? null : getAnonId();
+  const payload = {
+    user_id: userId,
+    anon_id: anonId,
+    messages: transcript,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (chatId) {
+    const { error } = await supabaseClient.from("chats").update(payload).eq("id", chatId);
+    if (!error) {
+      setStatus("Диалог сохранён в Supabase.", "ok");
+      return;
+    }
+  }
+
+  const { data, error } = await supabaseClient
+    .from("chats")
+    .insert(payload)
+    .select("id")
+    .single();
+  if (error) {
+    setStatus(`Supabase: ${error.message}`, "error");
+    return;
+  }
+  setStoredChatId(data?.id);
+  setStatus("Диалог сохранён в Supabase.", "ok");
+}
+
+async function loadLatestChat() {
+  if (!supabaseClient) return;
+  const userId = supabaseSession?.user?.id || null;
+  const anonId = userId ? null : localStorage.getItem(ANON_ID_KEY);
+  if (!userId && !anonId) return;
+
+  const storedChatId = getStoredChatId();
+  if (storedChatId) {
+    const { data, error } = await supabaseClient
+      .from("chats")
+      .select("id,messages,updated_at")
+      .eq("id", storedChatId)
+      .maybeSingle();
+    if (!error && data?.messages) {
+      transcript = data.messages;
+      render();
+      return;
+    }
+  }
+
+  let query = supabaseClient.from("chats").select("id,messages,updated_at").order("updated_at", {
+    ascending: false,
+  });
+  if (userId) {
+    query = query.eq("user_id", userId);
+  } else if (anonId) {
+    query = query.eq("anon_id", anonId);
+  }
+
+  const { data, error } = await query.limit(1);
+  if (error || !data?.length) return;
+  const [latest] = data;
+  if (latest?.messages) {
+    setStoredChatId(latest.id);
+    transcript = latest.messages;
+    render();
+  }
 }
 
 async function saveDialogToSupabase() {
@@ -661,30 +793,12 @@ async function saveDialogToSupabase() {
     setStatus("Supabase не настроен (нет ENV).", "error");
     return;
   }
-  if (!supabaseSession) {
-    setStatus("Сначала авторизуйся в Supabase.", "error");
-    return;
-  }
   if (transcript.length === 0) {
     setStatus("Диалог пустой — нечего сохранять.", "error");
     return;
   }
 
-  const payload = {
-    user_id: supabaseSession.user.id,
-    created_at: new Date().toISOString(),
-    title: getDialogTitle(),
-    model: modelEl.value.trim(),
-    turns: Number(turnsEl.value || 0),
-    messages: transcript,
-  };
-
-  const { error } = await supabaseClient.from("dialogs").insert(payload);
-  if (error) {
-    setStatus(`Supabase: ${error.message}`, "error");
-    return;
-  }
-  setStatus("Диалог сохранён в Supabase.", "ok");
+  await persistChat();
 }
 
 sendBtn.addEventListener("click", onSend);
