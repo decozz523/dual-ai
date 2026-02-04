@@ -1,13 +1,13 @@
 # dual-ai
 
-## Supabase setup (Magic Link + chat storage)
+## Supabase setup (Email OTP + chat storage)
 
 ### 1) Create a Supabase project
 - Go to https://supabase.com and create a new project.
 - Copy **Project URL** and **anon public key** (Settings → API).
 
-### 2) Enable Magic Link auth
-- Authentication → Providers → Email → enable **Magic Link**.
+### 2) Enable Email OTP auth
+- Authentication → Providers → Email → enable **Email OTP** (passwordless).
 - Configure **URL Configuration**:
   - `http://localhost:3000`
   - `https://<your-vercel-domain>.vercel.app`
@@ -42,11 +42,17 @@ using (auth.uid() is null and anon_id is not null)
 with check (auth.uid() is null and anon_id is not null);
 ```
 
-### 5) Configure the app UI
+### 5) Configure Vercel Environment Variables
+Add these environment variables in Vercel (Project Settings → Environment Variables):
+- `SUPABASE_PROJECT_URL`
+- `SUPABASE_ANON_PUBLIC_KEY`
+
+The app reads them through `/api/config`, which serves the public Supabase config
+from the serverless environment.
+
+### 6) Sign in via the app
 - Open the app, go to **Меню → Авторизация**.
-- Paste **Supabase Project URL** and **Supabase anon public key**.
-- Click **Сохранить настройки**.
-- Use **Email для входа (magic link)** to sign in and link your dialogs.
+- Click **Войти**, enter your email, and confirm the code from the email.
 
 ## How it works
 - Guest users get a local `anon_id`.

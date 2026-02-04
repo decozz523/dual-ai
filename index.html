@@ -133,23 +133,8 @@
             <div class="auth-meta" id="authMeta">Сессия активна</div>
           </div>
         </div>
-        <label class="field">
-          <div class="label">Email для входа (magic link)</div>
-          <input id="authEmailInput" type="email" placeholder="you@email.com" />
-          <div class="hint">Ссылка для входа придёт на почту.</div>
-        </label>
-        <button id="magicLinkBtn" class="btn btn-primary" type="button">Отправить ссылку</button>
+        <button id="authModalOpenBtn" class="btn btn-primary" type="button">Войти</button>
         <button id="logoutBtn" class="btn btn-secondary" type="button" hidden>Выйти</button>
-        <label class="field">
-          <div class="label">Supabase Project URL</div>
-          <input id="supabaseUrl" type="text" placeholder="https://xxxx.supabase.co" />
-          <div class="hint">URL проекта Supabase.</div>
-        </label>
-        <label class="field">
-          <div class="label">Supabase anon public key</div>
-          <input id="supabaseAnonKey" type="text" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." />
-          <div class="hint">Публичный ключ (anon).</div>
-        </label>
         <div class="hint">
           Чат можно начать без логина. Диалоги сохраняются в Supabase и привязываются к аккаунту после входа.
         </div>
@@ -188,6 +173,34 @@
         </div>
       </section>
     </aside>
+
+    <div id="authModal" class="modal" hidden>
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
+        <div class="modal-head">
+          <div class="modal-title" id="authModalTitle">Войти по email</div>
+          <button id="authModalCloseBtn" class="icon-btn" aria-label="Закрыть окно">
+            <span class="icon">✕</span>
+          </button>
+        </div>
+        <div id="authEmailStep" class="modal-step">
+          <label class="field">
+            <div class="label">Email</div>
+            <input id="authEmailInput" type="email" placeholder="you@email.com" />
+            <div class="hint">Мы отправим код подтверждения.</div>
+          </label>
+          <button id="sendOtpBtn" class="btn btn-primary" type="button">Отправить код</button>
+        </div>
+        <div id="authCodeStep" class="modal-step" hidden>
+          <label class="field">
+            <div class="label">Код из письма</div>
+            <input id="authCodeInput" type="text" placeholder="123456" />
+            <div class="hint">Введите код, чтобы подтвердить вход.</div>
+          </label>
+          <button id="verifyOtpBtn" class="btn btn-primary" type="button">Подтвердить вход</button>
+          <button id="backToEmailBtn" class="btn btn-secondary" type="button">Изменить email</button>
+        </div>
+      </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script type="module" src="./app.js"></script>

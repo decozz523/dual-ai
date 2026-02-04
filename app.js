@@ -27,10 +27,16 @@ const authAvatar = $("authAvatar");
 const authName = $("authName");
 const authEmail = $("authEmail");
 const authMeta = $("authMeta");
+const authModal = $("authModal");
+const authModalOpenBtn = $("authModalOpenBtn");
+const authModalCloseBtn = $("authModalCloseBtn");
+const authEmailStep = $("authEmailStep");
+const authCodeStep = $("authCodeStep");
 const authEmailInput = $("authEmailInput");
-const magicLinkBtn = $("magicLinkBtn");
-const supabaseUrlEl = $("supabaseUrl");
-const supabaseAnonKeyEl = $("supabaseAnonKey");
+const authCodeInput = $("authCodeInput");
+const sendOtpBtn = $("sendOtpBtn");
+const verifyOtpBtn = $("verifyOtpBtn");
+const backToEmailBtn = $("backToEmailBtn");
 
 const PERSONAS = {
   R: {
@@ -97,17 +103,28 @@ let currentChatId = null;
 let anonId = null;
 let authSubscription = null;
 let warnedMissingSupabase = false;
+let supabaseConfig = null;
 
 function formatAuthDate(ts) {
   if (!ts) return "Сессия активна";
   return `Сессия с ${new Date(ts).toLocaleDateString("ru-RU")}`;
 }
 
-function getSupabaseConfig() {
-  const url = supabaseUrlEl.value.trim();
-  const anonKey = supabaseAnonKeyEl.value.trim();
-  if (!url || !anonKey) return null;
-  return { url, anonKey };
+async function loadSupabaseConfig() {
+  if (supabaseConfig) return supabaseConfig;
+  try {
+    const resp = await fetch("/api/config");
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    if (!data?.supabaseUrl || !data?.supabaseAnonKey) return null;
+    supabaseConfig = {
+      url: data.supabaseUrl,
+      anonKey: data.supabaseAnonKey,
+    };
+    return supabaseConfig;
+  } catch {
+    return null;
+  }
 }
 
 function ensureAnonId() {
@@ -124,8 +141,8 @@ function ensureAnonId() {
   return newId;
 }
 
-function initSupabase() {
-  const config = getSupabaseConfig();
+async function initSupabase() {
+  const config = await loadSupabaseConfig();
   if (!config || !window.supabase) return null;
   supabaseClient = window.supabase.createClient(config.url, config.anonKey);
   return supabaseClient;
@@ -136,9 +153,10 @@ function isSupabaseReady() {
 }
 
 async function setupSupabase() {
-  if (!initSupabase()) return;
+  if (!(await initSupabase())) return;
   ensureAnonId();
   await refreshAuthState();
+  warnedMissingSupabase = false;
   if (authSubscription) {
     authSubscription.unsubscribe();
     authSubscription = null;
@@ -188,9 +206,40 @@ function updateAuthUI() {
   logoutBtn.hidden = false;
 }
 
-async function sendMagicLink() {
+async function openAuthModal() {
+  if (!isSupabaseReady()) {
+    await setupSupabase();
+  }
+  if (!isSupabaseReady()) {
+    setStatus("Настрой Supabase в переменных окружения Vercel.", "error");
+    return;
+  }
+  authModal.hidden = false;
+  showEmailStep();
+}
+
+function closeAuthModal() {
+  authModal.hidden = true;
+  authEmailInput.value = "";
+  authCodeInput.value = "";
+}
+
+function showEmailStep() {
+  authEmailStep.hidden = false;
+  authCodeStep.hidden = true;
+  authCodeInput.value = "";
+  authEmailInput.focus();
+}
+
+function showCodeStep() {
+  authEmailStep.hidden = true;
+  authCodeStep.hidden = false;
+  authCodeInput.focus();
+}
+
+async function sendOtpEmail() {
   if (!supabaseClient) {
-    setStatus("Укажи Supabase URL и anon key в настройках.", "error");
+    setStatus("Настрой Supabase в переменных окружения Vercel.", "error");
     return;
   }
   const email = authEmailInput.value.trim();
@@ -200,13 +249,38 @@ async function sendMagicLink() {
   }
   const { error } = await supabaseClient.auth.signInWithOtp({
     email,
-    options: { emailRedirectTo: window.location.href },
+    options: { shouldCreateUser: true },
   });
   if (error) {
-    setStatus(`Ошибка отправки ссылки: ${error.message}`, "error");
+    setStatus(`Ошибка отправки кода: ${error.message}`, "error");
     return;
   }
-  setStatus("Ссылка для входа отправлена на почту.", "ok");
+  showCodeStep();
+  setStatus("Код отправлен на почту.", "ok");
+}
+
+async function verifyOtpCode() {
+  if (!supabaseClient) {
+    setStatus("Настрой Supabase в переменных окружения Vercel.", "error");
+    return;
+  }
+  const email = authEmailInput.value.trim();
+  const code = authCodeInput.value.trim();
+  if (!email || !code) {
+    setStatus("Укажи email и код из письма.", "error");
+    return;
+  }
+  const { error } = await supabaseClient.auth.verifyOtp({
+    email,
+    token: code,
+    type: "email",
+  });
+  if (error) {
+    setStatus(`Ошибка подтверждения: ${error.message}`, "error");
+    return;
+  }
+  closeAuthModal();
+  setStatus("Вход выполнен.", "ok");
 }
 
 async function signOut() {
@@ -294,7 +368,7 @@ async function loadLatestChat() {
 async function persistChat() {
   if (!isSupabaseReady()) {
     if (!warnedMissingSupabase) {
-      setStatus("Для сохранения в облаке укажи Supabase URL и anon key.", "error");
+      setStatus("Для сохранения в облаке задай Supabase URL и anon key в Vercel.", "error");
       warnedMissingSupabase = true;
     }
     return;
@@ -406,8 +480,6 @@ function loadSettings() {
     const s = JSON.parse(raw);
     if (typeof s.model === "string") modelEl.value = s.model;
     if (typeof s.turns === "number") turnsEl.value = String(s.turns);
-    if (typeof s.supabaseUrl === "string") supabaseUrlEl.value = s.supabaseUrl;
-    if (typeof s.supabaseAnonKey === "string") supabaseAnonKeyEl.value = s.supabaseAnonKey;
   } catch {
     // ignore
   }
@@ -416,14 +488,8 @@ function loadSettings() {
 function saveSettings() {
   const model = modelEl.value.trim();
   const turns = Number(turnsEl.value || 0);
-  const supabaseUrl = supabaseUrlEl.value.trim();
-  const supabaseAnonKey = supabaseAnonKeyEl.value.trim();
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify({ model, turns, supabaseUrl, supabaseAnonKey })
-  );
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ model, turns }));
   setStatus("Настройки сохранены.", "ok");
-  setupSupabase();
 }
 
 function clearChat() {
@@ -552,7 +618,11 @@ inputEl.addEventListener("keydown", (e) => {
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
-    closeDrawer();
+    if (!authModal.hidden) {
+      closeAuthModal();
+    } else {
+      closeDrawer();
+    }
   }
 });
 
@@ -563,10 +633,20 @@ setChatMode(localStorage.getItem(VIEW_MODE_KEY) === "chat", { scroll: false });
 ensureAnonId();
 setupSupabase();
 
-magicLinkBtn.addEventListener("click", sendMagicLink);
+authModalOpenBtn.addEventListener("click", openAuthModal);
+authModalCloseBtn.addEventListener("click", closeAuthModal);
+sendOtpBtn.addEventListener("click", sendOtpEmail);
+verifyOtpBtn.addEventListener("click", verifyOtpCode);
+backToEmailBtn.addEventListener("click", showEmailStep);
 logoutBtn.addEventListener("click", signOut);
 authBtn.addEventListener("click", () => {
   openDrawer();
+});
+
+authModal.addEventListener("click", (event) => {
+  if (event.target === authModal) {
+    closeAuthModal();
+  }
 });
 
 
