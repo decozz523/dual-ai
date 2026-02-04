@@ -580,8 +580,11 @@ logoutBtn.addEventListener("click", async () => {
   if (!supabase) return;
   await supabase.auth.signOut();
 });
-authCloseBtn.addEventListener("click", closeAuthModal);
-authOverlay.addEventListener("click", closeAuthModal);
+authCloseBtn?.addEventListener("click", (event) => {
+  event.preventDefault();
+  closeAuthModal();
+});
+authOverlay?.addEventListener("click", closeAuthModal);
 authSignInBtn.addEventListener("click", async () => {
   if (!supabase) return;
   const email = authEmailEl.value.trim();
