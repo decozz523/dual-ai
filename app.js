@@ -1,5 +1,6 @@
 const STORAGE_KEY = "dual-ai-chat-settings-v1";
-const AUTH_KEY = "dual-ai-chat-auth-v1";
+const DIALOGS_KEY = "dual-ai-chat-dialogs-v1";
+const ACTIVE_DIALOG_KEY = "dual-ai-chat-active-dialog-v1";
 
 const $ = (id) => document.getElementById(id);
 const modelEl = $("model");
@@ -11,17 +12,32 @@ const demoBtn = $("demoBtn");
 const saveBtn = $("saveBtn");
 const clearBtn = $("clearBtn");
 const statusEl = $("status");
+const authStatusEl = $("authStatus");
+const loginBtn = $("loginBtn");
+const logoutBtn = $("logoutBtn");
+const layoutEl = document.querySelector(".layout");
+const homeBtn = $("homeBtn");
 const menuBtn = $("menuBtn");
 const openDrawerBtn = $("openDrawerBtn");
 const newChatBtn = $("newChatBtn");
+const drawerNewChatBtn = $("drawerNewChatBtn");
+const dialogListEl = $("dialogList");
 const drawer = $("drawer");
 const drawerOverlay = $("drawerOverlay");
 const closeDrawerBtn = $("closeDrawerBtn");
-const authBtn = $("authBtn");
-const googleAuthBtn = $("googleAuthBtn");
-const logoutBtn = $("logoutBtn");
-const authStatus = $("authStatus");
-const googleClientIdEl = $("googleClientId");
+const authOverlay = $("authOverlay");
+const authModal = $("authModal");
+const authCloseBtn = $("authCloseBtn");
+const authEmailEl = $("authEmail");
+const authPasswordEl = $("authPassword");
+const authMessageEl = $("authMessage");
+const authSignInBtn = $("authSignInBtn");
+const authSignUpBtn = $("authSignUpBtn");
+const authResendBtn = $("authResendBtn");
+
+let supabase = null;
+let authSession = null;
+let supabaseReady = null;
 
 const PERSONAS = {
   R: {
@@ -48,6 +64,9 @@ const PERSONAS = {
 
 /** @type {{speaker: 'user'|'R'|'S', content: string, ts: number}[]} */
 let transcript = [];
+/** @type {{id: string, title: string, messages: typeof transcript, createdAt: number, updatedAt: number}[]} */
+let dialogs = [];
+let activeDialogId = null;
 
 function setStatus(text, kind = "muted") {
   statusEl.textContent = text;
@@ -56,89 +75,89 @@ function setStatus(text, kind = "muted") {
   if (kind === "ok") statusEl.classList.add("ok");
 }
 
-function parseJwt(token) {
-  try {
-    const payload = token.split(".")[1];
-    if (!payload) return null;
-    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
-    const json = decodeURIComponent(
-      atob(base64)
-        .split("")
-        .map((c) => `%${c.charCodeAt(0).toString(16).padStart(2, "0")}`)
-        .join("")
-    );
-    return JSON.parse(json);
-  } catch {
-    return null;
-  }
+function setAuthMessage(text, kind = "muted") {
+  authMessageEl.textContent = text;
+  authMessageEl.classList.remove("error", "ok");
+  if (kind === "error") authMessageEl.classList.add("error");
+  if (kind === "ok") authMessageEl.classList.add("ok");
 }
 
-let googleScriptPromise = null;
-
-function loadGoogleScript() {
-  if (googleScriptPromise) return googleScriptPromise;
-  googleScriptPromise = new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = "https://accounts.google.com/gsi/client";
-    script.async = true;
-    script.defer = true;
-    script.onload = resolve;
-    script.onerror = reject;
-    document.head.appendChild(script);
-  });
-  return googleScriptPromise;
-}
-
-function updateAuthUI() {
-  const authRaw = localStorage.getItem(AUTH_KEY);
-  if (!authRaw) {
-    authStatus.textContent = "Не выполнен вход";
-    authBtn.textContent = "Войти";
-    logoutBtn.hidden = true;
+function openAuthModal() {
+  if (!supabase) {
+    setStatus("Supabase не настроен или ещё инициализируется.", "error");
     return;
   }
-  const auth = JSON.parse(authRaw);
-  authStatus.textContent = auth?.name
-    ? `Вход выполнен: ${auth.name}`
-    : "Вход выполнен";
-  authBtn.textContent = "Выйти";
-  logoutBtn.hidden = false;
+  setAuthScene(true);
+  authEmailEl.focus();
 }
 
-async function signInWithGoogle() {
-  const clientId = googleClientIdEl.value.trim();
-  if (!clientId) {
-    setStatus("Укажи Google Client ID в настройках.", "error");
-    return;
-  }
-
-  await loadGoogleScript();
-  if (!window.google?.accounts?.id) {
-    setStatus("Google Identity Services недоступен.", "error");
-    return;
-  }
-
-  window.google.accounts.id.initialize({
-    client_id: clientId,
-    callback: (response) => {
-      const payload = parseJwt(response.credential);
-      const profile = {
-        token: response.credential,
-        name: payload?.name || payload?.email || "Google User",
-        email: payload?.email || "",
-      };
-      localStorage.setItem(AUTH_KEY, JSON.stringify(profile));
-      updateAuthUI();
-      setStatus("Авторизация выполнена.", "ok");
-    },
-  });
-  window.google.accounts.id.prompt();
+function closeAuthModal() {
+  setAuthScene(false);
+  setAuthMessage("");
 }
 
-function signOut() {
-  localStorage.removeItem(AUTH_KEY);
-  updateAuthUI();
-  setStatus("Вы вышли из аккаунта.", "ok");
+function updateAuthUI(session) {
+  authSession = session;
+  const email = session?.user?.email;
+  authStatusEl.hidden = !email;
+  authStatusEl.textContent = email ? `Вы вошли как ${email}` : "";
+  loginBtn.hidden = !!email;
+  logoutBtn.hidden = !email;
+  if (email) {
+    setAuthScene(false);
+  }
+  if (email) {
+    void syncDialogsFromSupabase();
+  } else {
+    dialogs = loadDialogsLocal();
+    ensureActiveDialog();
+    render();
+    renderDialogList();
+  }
+}
+
+function requireAuth() {
+  if (authSession) return true;
+  if (!supabase) {
+    setStatus("Supabase не настроен или ещё инициализируется.", "error");
+    return false;
+  }
+  setStatus("Нужен вход в аккаунт.", "error");
+  openAuthModal();
+  return false;
+}
+
+function setAuthScene(isOpen) {
+  document.body.classList.toggle("auth-open", isOpen);
+}
+
+async function initSupabase() {
+  if (supabaseReady) return supabaseReady;
+  supabaseReady = (async () => {
+    try {
+      const resp = await fetch("/api/supabase-config", { method: "GET" });
+      if (!resp.ok) throw new Error(`Supabase config ${resp.status}`);
+      const data = await resp.json();
+      if (!data?.url || !data?.anonKey) {
+        throw new Error("Supabase config missing");
+      }
+      const { createClient } = await import(
+        "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"
+      );
+      supabase = createClient(data.url, data.anonKey);
+      const { data: sessionData } = await supabase.auth.getSession();
+      updateAuthUI(sessionData?.session || null);
+      supabase.auth.onAuthStateChange((_event, session) => {
+        updateAuthUI(session);
+      });
+      return true;
+    } catch (e) {
+      setStatus("Supabase ключи не настроены.", "error");
+      loginBtn.disabled = true;
+      return false;
+    }
+  })();
+  return supabaseReady;
 }
 
 function openDrawer() {
@@ -199,14 +218,169 @@ function render() {
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
 
+function setMode(mode) {
+  layoutEl.classList.toggle("mode-home", mode === "home");
+  layoutEl.classList.toggle("mode-chat", mode === "chat");
+  homeBtn.hidden = mode === "home";
+}
+
+function makeDialogId() {
+  if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+  return `dialog-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function loadDialogs() {
+  try {
+    const raw = localStorage.getItem(DIALOGS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((d) => d && d.id && Array.isArray(d.messages));
+  } catch {
+    return [];
+  }
+}
+
+function loadDialogsLocal() {
+  return loadDialogs();
+}
+
+function saveDialogsLocal() {
+  localStorage.setItem(DIALOGS_KEY, JSON.stringify(dialogs));
+}
+
+function deriveTitle(messages) {
+  const firstUser = messages.find((m) => m.speaker === "user" && m.content.trim());
+  if (!firstUser) return "Новый диалог";
+  return firstUser.content.trim().slice(0, 48);
+}
+
+function persistActiveDialog() {
+  const dialog = dialogs.find((d) => d.id === activeDialogId);
+  if (!dialog) return;
+  dialog.messages = [...transcript];
+  dialog.updatedAt = Date.now();
+  dialog.title = deriveTitle(dialog.messages);
+  saveDialogsLocal();
+  renderDialogList();
+  void upsertDialogRemote(dialog);
+}
+
+function setActiveDialog(id) {
+  const dialog = dialogs.find((d) => d.id === id);
+  if (!dialog) return;
+  activeDialogId = id;
+  localStorage.setItem(ACTIVE_DIALOG_KEY, id);
+  transcript = [...dialog.messages];
+  render();
+  renderDialogList();
+}
+
+function createDialog({ activate = true } = {}) {
+  const now = Date.now();
+  const dialog = {
+    id: makeDialogId(),
+    title: "Новый диалог",
+    messages: [],
+    createdAt: now,
+    updatedAt: now,
+  };
+  dialogs.unshift(dialog);
+  saveDialogsLocal();
+  if (activate) {
+    setActiveDialog(dialog.id);
+  } else {
+    renderDialogList();
+  }
+  void upsertDialogRemote(dialog);
+  return dialog;
+}
+
+function ensureActiveDialog() {
+  if (activeDialogId && dialogs.some((d) => d.id === activeDialogId)) return;
+  const storedId = localStorage.getItem(ACTIVE_DIALOG_KEY);
+  if (storedId && dialogs.some((d) => d.id === storedId)) {
+    activeDialogId = storedId;
+    setActiveDialog(storedId);
+    return;
+  }
+  createDialog({ activate: true });
+}
+
+function renderDialogList() {
+  dialogListEl.innerHTML = "";
+  if (dialogs.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "dialog-empty";
+    empty.textContent = "Пока нет диалогов.";
+    dialogListEl.appendChild(empty);
+    return;
+  }
+  for (const dialog of dialogs) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "dialog-item";
+    if (dialog.id === activeDialogId) btn.classList.add("active");
+    const title = document.createElement("div");
+    title.className = "dialog-title";
+    title.textContent = dialog.title || "Новый диалог";
+    const meta = document.createElement("div");
+    meta.className = "dialog-meta";
+    meta.textContent = new Date(dialog.updatedAt).toLocaleString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      day: "2-digit",
+      month: "short",
+    });
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "dialog-remove";
+    removeBtn.setAttribute("aria-label", "Удалить диалог");
+    removeBtn.textContent = "🗑️";
+    removeBtn.addEventListener("click", (event) => {
+      event.stopPropagation();
+      deleteDialog(dialog.id);
+    });
+    btn.appendChild(title);
+    btn.appendChild(meta);
+    btn.appendChild(removeBtn);
+    btn.addEventListener("click", () => {
+      setActiveDialog(dialog.id);
+      setMode("chat");
+      closeDrawer();
+    });
+    dialogListEl.appendChild(btn);
+  }
+}
+
+function deleteDialog(id) {
+  const index = dialogs.findIndex((dialog) => dialog.id === id);
+  if (index === -1) return;
+  const wasActive = dialogs[index].id === activeDialogId;
+  dialogs.splice(index, 1);
+  saveDialogsLocal();
+  void deleteDialogRemote(id);
+  if (wasActive) {
+    if (dialogs.length > 0) {
+      setActiveDialog(dialogs[0].id);
+    } else {
+      createDialog({ activate: true });
+    }
+  } else {
+    renderDialogList();
+  }
+}
+
 function loadSettings() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return;
     const s = JSON.parse(raw);
-    if (typeof s.model === "string") modelEl.value = s.model;
+    if (typeof s.model === "string") {
+      const exists = Array.from(modelEl.options).some((option) => option.value === s.model);
+      modelEl.value = exists ? s.model : modelEl.options[0]?.value || "";
+    }
     if (typeof s.turns === "number") turnsEl.value = String(s.turns);
-    if (typeof s.googleClientId === "string") googleClientIdEl.value = s.googleClientId;
   } catch {
     // ignore
   }
@@ -214,16 +388,71 @@ function loadSettings() {
 
 function saveSettings() {
   const model = modelEl.value.trim();
-  const turns = Number(turnsEl.value || 0);
-  const googleClientId = googleClientIdEl.value.trim();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ model, turns, googleClientId }));
+  const turns = getExtraTurns();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ model, turns }));
   setStatus("Настройки сохранены.", "ok");
 }
 
 function clearChat() {
   transcript = [];
+  persistActiveDialog();
   render();
   setStatus("Чат очищен.", "ok");
+}
+
+async function syncDialogsFromSupabase() {
+  if (!supabase || !authSession?.user?.id) return;
+  const { data, error } = await supabase
+    .from("dialogs")
+    .select("id,title,messages,created_at,updated_at")
+    .eq("user_id", authSession.user.id)
+    .order("updated_at", { ascending: false });
+  if (error) {
+    setStatus(`Supabase dialogs: ${error.message}`, "error");
+    return;
+  }
+  dialogs = (data || []).map((row) => ({
+    id: row.id,
+    title: row.title || "Новый диалог",
+    messages: Array.isArray(row.messages) ? row.messages : [],
+    createdAt: row.created_at ? Date.parse(row.created_at) : Date.now(),
+    updatedAt: row.updated_at ? Date.parse(row.updated_at) : Date.now(),
+  }));
+  if (dialogs.length === 0) {
+    createDialog({ activate: true });
+  } else {
+    activeDialogId = dialogs[0].id;
+    setActiveDialog(activeDialogId);
+  }
+  renderDialogList();
+}
+
+async function upsertDialogRemote(dialog) {
+  if (!supabase || !authSession?.user?.id) return;
+  const payload = {
+    id: dialog.id,
+    user_id: authSession.user.id,
+    title: dialog.title,
+    messages: dialog.messages,
+    created_at: new Date(dialog.createdAt).toISOString(),
+    updated_at: new Date(dialog.updatedAt).toISOString(),
+  };
+  const { error } = await supabase.from("dialogs").upsert(payload);
+  if (error) {
+    setStatus(`Supabase dialogs: ${error.message}`, "error");
+  }
+}
+
+async function deleteDialogRemote(id) {
+  if (!supabase || !authSession?.user?.id) return;
+  const { error } = await supabase
+    .from("dialogs")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", authSession.user.id);
+  if (error) {
+    setStatus(`Supabase dialogs: ${error.message}`, "error");
+  }
 }
 
 function toOpenRouterMessages() {
@@ -277,31 +506,40 @@ async function runTurn(speaker) {
   });
   transcript.push({ speaker, content: text, ts: Date.now() });
   render();
+  persistActiveDialog();
   setStatus("Готов.", "ok");
 }
 
 async function sendUserMessage(text) {
+  const extraTurns = getExtraTurns();
   transcript.push({ speaker: "user", content: text, ts: Date.now() });
   render();
+  persistActiveDialog();
   await runTurn("R");
   await runTurn("S");
 
-  const extraTurns = Math.max(0, Math.min(10, Number(turnsEl.value || 0)));
   // Авто-диалог: R<->S. Последний говорил S, значит следующий R.
   for (let i = 0; i < extraTurns; i++) {
     await runTurn(i % 2 === 0 ? "R" : "S");
   }
 }
 
+function getExtraTurns() {
+  const parsed = Number(turnsEl.value || 0);
+  if (!Number.isFinite(parsed)) return 0;
+  return Math.max(0, Math.min(10, parsed));
+}
+
 async function onSend() {
   const text = inputEl.value.trim();
   if (!text) return;
+  if (!requireAuth()) return;
 
   sendBtn.disabled = true;
   demoBtn.disabled = true;
+  inputEl.value = "";
   try {
     await sendUserMessage(text);
-    inputEl.value = "";
   } catch (e) {
     setStatus(String(e?.message || e), "error");
   } finally {
@@ -312,6 +550,7 @@ async function onSend() {
 
 sendBtn.addEventListener("click", onSend);
 demoBtn.addEventListener("click", () => {
+  if (!requireAuth()) return;
   inputEl.value = "Что думаете о будущем ИИ?";
   inputEl.focus();
 });
@@ -322,8 +561,115 @@ openDrawerBtn.addEventListener("click", openDrawer);
 closeDrawerBtn.addEventListener("click", closeDrawer);
 drawerOverlay.addEventListener("click", closeDrawer);
 newChatBtn.addEventListener("click", () => {
+  if (!requireAuth()) return;
   inputEl.value = "";
-  clearChat();
+  createDialog({ activate: true });
+  render();
+  setMode("chat");
+});
+drawerNewChatBtn.addEventListener("click", () => {
+  if (!requireAuth()) return;
+  createDialog({ activate: true });
+  setMode("chat");
+  closeDrawer();
+});
+homeBtn.addEventListener("click", () => setMode("home"));
+loginBtn.addEventListener("click", () => {
+  if (!supabase) {
+    initSupabase().then(() => openAuthModal());
+    return;
+  }
+  if (authSession) {
+    setAuthScene(false);
+    return;
+  }
+  openAuthModal();
+});
+logoutBtn.addEventListener("click", async () => {
+  if (!supabase) return;
+  await supabase.auth.signOut();
+});
+authCloseBtn?.addEventListener("click", (event) => {
+  event.preventDefault();
+  closeAuthModal();
+});
+authOverlay?.addEventListener("click", closeAuthModal);
+authModal?.addEventListener("click", (event) => {
+  const target = event.target;
+  if (target instanceof Element && target.closest("[data-close-auth]")) {
+    event.preventDefault();
+    closeAuthModal();
+  }
+});
+authSignInBtn.addEventListener("click", async () => {
+  if (!supabase) return;
+  const email = authEmailEl.value.trim();
+  const password = authPasswordEl.value;
+  if (!email || !password) {
+    setAuthMessage("Введите email и пароль.", "error");
+    return;
+  }
+  authSignInBtn.disabled = true;
+  authSignUpBtn.disabled = true;
+  try {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    setAuthMessage("Успешный вход.", "ok");
+    closeAuthModal();
+  } catch (e) {
+    setAuthMessage(String(e?.message || e), "error");
+  } finally {
+    authSignInBtn.disabled = false;
+    authSignUpBtn.disabled = false;
+  }
+});
+authSignUpBtn.addEventListener("click", async () => {
+  if (!supabase) return;
+  const email = authEmailEl.value.trim();
+  const password = authPasswordEl.value;
+  if (!email || !password) {
+    setAuthMessage("Введите email и пароль.", "error");
+    return;
+  }
+  authSignInBtn.disabled = true;
+  authSignUpBtn.disabled = true;
+  authResendBtn.disabled = true;
+  try {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: window.location.origin,
+      },
+    });
+    if (error) throw error;
+    setAuthMessage("Аккаунт создан. Проверьте почту для подтверждения.", "ok");
+  } catch (e) {
+    setAuthMessage(String(e?.message || e), "error");
+  } finally {
+    authSignInBtn.disabled = false;
+    authSignUpBtn.disabled = false;
+    authResendBtn.disabled = false;
+  }
+});
+
+authResendBtn.addEventListener("click", async () => {
+  if (!supabase) return;
+  const email = authEmailEl.value.trim();
+  if (!email) {
+    setAuthMessage("Введите email для повторной отправки.", "error");
+    return;
+  }
+  authResendBtn.disabled = true;
+  try {
+    const { error } = await supabase.auth.resend({ type: "signup", email });
+    if (error) throw error;
+    setAuthMessage("Письмо отправлено повторно.", "ok");
+  } catch (e) {
+    setAuthMessage(String(e?.message || e), "error");
+  } finally {
+    authResendBtn.disabled = false;
+  }
 });
 
 inputEl.addEventListener("keydown", (e) => {
@@ -336,22 +682,17 @@ inputEl.addEventListener("keydown", (e) => {
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     closeDrawer();
+    closeAuthModal();
   }
 });
 
 loadSettings();
+dialogs = loadDialogs();
+ensureActiveDialog();
 render();
-updateAuthUI();
-
-googleAuthBtn.addEventListener("click", signInWithGoogle);
-logoutBtn.addEventListener("click", signOut);
-authBtn.addEventListener("click", () => {
-  if (localStorage.getItem(AUTH_KEY)) {
-    signOut();
-  } else {
-    openDrawer();
-  }
-});
+renderDialogList();
+setMode("home");
+initSupabase();
 
 
 
