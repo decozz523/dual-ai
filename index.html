@@ -124,18 +124,35 @@
 
       <section class="drawer-section">
         <div class="section-title">Авторизация</div>
-        <div class="auth-status" id="authStatus">Не выполнен вход</div>
-        <button id="googleAuthBtn" class="btn btn-primary btn-google">
-          <span class="icon">G</span>
-          Войти через Google
-        </button>
+        <div class="auth-status" id="authStatus">Гость (сессия без аккаунта)</div>
+        <div class="auth-card" id="authCard" hidden>
+          <img id="authAvatar" class="auth-avatar" alt="User avatar" />
+          <div class="auth-details">
+            <div class="auth-name" id="authName">User</div>
+            <div class="auth-email" id="authEmail">user@email.com</div>
+            <div class="auth-meta" id="authMeta">Сессия активна</div>
+          </div>
+        </div>
+        <label class="field">
+          <div class="label">Email для входа (magic link)</div>
+          <input id="authEmailInput" type="email" placeholder="you@email.com" />
+          <div class="hint">Ссылка для входа придёт на почту.</div>
+        </label>
+        <button id="magicLinkBtn" class="btn btn-primary" type="button">Отправить ссылку</button>
         <button id="logoutBtn" class="btn btn-secondary" type="button" hidden>Выйти</button>
         <label class="field">
-          <div class="label">Google Client ID</div>
-          <input id="googleClientId" type="text" placeholder="xxxxx.apps.googleusercontent.com" />
-          <div class="hint">Нужен для работы Google Identity Services.</div>
+          <div class="label">Supabase Project URL</div>
+          <input id="supabaseUrl" type="text" placeholder="https://xxxx.supabase.co" />
+          <div class="hint">URL проекта Supabase.</div>
         </label>
-        <div class="hint">Авторизация опциональна. Можно работать без входа.</div>
+        <label class="field">
+          <div class="label">Supabase anon public key</div>
+          <input id="supabaseAnonKey" type="text" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." />
+          <div class="hint">Публичный ключ (anon).</div>
+        </label>
+        <div class="hint">
+          Чат можно начать без логина. Диалоги сохраняются в Supabase и привязываются к аккаунту после входа.
+        </div>
       </section>
 
       <section class="drawer-section">
@@ -172,6 +189,7 @@
       </section>
     </aside>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script type="module" src="./app.js"></script>
   </body>
 </html>

@@ -20,10 +20,17 @@ const drawer = $("drawer");
 const drawerOverlay = $("drawerOverlay");
 const closeDrawerBtn = $("closeDrawerBtn");
 const authBtn = $("authBtn");
-const googleAuthBtn = $("googleAuthBtn");
 const logoutBtn = $("logoutBtn");
 const authStatus = $("authStatus");
-const googleClientIdEl = $("googleClientId");
+const authCard = $("authCard");
+const authAvatar = $("authAvatar");
+const authName = $("authName");
+const authEmail = $("authEmail");
+const authMeta = $("authMeta");
+const authEmailInput = $("authEmailInput");
+const magicLinkBtn = $("magicLinkBtn");
+const supabaseUrlEl = $("supabaseUrl");
+const supabaseAnonKeyEl = $("supabaseAnonKey");
 
 const PERSONAS = {
   R: {
@@ -58,91 +65,259 @@ function setStatus(text, kind = "muted") {
   if (kind === "ok") statusEl.classList.add("ok");
 }
 
-function parseJwt(token) {
+function getAvatarPlaceholder(label = "G") {
+  const safeLabel = encodeURIComponent(label.slice(0, 1).toUpperCase());
+  return (
+    "data:image/svg+xml;utf8," +
+    `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48">` +
+    `<rect width="100%" height="100%" fill="%23131a2a"/>` +
+    `<text x="50%" y="54%" font-size="20" fill="%23ffffff" text-anchor="middle" font-family="Arial">${safeLabel}</text>` +
+    "</svg>"
+  );
+}
+
+function getStoredAuth() {
+  const authRaw = localStorage.getItem(AUTH_KEY);
+  if (!authRaw) return null;
   try {
-    const payload = token.split(".")[1];
-    if (!payload) return null;
-    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
-    const json = decodeURIComponent(
-      atob(base64)
-        .split("")
-        .map((c) => `%${c.charCodeAt(0).toString(16).padStart(2, "0")}`)
-        .join("")
-    );
-    return JSON.parse(json);
+    return JSON.parse(authRaw);
   } catch {
     return null;
   }
 }
 
-let googleScriptPromise = null;
 const VIEW_MODE_KEY = "dual-ai-view-mode";
 const CHAT_MODE_CLASS = "chat-mode";
+const ANON_ID_KEY = "dual-ai-anon-id-v1";
+const CHAT_TABLE = "chats";
 
-function loadGoogleScript() {
-  if (googleScriptPromise) return googleScriptPromise;
-  googleScriptPromise = new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = "https://accounts.google.com/gsi/client";
-    script.async = true;
-    script.defer = true;
-    script.onload = resolve;
-    script.onerror = reject;
-    document.head.appendChild(script);
+let supabaseClient = null;
+let currentUser = null;
+let currentChatId = null;
+let anonId = null;
+let authSubscription = null;
+let warnedMissingSupabase = false;
+
+function formatAuthDate(ts) {
+  if (!ts) return "Сессия активна";
+  return `Сессия с ${new Date(ts).toLocaleDateString("ru-RU")}`;
+}
+
+function getSupabaseConfig() {
+  const url = supabaseUrlEl.value.trim();
+  const anonKey = supabaseAnonKeyEl.value.trim();
+  if (!url || !anonKey) return null;
+  return { url, anonKey };
+}
+
+function ensureAnonId() {
+  const stored = localStorage.getItem(ANON_ID_KEY);
+  if (stored) {
+    anonId = stored;
+    return stored;
+  }
+  const newId = window.crypto?.randomUUID
+    ? window.crypto.randomUUID()
+    : `${Date.now().toString(16)}-${Math.random().toString(16).slice(2)}`;
+  localStorage.setItem(ANON_ID_KEY, newId);
+  anonId = newId;
+  return newId;
+}
+
+function initSupabase() {
+  const config = getSupabaseConfig();
+  if (!config || !window.supabase) return null;
+  supabaseClient = window.supabase.createClient(config.url, config.anonKey);
+  return supabaseClient;
+}
+
+function isSupabaseReady() {
+  return Boolean(supabaseClient);
+}
+
+async function setupSupabase() {
+  if (!initSupabase()) return;
+  ensureAnonId();
+  await refreshAuthState();
+  if (authSubscription) {
+    authSubscription.unsubscribe();
+    authSubscription = null;
+  }
+  const { data } = supabaseClient.auth.onAuthStateChange(async (_event, session) => {
+    currentUser = session?.user || null;
+    if (currentUser) {
+      const authProfile = {
+        id: currentUser.id,
+        email: currentUser.email,
+        name: currentUser.user_metadata?.name || currentUser.email || "User",
+        avatarUrl: currentUser.user_metadata?.avatar_url || "",
+        signedInAt: Date.now(),
+      };
+      localStorage.setItem(AUTH_KEY, JSON.stringify(authProfile));
+    } else {
+      localStorage.removeItem(AUTH_KEY);
+    }
+    updateAuthUI();
+    if (currentUser) {
+      await migrateAnonChatsToUser();
+    }
+    await loadLatestChat();
   });
-  return googleScriptPromise;
+  authSubscription = data?.subscription || null;
+  await loadLatestChat();
 }
 
 function updateAuthUI() {
-  const authRaw = localStorage.getItem(AUTH_KEY);
-  if (!authRaw) {
-    authStatus.textContent = "Не выполнен вход";
+  const auth = getStoredAuth();
+  if (!auth) {
+    authStatus.textContent = "Гость (сессия без аккаунта)";
     authBtn.textContent = "Войти";
+    authCard.hidden = true;
     logoutBtn.hidden = true;
     return;
   }
-  const auth = JSON.parse(authRaw);
-  authStatus.textContent = auth?.name
-    ? `Вход выполнен: ${auth.name}`
-    : "Вход выполнен";
-  authBtn.textContent = "Выйти";
+
+  authStatus.textContent = "Аккаунт подключён";
+  authBtn.textContent = "Профиль";
+  authCard.hidden = false;
+  authAvatar.src = auth.avatarUrl || getAvatarPlaceholder(auth.name || "U");
+  authAvatar.alt = auth.name || "User avatar";
+  authName.textContent = auth.name || "User";
+  authEmail.textContent = auth.email || "Account";
+  authMeta.textContent = formatAuthDate(auth.signedInAt);
   logoutBtn.hidden = false;
 }
 
-async function signInWithGoogle() {
-  const clientId = googleClientIdEl.value.trim();
-  if (!clientId) {
-    setStatus("Укажи Google Client ID в настройках.", "error");
+async function sendMagicLink() {
+  if (!supabaseClient) {
+    setStatus("Укажи Supabase URL и anon key в настройках.", "error");
     return;
   }
-
-  await loadGoogleScript();
-  if (!window.google?.accounts?.id) {
-    setStatus("Google Identity Services недоступен.", "error");
+  const email = authEmailInput.value.trim();
+  if (!email) {
+    setStatus("Укажи email для входа.", "error");
     return;
   }
-
-  window.google.accounts.id.initialize({
-    client_id: clientId,
-    callback: (response) => {
-      const payload = parseJwt(response.credential);
-      const profile = {
-        token: response.credential,
-        name: payload?.name || payload?.email || "Google User",
-        email: payload?.email || "",
-      };
-      localStorage.setItem(AUTH_KEY, JSON.stringify(profile));
-      updateAuthUI();
-      setStatus("Авторизация выполнена.", "ok");
-    },
+  const { error } = await supabaseClient.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: window.location.href },
   });
-  window.google.accounts.id.prompt();
+  if (error) {
+    setStatus(`Ошибка отправки ссылки: ${error.message}`, "error");
+    return;
+  }
+  setStatus("Ссылка для входа отправлена на почту.", "ok");
 }
 
-function signOut() {
+async function signOut() {
+  if (!supabaseClient) {
+    localStorage.removeItem(AUTH_KEY);
+    updateAuthUI();
+    return;
+  }
+  const { error } = await supabaseClient.auth.signOut();
+  if (error) {
+    setStatus(`Ошибка выхода: ${error.message}`, "error");
+    return;
+  }
   localStorage.removeItem(AUTH_KEY);
+  currentUser = null;
   updateAuthUI();
   setStatus("Вы вышли из аккаунта.", "ok");
+}
+
+async function refreshAuthState() {
+  if (!supabaseClient) return;
+  const { data, error } = await supabaseClient.auth.getSession();
+  if (error) {
+    setStatus(`Supabase auth: ${error.message}`, "error");
+    return;
+  }
+  currentUser = data?.session?.user || null;
+  if (currentUser) {
+    const authProfile = {
+      id: currentUser.id,
+      email: currentUser.email,
+      name: currentUser.user_metadata?.name || currentUser.email || "User",
+      avatarUrl: currentUser.user_metadata?.avatar_url || "",
+      signedInAt: Date.now(),
+    };
+    localStorage.setItem(AUTH_KEY, JSON.stringify(authProfile));
+  } else {
+    localStorage.removeItem(AUTH_KEY);
+  }
+  updateAuthUI();
+}
+
+async function migrateAnonChatsToUser() {
+  if (!supabaseClient || !currentUser || !anonId) return;
+  const { error } = await supabaseClient
+    .from(CHAT_TABLE)
+    .update({ user_id: currentUser.id, anon_id: null })
+    .eq("anon_id", anonId)
+    .is("user_id", null);
+  if (error) {
+    setStatus(`Не удалось привязать диалоги: ${error.message}`, "error");
+    return;
+  }
+  setStatus("Диалоги привязаны к аккаунту.", "ok");
+}
+
+function getChatFilter() {
+  if (currentUser) {
+    return { user_id: currentUser.id, anon_id: null };
+  }
+  return { anon_id: anonId, user_id: null };
+}
+
+async function loadLatestChat() {
+  if (!supabaseClient) return;
+  const filter = getChatFilter();
+  const { data, error } = await supabaseClient
+    .from(CHAT_TABLE)
+    .select("id, messages, updated_at")
+    .match(filter)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) {
+    setStatus(`Не удалось загрузить чат: ${error.message}`, "error");
+    return;
+  }
+  if (data?.id) {
+    currentChatId = data.id;
+    transcript = Array.isArray(data.messages) ? data.messages : [];
+    render();
+  }
+}
+
+async function persistChat() {
+  if (!isSupabaseReady()) {
+    if (!warnedMissingSupabase) {
+      setStatus("Для сохранения в облаке укажи Supabase URL и anon key.", "error");
+      warnedMissingSupabase = true;
+    }
+    return;
+  }
+  const payload = {
+    messages: transcript,
+    updated_at: new Date().toISOString(),
+    ...getChatFilter(),
+  };
+  let query = supabaseClient.from(CHAT_TABLE);
+  if (currentChatId) {
+    const { error } = await query.update(payload).eq("id", currentChatId);
+    if (error) {
+      setStatus(`Не удалось сохранить чат: ${error.message}`, "error");
+    }
+    return;
+  }
+  const { data, error } = await query.insert(payload).select("id").single();
+  if (error) {
+    setStatus(`Не удалось создать чат: ${error.message}`, "error");
+    return;
+  }
+  currentChatId = data.id;
 }
 
 function openDrawer() {
@@ -231,7 +406,8 @@ function loadSettings() {
     const s = JSON.parse(raw);
     if (typeof s.model === "string") modelEl.value = s.model;
     if (typeof s.turns === "number") turnsEl.value = String(s.turns);
-    if (typeof s.googleClientId === "string") googleClientIdEl.value = s.googleClientId;
+    if (typeof s.supabaseUrl === "string") supabaseUrlEl.value = s.supabaseUrl;
+    if (typeof s.supabaseAnonKey === "string") supabaseAnonKeyEl.value = s.supabaseAnonKey;
   } catch {
     // ignore
   }
@@ -240,15 +416,24 @@ function loadSettings() {
 function saveSettings() {
   const model = modelEl.value.trim();
   const turns = Number(turnsEl.value || 0);
-  const googleClientId = googleClientIdEl.value.trim();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ model, turns, googleClientId }));
+  const supabaseUrl = supabaseUrlEl.value.trim();
+  const supabaseAnonKey = supabaseAnonKeyEl.value.trim();
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({ model, turns, supabaseUrl, supabaseAnonKey })
+  );
   setStatus("Настройки сохранены.", "ok");
+  setupSupabase();
 }
 
 function clearChat() {
   transcript = [];
+  currentChatId = null;
   render();
   setStatus("Чат очищен.", "ok");
+  if (isSupabaseReady()) {
+    persistChat();
+  }
 }
 
 function toOpenRouterMessages() {
@@ -316,6 +501,7 @@ async function sendUserMessage(text) {
   for (let i = 0; i < extraTurns; i++) {
     await runTurn(i % 2 === 0 ? "R" : "S");
   }
+  await persistChat();
 }
 
 async function onSend() {
@@ -374,15 +560,13 @@ loadSettings();
 render();
 updateAuthUI();
 setChatMode(localStorage.getItem(VIEW_MODE_KEY) === "chat", { scroll: false });
+ensureAnonId();
+setupSupabase();
 
-googleAuthBtn.addEventListener("click", signInWithGoogle);
+magicLinkBtn.addEventListener("click", sendMagicLink);
 logoutBtn.addEventListener("click", signOut);
 authBtn.addEventListener("click", () => {
-  if (localStorage.getItem(AUTH_KEY)) {
-    signOut();
-  } else {
-    openDrawer();
-  }
+  openDrawer();
 });
 
 
