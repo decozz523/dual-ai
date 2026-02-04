@@ -110,14 +110,13 @@
 
         <label class="field">
           <div class="label">Модель (OpenRouter slug)</div>
-          <input id="model" type="text" list="modelOptions" value="arcee-ai/trinity-large-preview:free" />
-          <div class="hint">Можно менять на любую доступную в твоём аккаунте.</div>
+          <select id="model">
+            <option value="arcee-ai/trinity-large-preview:free">arcee-ai/trinity-large-preview:free</option>
+            <option value="deepseek/deepseek-r1-0528:free">deepseek/deepseek-r1-0528:free</option>
+            <option value="stepfun/step-3.5-flash:free">stepfun/step-3.5-flash:free</option>
+          </select>
+          <div class="hint">Выберите одну из предустановленных моделей.</div>
         </label>
-        <datalist id="modelOptions">
-          <option value="arcee-ai/trinity-large-preview:free"></option>
-          <option value="stepfun/step-3.5-flash:free"></option>
-          <option value="deepseek/deepseek-r1-0528:free"></option>
-        </datalist>
       </section>
 
       <section class="drawer-section">

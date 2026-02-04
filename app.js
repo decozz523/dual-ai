@@ -268,7 +268,10 @@ function loadSettings() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return;
     const s = JSON.parse(raw);
-    if (typeof s.model === "string") modelEl.value = s.model;
+    if (typeof s.model === "string") {
+      const exists = Array.from(modelEl.options).some((option) => option.value === s.model);
+      modelEl.value = exists ? s.model : modelEl.options[0]?.value || "";
+    }
     if (typeof s.turns === "number") turnsEl.value = String(s.turns);
   } catch {
     // ignore
