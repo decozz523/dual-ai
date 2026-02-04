@@ -50,6 +50,11 @@ Add these environment variables in Vercel (Project Settings → Environment Vari
 The app reads them through `/api/config`, which serves the public Supabase config
 from the serverless environment.
 
+> Если у тебя Supabase отдаёт значения как `SUPABASE_URL` и `SUPABASE_ANON_KEY`,
+> то просто прокинь их в Vercel как:
+> - `SUPABASE_PROJECT_URL = SUPABASE_URL`
+> - `SUPABASE_ANON_PUBLIC_KEY = SUPABASE_ANON_KEY`
+
 ### 6) Sign in via the app
 - Open the app, go to **Меню → Авторизация**.
 - Click **Войти**, enter your email, and confirm the code from the email.
