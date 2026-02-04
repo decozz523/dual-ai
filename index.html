@@ -123,35 +123,15 @@
       </div>
 
       <section class="drawer-section">
-        <div class="section-title">Авторизация (Google)</div>
-        <div class="auth-status" id="authStatus">Аккаунт не привязан</div>
-        <div class="auth-card" id="authCard" hidden>
-          <img id="authAvatar" class="auth-avatar" alt="Google avatar" />
-          <div class="auth-details">
-            <div class="auth-name" id="authName"></div>
-            <div class="auth-email" id="authEmail"></div>
-            <div class="auth-meta" id="authMeta">Привязка активна</div>
-            <div class="auth-meta" id="authBirthday">Дата рождения: не указана</div>
-          </div>
-        </div>
-        <button id="googleAuthBtn" class="btn btn-primary btn-google" type="button">
-          <span class="icon">G</span>
-          Войти через Google
-        </button>
-        <button id="logoutBtn" class="btn btn-secondary" type="button" hidden>Отвязать аккаунт</button>
-        <label class="field">
-          <div class="label">Google Client ID</div>
-          <input id="googleClientId" type="text" placeholder="xxxxx.apps.googleusercontent.com" />
-          <div class="hint">Нужен для OAuth 2.0 (кнопка ведёт на экран согласия Google).</div>
-        </label>
-        <div class="hint">
-          Мы запрашиваем имя, почту, аватар и дату рождения (People API). Данные сохраняются локально в браузере.
-        </div>
-      </section>
-
-      <section class="drawer-section">
         <div class="section-title">Авторизация по почте (Supabase)</div>
         <div class="auth-status" id="supabaseStatus">Supabase не настроен</div>
+        <div class="auth-card" id="supabaseCard" hidden>
+          <div class="auth-details">
+            <div class="auth-name" id="supabaseUserName">Сессия активна</div>
+            <div class="auth-email" id="supabaseUserEmail"></div>
+            <div class="auth-meta" id="supabaseUserMeta">Magic Link подтверждён</div>
+          </div>
+        </div>
         <label class="field">
           <div class="label">Email для входа</div>
           <input id="supabaseEmail" type="email" placeholder="you@example.com" />
@@ -160,12 +140,12 @@
         <div class="row">
           <button id="emailAuthBtn" class="btn btn-primary" type="button">Войти по почте</button>
           <button id="supabaseLogoutBtn" class="btn btn-secondary" type="button" hidden>Выйти</button>
-          <button id="saveDialogBtn" class="btn" type="button" disabled>Сохранить диалог в Supabase</button>
+          <button id="saveDialogBtn" class="btn" type="button" disabled>Сохранить диалог</button>
         </div>
         <div class="hint">
           Укажи <code>SUPABASE_URL</code> и <code>SUPABASE_ANON_KEY</code> в Vercel Environment Variables.
-          Для сохранения нужен стол <code>dialogs</code> с колонками <code>id</code>, <code>user_id</code>,
-          <code>created_at</code>, <code>title</code>, <code>model</code>, <code>turns</code>, <code>messages</code> (JSONB).
+          Для сохранения нужен стол <code>chats</code> с колонками <code>id</code>, <code>user_id</code>,
+          <code>anon_id</code>, <code>messages</code> (JSONB), <code>updated_at</code>.
         </div>
       </section>
 

@@ -226,14 +226,6 @@ input:focus, textarea:focus { border-color: rgba(124, 92, 255, 0.55); box-shadow
   background: rgba(255, 255, 255, 0.06);
 }
 
-.btn-google {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  justify-content: center;
-}
-
 .auth-card {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -243,15 +235,6 @@ input:focus, textarea:focus { border-color: rgba(124, 92, 255, 0.55); box-shadow
   border-radius: 14px;
   border: 1px solid var(--border);
   background: rgba(255, 255, 255, 0.04);
-}
-
-.auth-avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.08);
 }
 
 .auth-details {
