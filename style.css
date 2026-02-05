@@ -575,3 +575,15 @@ input:focus, textarea:focus { border-color: rgba(139, 109, 255, 0.7); box-shadow
   background: rgba(255,255,255,0.04);
   font-size: 13px;
 }
+
+
+.plan-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  margin-bottom: 12px;
+}
+
+.info-card.compact {
+  padding: 10px 12px;
+}

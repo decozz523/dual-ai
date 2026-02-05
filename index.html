@@ -134,7 +134,29 @@
         <section class="drawer-section">
           <div class="section-title">Аккаунт</div>
           <div class="account-box" id="settingsAccountEmail">Гость (не выполнен вход)</div>
+          <div class="plan-grid">
+            <div class="info-card compact">
+              <div class="info-title">Тариф</div>
+              <div class="info-value" id="settingsPlanTier">Free</div>
+            </div>
+            <div class="info-card compact">
+              <div class="info-title">Дневной лимит</div>
+              <div class="info-value"><span id="settingsPlanLimit">80</span> ответов</div>
+            </div>
+            <div class="info-card compact">
+              <div class="info-title">Осталось сегодня</div>
+              <div class="info-value"><span id="settingsPlanRemaining">80</span></div>
+            </div>
+          </div>
+          <label class="field">
+            <div class="label">Код активации из Telegram-бота</div>
+            <input id="activationCode" type="text" placeholder="Например: DUALAI-PRO-XXXX" />
+          </label>
           <div class="row">
+            <button id="activateCodeBtn" class="btn btn-primary">Активировать код</button>
+            <button id="buyProBtn" class="btn btn-secondary">Купить Pro</button>
+            <button id="buyMaxBtn" class="btn btn-secondary">Купить Max</button>
+            <button id="anonymousPurchaseBtn" class="btn btn-secondary">Покупки (вход/регистрация)</button>
             <button id="settingsLogoutBtn" class="btn btn-secondary">Выйти из аккаунта</button>
           </div>
         </section>
@@ -184,6 +206,5 @@
     <script type="module" src="./app.js"></script>
   </body>
 </html>
-
 
 
