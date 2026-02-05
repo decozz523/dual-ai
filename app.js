@@ -39,10 +39,39 @@ const authMessageEl = $("authMessage");
 const authSignInBtn = $("authSignInBtn");
 const authSignUpBtn = $("authSignUpBtn");
 const authResendBtn = $("authResendBtn");
+const settingsPlanTierEl = $("settingsPlanTier");
+const settingsPlanLimitEl = $("settingsPlanLimit");
+const settingsPlanRemainingEl = $("settingsPlanRemaining");
+const buyProBtn = $("buyProBtn");
+const buyMaxBtn = $("buyMaxBtn");
+const anonymousPurchaseBtn = $("anonymousPurchaseBtn");
+const activationCodeEl = $("activationCode");
+const activateCodeBtn = $("activateCodeBtn");
 
 let supabase = null;
 let authSession = null;
 let supabaseReady = null;
+
+const TELEGRAM_BOT_LINK = "https://t.me/dual_ai_pay_bot";
+const MODEL_CATALOG = {
+  "arcee-ai/trinity-large-preview:free": "arcii (Free)",
+  "deepseek/deepseek-r1-0528:free": "deepseek (Free)",
+  "stepfun/step-3.5-flash:free": "stepfun (Pro/Max)",
+};
+
+const FALLBACK_ACCESS = {
+  plan: "free",
+  planLabel: "Free",
+  dailyLimit: 80,
+  usedMessages: 0,
+  remainingMessages: 80,
+  models: [
+    "arcee-ai/trinity-large-preview:free",
+    "deepseek/deepseek-r1-0528:free",
+  ],
+};
+
+let accessState = { ...FALLBACK_ACCESS };
 
 const PERSONAS = {
   R: {
@@ -87,6 +116,70 @@ function setAuthMessage(text, kind = "muted") {
   if (kind === "ok") authMessageEl.classList.add("ok");
 }
 
+function getAccessToken() {
+  return authSession?.access_token || null;
+}
+
+function buildAuthHeaders() {
+  const token = getAccessToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+function applyModelRestrictions() {
+  const allowedModels = accessState?.models?.length ? accessState.models : FALLBACK_ACCESS.models;
+  const currentValue = modelEl.value;
+  modelEl.innerHTML = "";
+
+  for (const model of allowedModels) {
+    const option = document.createElement("option");
+    option.value = model;
+    option.textContent = MODEL_CATALOG[model] || model;
+    modelEl.appendChild(option);
+  }
+
+  modelEl.value = allowedModels.includes(currentValue) ? currentValue : allowedModels[0] || "";
+}
+
+function renderAccessUi() {
+  if (settingsPlanTierEl) settingsPlanTierEl.textContent = accessState.planLabel || "Free";
+  if (settingsPlanLimitEl) settingsPlanLimitEl.textContent = String(accessState.dailyLimit ?? 0);
+  if (settingsPlanRemainingEl) settingsPlanRemainingEl.textContent = String(accessState.remainingMessages ?? 0);
+
+  const isAuthed = !!authSession;
+  buyProBtn.hidden = !isAuthed;
+  buyMaxBtn.hidden = !isAuthed;
+  if (activationCodeEl) activationCodeEl.disabled = !isAuthed;
+  if (activateCodeBtn) activateCodeBtn.disabled = !isAuthed;
+  anonymousPurchaseBtn.hidden = isAuthed;
+  settingsLogoutBtn.hidden = !isAuthed;
+}
+
+async function refreshAccessState() {
+  if (!authSession) {
+    accessState = { ...FALLBACK_ACCESS };
+    applyModelRestrictions();
+    renderAccessUi();
+    return;
+  }
+
+  try {
+    const resp = await fetch("/api/access", {
+      method: "GET",
+      headers: { ...buildAuthHeaders() },
+    });
+    if (!resp.ok) throw new Error(`Access ${resp.status}`);
+    const data = await resp.json();
+    accessState = { ...FALLBACK_ACCESS, ...data };
+    accessState.remainingMessages = Math.max((accessState.dailyLimit || 0) - (accessState.usedMessages || 0), 0);
+  } catch (e) {
+    setStatus(`Access: ${String(e?.message || e)}`, "error");
+    accessState = { ...FALLBACK_ACCESS };
+  }
+
+  applyModelRestrictions();
+  renderAccessUi();
+}
+
 function openAuthModal() {
   if (!supabase) {
     setStatus("Supabase не настроен или ещё инициализируется.", "error");
@@ -117,6 +210,7 @@ function updateAuthUI(session) {
     render();
     renderDialogList();
   }
+  void refreshAccessState();
 }
 
 function requireAuth() {
@@ -509,7 +603,7 @@ async function callOpenRouter({ model, persona, messages }) {
 
   const resp = await fetch("/api/chat", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...buildAuthHeaders() },
     body: JSON.stringify(payload),
   });
 
@@ -576,6 +670,7 @@ async function onSend() {
   inputEl.value = "";
   try {
     await sendUserMessage(text);
+    await refreshAccessState();
   } catch (e) {
     setStatus(String(e?.message || e), "error");
   } finally {
@@ -617,6 +712,46 @@ drawerNewChatBtn.addEventListener("click", () => {
   createDialog({ activate: true });
   setMode("chat");
   closeDrawer();
+});
+
+buyProBtn.addEventListener("click", () => {
+  if (!requireAuth()) return;
+  window.open(`${TELEGRAM_BOT_LINK}?start=buy_pro`, "_blank", "noopener,noreferrer");
+});
+
+buyMaxBtn.addEventListener("click", () => {
+  if (!requireAuth()) return;
+  window.open(`${TELEGRAM_BOT_LINK}?start=buy_max`, "_blank", "noopener,noreferrer");
+});
+
+anonymousPurchaseBtn.addEventListener("click", () => {
+  openAuthModal();
+});
+
+activateCodeBtn.addEventListener("click", async () => {
+  if (!requireAuth()) return;
+  const code = activationCodeEl.value.trim();
+  if (!code) {
+    setStatus("Введите код активации.", "error");
+    return;
+  }
+  activateCodeBtn.disabled = true;
+  try {
+    const resp = await fetch("/api/redeem-code", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...buildAuthHeaders() },
+      body: JSON.stringify({ code }),
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok) throw new Error(data?.error || `Redeem ${resp.status}`);
+    activationCodeEl.value = "";
+    setStatus("Код активирован. Тариф обновлён.", "ok");
+    await refreshAccessState();
+  } catch (e) {
+    setStatus(String(e?.message || e), "error");
+  } finally {
+    activateCodeBtn.disabled = false;
+  }
 });
 homeBtn.addEventListener("click", () => {
   setMode("home");
@@ -739,6 +874,8 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
+applyModelRestrictions();
+renderAccessUi();
 loadSettings();
 dialogs = loadDialogs();
 ensureActiveDialog();
