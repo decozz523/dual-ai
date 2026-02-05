@@ -14,6 +14,7 @@ const clearBtn = $("clearBtn");
 const clearDialogsBtn = $("clearDialogsBtn");
 const statusEl = $("status");
 const loginBtn = $("loginBtn");
+const planStatusEl = $("planStatus");
 const layoutEl = document.querySelector(".layout");
 const homeBtn = $("homeBtn");
 const menuBtn = $("menuBtn");
@@ -30,6 +31,13 @@ const settingsModal = $("settingsModal");
 const settingsCloseBtn = $("settingsCloseBtn");
 const settingsLogoutBtn = $("settingsLogoutBtn");
 const settingsAccountEmailEl = $("settingsAccountEmail");
+const billingCodeInputEl = $("billingCodeInput");
+const redeemCodeBtn = $("redeemCodeBtn");
+const buyLinkBtn = $("buyLinkBtn");
+const billingMessageEl = $("billingMessage");
+const buyProBtn = $("buyProBtn");
+const buyMaxBtn = $("buyMaxBtn");
+const setFreePlanBtn = $("setFreePlanBtn");
 const authOverlay = $("authOverlay");
 const authModal = $("authModal");
 const authCloseBtn = $("authCloseBtn");
@@ -43,6 +51,27 @@ const authResendBtn = $("authResendBtn");
 let supabase = null;
 let authSession = null;
 let supabaseReady = null;
+
+const BILLING_SETTINGS_KEY = "dual-ai-billing-settings-v1";
+const BILLING_USAGE_KEY = "dual-ai-billing-usage-v1";
+const BILLING_PUBLIC_TELEGRAM_URL = "https://t.me/your_payment_bot";
+
+const PLAN_LIMITS = {
+  free: 30,
+  pro: 100,
+  max: Infinity,
+};
+
+let billingState = {
+  plan: "free",
+  source: "local",
+  expiresAt: null,
+  activatedCode: null,
+};
+let usageState = {
+  periodKey: monthKey(),
+  usedMessages: 0,
+};
 
 const PERSONAS = {
   R: {
@@ -85,6 +114,140 @@ function setAuthMessage(text, kind = "muted") {
   authMessageEl.classList.remove("error", "ok");
   if (kind === "error") authMessageEl.classList.add("error");
   if (kind === "ok") authMessageEl.classList.add("ok");
+}
+
+function setBillingMessage(text, kind = "muted") {
+  if (!billingMessageEl) return;
+  billingMessageEl.textContent = text;
+  billingMessageEl.classList.remove("error", "ok");
+  if (kind === "error") billingMessageEl.classList.add("error");
+  if (kind === "ok") billingMessageEl.classList.add("ok");
+}
+
+function monthKey(d = new Date()) {
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+function getCurrentPlanLimit() {
+  return PLAN_LIMITS[billingState.plan] ?? PLAN_LIMITS.free;
+}
+
+function getPlanLabel(plan) {
+  if (plan === "pro") return "Pro";
+  if (plan === "max") return "Max";
+  return "Free";
+}
+
+function resetUsageIfNeeded() {
+  const current = monthKey();
+  if (usageState.periodKey !== current) {
+    usageState.periodKey = current;
+    usageState.usedMessages = 0;
+    persistUsageLocal();
+  }
+}
+
+function persistBillingLocal() {
+  localStorage.setItem(BILLING_SETTINGS_KEY, JSON.stringify(billingState));
+}
+
+function persistUsageLocal() {
+  localStorage.setItem(BILLING_USAGE_KEY, JSON.stringify(usageState));
+}
+
+function loadBillingLocal() {
+  try {
+    const rawState = localStorage.getItem(BILLING_SETTINGS_KEY);
+    if (rawState) {
+      const parsed = JSON.parse(rawState);
+      if (parsed && typeof parsed === "object") {
+        if (["free", "pro", "max"].includes(parsed.plan)) {
+          billingState.plan = parsed.plan;
+        }
+        billingState.source = parsed.source || "local";
+        billingState.expiresAt = parsed.expiresAt || null;
+        billingState.activatedCode = parsed.activatedCode || null;
+      }
+    }
+
+    const rawUsage = localStorage.getItem(BILLING_USAGE_KEY);
+    if (rawUsage) {
+      const parsedUsage = JSON.parse(rawUsage);
+      if (parsedUsage && typeof parsedUsage === "object") {
+        usageState.periodKey = parsedUsage.periodKey || monthKey();
+        usageState.usedMessages = Number(parsedUsage.usedMessages || 0);
+      }
+    }
+  } catch {
+    // ignore broken local storage values
+  }
+  resetUsageIfNeeded();
+}
+
+function applyPlan(plan, source = "local", activatedCode = null) {
+  billingState.plan = plan;
+  billingState.source = source;
+  billingState.activatedCode = activatedCode;
+  persistBillingLocal();
+  updateBillingUI();
+}
+
+function updateBillingUI() {
+  resetUsageIfNeeded();
+  const limit = getCurrentPlanLimit();
+  const used = usageState.usedMessages;
+  const planLabel = getPlanLabel(billingState.plan);
+  const remainText = Number.isFinite(limit) ? `${Math.max(limit - used, 0)} / ${limit}` : "∞";
+  if (planStatusEl) {
+    planStatusEl.textContent = `План: ${planLabel} · Осталось: ${remainText}`;
+  }
+  document.querySelectorAll(".billing-card").forEach((card) => {
+    const plan = card.getAttribute("data-plan");
+    card.classList.toggle("active", plan === billingState.plan);
+  });
+}
+
+function canSendMessage() {
+  resetUsageIfNeeded();
+  const limit = getCurrentPlanLimit();
+  if (!Number.isFinite(limit)) return true;
+  return usageState.usedMessages < limit;
+}
+
+function incrementUsage() {
+  resetUsageIfNeeded();
+  usageState.usedMessages += 1;
+  persistUsageLocal();
+  updateBillingUI();
+}
+
+function getBuyLink(plan) {
+  const email = authSession?.user?.email || "guest";
+  return `${BILLING_PUBLIC_TELEGRAM_URL}?start=${encodeURIComponent(`buy_${plan}_${email}`)}`;
+}
+
+async function redeemBillingCode(code) {
+  if (!supabase || !authSession?.user?.id) {
+    throw new Error("Войдите в аккаунт перед активацией кода.");
+  }
+  const resp = await fetch("/api/redeem-code", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-user-id": authSession.user.id,
+    },
+    body: JSON.stringify({ code }),
+  });
+  const payload = await resp.json().catch(() => ({}));
+  if (!resp.ok) {
+    throw new Error(payload?.error || `Ошибка активации (${resp.status})`);
+  }
+  const plan = payload?.plan;
+  if (!["pro", "max"].includes(plan)) {
+    throw new Error("Код вернул неизвестный тариф.");
+  }
+  applyPlan(plan, "redeemed", code);
+  setStatus(`Тариф обновлён: ${getPlanLabel(plan)}.`, "ok");
 }
 
 function openAuthModal() {
@@ -570,13 +733,22 @@ async function onSend() {
   const text = inputEl.value.trim();
   if (!text) return;
   if (!requireAuth()) return;
+  if (!canSendMessage()) {
+    setStatus("Лимит сообщений исчерпан. Обновите тариф в меню.", "error");
+    openSettingsModal();
+    return;
+  }
 
   sendBtn.disabled = true;
   demoBtn.disabled = true;
   inputEl.value = "";
   try {
+    incrementUsage();
     await sendUserMessage(text);
   } catch (e) {
+    usageState.usedMessages = Math.max(usageState.usedMessages - 1, 0);
+    persistUsageLocal();
+    updateBillingUI();
     setStatus(String(e?.message || e), "error");
   } finally {
     sendBtn.disabled = false;
@@ -641,6 +813,35 @@ settingsLogoutBtn.addEventListener("click", async () => {
 });
 settingsCloseBtn.addEventListener("click", closeSettingsModal);
 settingsOverlay.addEventListener("click", closeSettingsModal);
+setFreePlanBtn?.addEventListener("click", () => {
+  applyPlan("free", "manual");
+  setBillingMessage("Активирован тариф Free.", "ok");
+});
+buyProBtn?.addEventListener("click", () => {
+  window.open(getBuyLink("pro"), "_blank", "noopener,noreferrer");
+});
+buyMaxBtn?.addEventListener("click", () => {
+  window.open(getBuyLink("max"), "_blank", "noopener,noreferrer");
+});
+buyLinkBtn?.addEventListener("click", () => {
+  window.open(BILLING_PUBLIC_TELEGRAM_URL, "_blank", "noopener,noreferrer");
+});
+redeemCodeBtn?.addEventListener("click", async () => {
+  const code = billingCodeInputEl?.value?.trim();
+  if (!code) {
+    setBillingMessage("Введите код активации.", "error");
+    return;
+  }
+  redeemCodeBtn.disabled = true;
+  try {
+    await redeemBillingCode(code);
+    setBillingMessage("Код активирован. Тариф обновлён.", "ok");
+  } catch (e) {
+    setBillingMessage(String(e?.message || e), "error");
+  } finally {
+    redeemCodeBtn.disabled = false;
+  }
+});
 authCloseBtn?.addEventListener("click", (event) => {
   event.preventDefault();
   closeAuthModal();
@@ -740,12 +941,13 @@ document.addEventListener("keydown", (e) => {
 });
 
 loadSettings();
+loadBillingLocal();
 dialogs = loadDialogs();
 ensureActiveDialog();
 render();
 renderDialogList();
+updateBillingUI();
 setMode("home");
 initSupabase();
-
 
 

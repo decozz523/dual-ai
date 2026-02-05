@@ -17,6 +17,7 @@
           <div class="subtitle">Bot R (рациональный) + Bot S (творческий) через OpenRouter</div>
         </div>
         <div class="topbar-right">
+          <div class="status-pill" id="planStatus">План: Free</div>
           <div class="status-pill" id="status">Готов.</div>
           <button id="homeBtn" class="btn btn-secondary">Главное меню</button>
           <button id="menuBtn" class="icon-btn" aria-label="Открыть меню">
@@ -140,6 +141,39 @@
         </section>
 
         <section class="drawer-section">
+          <div class="section-title">Монетизация</div>
+          <div class="billing-grid">
+            <article class="billing-card" data-plan="free">
+              <div class="billing-title">Free</div>
+              <div class="billing-limit">30 сообщений</div>
+              <div class="billing-hint">Для старта и теста сервиса.</div>
+              <button id="setFreePlanBtn" class="btn btn-secondary" type="button">Активировать Free</button>
+            </article>
+            <article class="billing-card" data-plan="pro">
+              <div class="billing-title">Pro</div>
+              <div class="billing-limit">100 сообщений</div>
+              <div class="billing-hint">Для активного ежедневного использования.</div>
+              <button id="buyProBtn" class="btn btn-primary" type="button">Купить / Update</button>
+            </article>
+            <article class="billing-card" data-plan="max">
+              <div class="billing-title">Max</div>
+              <div class="billing-limit">Без лимита</div>
+              <div class="billing-hint">Неограниченные сообщения для heavy-use.</div>
+              <button id="buyMaxBtn" class="btn btn-primary" type="button">Купить / Update</button>
+            </article>
+          </div>
+          <label class="field">
+            <div class="label">Код из Telegram-бота</div>
+            <input id="billingCodeInput" type="text" placeholder="Например: PRO-8HF2-KQ9M" autocomplete="off" />
+          </label>
+          <div class="row">
+            <button id="redeemCodeBtn" class="btn btn-primary" type="button">Активировать код</button>
+            <button id="buyLinkBtn" class="btn btn-secondary" type="button">Открыть оплату в Telegram</button>
+          </div>
+          <div id="billingMessage" class="auth-message" role="status"></div>
+        </section>
+
+        <section class="drawer-section">
           <div class="section-title">Диалоги</div>
           <div class="row">
             <button id="clearBtn" class="btn btn-secondary">Очистить текущий чат</button>
@@ -184,6 +218,5 @@
     <script type="module" src="./app.js"></script>
   </body>
 </html>
-
 
 
