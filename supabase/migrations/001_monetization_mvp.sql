@@ -105,3 +105,34 @@ for select using (auth.uid() = user_id);
 
 -- activation_codes must be read/write only by service role on backend
 -- (no user-facing policy on purpose)
+
+-- Atomic quota consumption for /api/chat
+create or replace function public.consume_message_quota(p_user_id uuid, p_limit int)
+returns table (allowed boolean, used int)
+language plpgsql
+security definer
+as $$
+declare
+  v_used int;
+begin
+  insert into public.daily_usage (user_id, day, messages_used)
+  values (p_user_id, current_date, 1)
+  on conflict (user_id, day)
+  do update set
+    messages_used = public.daily_usage.messages_used + 1,
+    updated_at = now()
+  where public.daily_usage.messages_used < p_limit
+  returning messages_used into v_used;
+
+  if v_used is null then
+    select messages_used
+      into v_used
+      from public.daily_usage
+     where user_id = p_user_id
+       and day = current_date;
+    return query select false, coalesce(v_used, 0);
+  end if;
+
+  return query select true, v_used;
+end;
+$$;
