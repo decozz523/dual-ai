@@ -214,6 +214,41 @@ input:focus, textarea:focus { border-color: rgba(139, 109, 255, 0.7); box-shadow
 .status-pill.error { color: rgba(255, 92, 122, 0.95); }
 .status-pill.ok { color: rgba(21, 195, 154, 0.95); }
 
+.billing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.billing-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  display: grid;
+  gap: 8px;
+}
+
+.billing-card.active {
+  border-color: rgba(34, 211, 163, 0.85);
+  box-shadow: 0 0 0 2px rgba(34, 211, 163, 0.15) inset;
+}
+
+.billing-title {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.billing-limit {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.billing-hint {
+  font-size: 12px;
+  color: var(--muted);
+}
+
 
 .chat {
   background: var(--panel);
