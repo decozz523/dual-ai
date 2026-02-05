@@ -30,6 +30,11 @@ const settingsModal = $("settingsModal");
 const settingsCloseBtn = $("settingsCloseBtn");
 const settingsLogoutBtn = $("settingsLogoutBtn");
 const settingsAccountEmailEl = $("settingsAccountEmail");
+const planBadgeEl = $("planBadge");
+const planUsageHintEl = $("planUsageHint");
+const buyProBtn = $("buyProBtn");
+const activationCodeEl = $("activationCode");
+const activateCodeBtn = $("activateCodeBtn");
 const authOverlay = $("authOverlay");
 const authModal = $("authModal");
 const authCloseBtn = $("authCloseBtn");
@@ -43,6 +48,7 @@ const authResendBtn = $("authResendBtn");
 let supabase = null;
 let authSession = null;
 let supabaseReady = null;
+let billingState = null;
 
 const PERSONAS = {
   R: {
@@ -101,6 +107,61 @@ function closeAuthModal() {
   setAuthMessage("");
 }
 
+
+function authHeaders() {
+  const token = authSession?.access_token;
+  if (!token) return { "Content-Type": "application/json" };
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  };
+}
+
+function applyPlanToModelSelect() {
+  const plan = billingState?.plan || "free";
+  const allowed = new Set(
+    billingState?.allowedModels || [
+      "arcee-ai/trinity-large-preview:free",
+      "deepseek/deepseek-r1-0528:free",
+    ]
+  );
+  for (const option of modelEl.options) {
+    option.disabled = !allowed.has(option.value);
+  }
+  if (!allowed.has(modelEl.value)) {
+    modelEl.value = allowed.values().next().value || modelEl.options[0]?.value || "";
+  }
+  if (planBadgeEl) {
+    planBadgeEl.textContent = `Тариф: ${String(plan).toUpperCase()}`;
+  }
+  if (planUsageHintEl) {
+    if (!billingState) {
+      planUsageHintEl.textContent = "Лимит: —";
+    } else {
+      planUsageHintEl.textContent = `Сегодня: ${billingState.messagesUsed}/${billingState.dailyLimit} (осталось ${billingState.remaining})`;
+    }
+  }
+}
+
+async function refreshPlanInfo() {
+  if (!authSession?.access_token) {
+    billingState = null;
+    applyPlanToModelSelect();
+    return;
+  }
+  try {
+    const resp = await fetch("/api/plan", {
+      method: "GET",
+      headers: authHeaders(),
+    });
+    if (!resp.ok) throw new Error(`Plan ${resp.status}`);
+    billingState = await resp.json();
+    applyPlanToModelSelect();
+  } catch (e) {
+    setStatus(`Не удалось загрузить тариф: ${String(e?.message || e)}`, "error");
+  }
+}
+
 function updateAuthUI(session) {
   authSession = session;
   const email = session?.user?.email;
@@ -111,11 +172,14 @@ function updateAuthUI(session) {
   }
   if (email) {
     void syncDialogsFromSupabase();
+    void refreshPlanInfo();
   } else {
     dialogs = loadDialogsLocal();
     ensureActiveDialog();
     render();
     renderDialogList();
+    billingState = null;
+    applyPlanToModelSelect();
   }
 }
 
@@ -136,6 +200,18 @@ function setAuthScene(isOpen) {
 
 function setSettingsScene(isOpen) {
   document.body.classList.toggle("settings-open", isOpen);
+}
+
+
+async function loadAppConfig() {
+  try {
+    const resp = await fetch("/api/app-config");
+    if (!resp.ok) return;
+    const data = await resp.json();
+    if (data?.telegramBotUrl) {
+      window.__TELEGRAM_BOT_URL__ = data.telegramBotUrl;
+    }
+  } catch {}
 }
 
 async function initSupabase() {
@@ -509,12 +585,21 @@ async function callOpenRouter({ model, persona, messages }) {
 
   const resp = await fetch("/api/chat", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders(),
     body: JSON.stringify(payload),
   });
 
   if (!resp.ok) {
     const text = await resp.text().catch(() => "");
+    let payload = null;
+    try { payload = text ? JSON.parse(text) : null; } catch {}
+    if (resp.status === 429 && payload?.code === "DAILY_LIMIT_REACHED") {
+      void refreshPlanInfo();
+      throw new Error("Дневной лимит сообщений исчерпан. Открой Настройки → Тариф.");
+    }
+    if (resp.status === 403 && payload?.code === "MODEL_NOT_ALLOWED") {
+      throw new Error("Модель недоступна на текущем тарифе. Выбери доступную модель или апгрейд.");
+    }
     throw new Error(`OpenRouter ${resp.status}: ${text || resp.statusText}`);
   }
 
@@ -581,6 +666,7 @@ async function onSend() {
   } finally {
     sendBtn.disabled = false;
     demoBtn.disabled = false;
+    void refreshPlanInfo();
   }
 }
 
@@ -724,6 +810,39 @@ authResendBtn.addEventListener("click", async () => {
   }
 });
 
+
+buyProBtn?.addEventListener("click", () => {
+  if (!requireAuth()) return;
+  const link = window.__TELEGRAM_BOT_URL__ || "https://t.me/your_bot";
+  window.open(link, "_blank", "noopener,noreferrer");
+});
+
+activateCodeBtn?.addEventListener("click", async () => {
+  if (!requireAuth()) return;
+  const code = activationCodeEl?.value?.trim();
+  if (!code) {
+    setStatus("Введи код активации.", "error");
+    return;
+  }
+  activateCodeBtn.disabled = true;
+  try {
+    const resp = await fetch("/api/activate-code", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ code }),
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok) throw new Error(data?.error || `Activate ${resp.status}`);
+    activationCodeEl.value = "";
+    setStatus(`Тариф обновлён: ${String(data.plan || "pro").toUpperCase()}`, "ok");
+    await refreshPlanInfo();
+  } catch (e) {
+    setStatus(String(e?.message || e), "error");
+  } finally {
+    activateCodeBtn.disabled = false;
+  }
+});
+
 inputEl.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
@@ -745,6 +864,8 @@ ensureActiveDialog();
 render();
 renderDialogList();
 setMode("home");
+applyPlanToModelSelect();
+void loadAppConfig();
 initSupabase();
 
 
