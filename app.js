@@ -11,20 +11,25 @@ const sendBtn = $("sendBtn");
 const demoBtn = $("demoBtn");
 const saveBtn = $("saveBtn");
 const clearBtn = $("clearBtn");
+const clearDialogsBtn = $("clearDialogsBtn");
 const statusEl = $("status");
-const authStatusEl = $("authStatus");
 const loginBtn = $("loginBtn");
-const logoutBtn = $("logoutBtn");
 const layoutEl = document.querySelector(".layout");
 const homeBtn = $("homeBtn");
 const menuBtn = $("menuBtn");
-const openDrawerBtn = $("openDrawerBtn");
+const openSettingsBtn = $("openSettingsBtn");
+const openSettingsHeroBtn = $("openSettingsHeroBtn");
 const newChatBtn = $("newChatBtn");
 const drawerNewChatBtn = $("drawerNewChatBtn");
 const dialogListEl = $("dialogList");
 const drawer = $("drawer");
 const drawerOverlay = $("drawerOverlay");
 const closeDrawerBtn = $("closeDrawerBtn");
+const settingsOverlay = $("settingsOverlay");
+const settingsModal = $("settingsModal");
+const settingsCloseBtn = $("settingsCloseBtn");
+const settingsLogoutBtn = $("settingsLogoutBtn");
+const settingsAccountEmailEl = $("settingsAccountEmail");
 const authOverlay = $("authOverlay");
 const authModal = $("authModal");
 const authCloseBtn = $("authCloseBtn");
@@ -99,10 +104,8 @@ function closeAuthModal() {
 function updateAuthUI(session) {
   authSession = session;
   const email = session?.user?.email;
-  authStatusEl.hidden = !email;
-  authStatusEl.textContent = email ? `Вы вошли как ${email}` : "";
   loginBtn.hidden = !!email;
-  logoutBtn.hidden = !email;
+  settingsAccountEmailEl.textContent = email || "Гость (не выполнен вход)";
   if (email) {
     setAuthScene(false);
   }
@@ -129,6 +132,10 @@ function requireAuth() {
 
 function setAuthScene(isOpen) {
   document.body.classList.toggle("auth-open", isOpen);
+}
+
+function setSettingsScene(isOpen) {
+  document.body.classList.toggle("settings-open", isOpen);
 }
 
 async function initSupabase() {
@@ -170,6 +177,14 @@ function closeDrawer() {
   drawer.classList.remove("open");
   drawerOverlay.hidden = true;
   drawerOverlay.classList.remove("visible");
+}
+
+function openSettingsModal() {
+  setSettingsScene(true);
+}
+
+function closeSettingsModal() {
+  setSettingsScene(false);
 }
 
 function escapeHtml(s) {
@@ -400,6 +415,27 @@ function clearChat() {
   setStatus("Чат очищен.", "ok");
 }
 
+async function clearAllDialogs() {
+  dialogs = [];
+  transcript = [];
+  localStorage.removeItem(DIALOGS_KEY);
+  localStorage.removeItem(ACTIVE_DIALOG_KEY);
+  if (supabase && authSession?.user?.id) {
+    const { error } = await supabase
+      .from("dialogs")
+      .delete()
+      .eq("user_id", authSession.user.id);
+    if (error) {
+      setStatus(`Supabase dialogs: ${error.message}`, "error");
+      return;
+    }
+  }
+  createDialog({ activate: true });
+  render();
+  renderDialogList();
+  setStatus("Все диалоги удалены.", "ok");
+}
+
 async function syncDialogsFromSupabase() {
   if (!supabase || !authSession?.user?.id) return;
   const { data, error } = await supabase
@@ -556,8 +592,17 @@ demoBtn.addEventListener("click", () => {
 });
 saveBtn.addEventListener("click", saveSettings);
 clearBtn.addEventListener("click", clearChat);
+clearDialogsBtn.addEventListener("click", () => {
+  void clearAllDialogs();
+});
 menuBtn.addEventListener("click", openDrawer);
-openDrawerBtn.addEventListener("click", openDrawer);
+openSettingsBtn.addEventListener("click", () => {
+  closeDrawer();
+  openSettingsModal();
+});
+openSettingsHeroBtn?.addEventListener("click", () => {
+  openSettingsModal();
+});
 closeDrawerBtn.addEventListener("click", closeDrawer);
 drawerOverlay.addEventListener("click", closeDrawer);
 newChatBtn.addEventListener("click", () => {
@@ -573,7 +618,11 @@ drawerNewChatBtn.addEventListener("click", () => {
   setMode("chat");
   closeDrawer();
 });
-homeBtn.addEventListener("click", () => setMode("home"));
+homeBtn.addEventListener("click", () => {
+  setMode("home");
+  closeDrawer();
+  closeSettingsModal();
+});
 loginBtn.addEventListener("click", () => {
   if (!supabase) {
     initSupabase().then(() => openAuthModal());
@@ -585,10 +634,13 @@ loginBtn.addEventListener("click", () => {
   }
   openAuthModal();
 });
-logoutBtn.addEventListener("click", async () => {
+settingsLogoutBtn.addEventListener("click", async () => {
   if (!supabase) return;
   await supabase.auth.signOut();
+  closeSettingsModal();
 });
+settingsCloseBtn.addEventListener("click", closeSettingsModal);
+settingsOverlay.addEventListener("click", closeSettingsModal);
 authCloseBtn?.addEventListener("click", (event) => {
   event.preventDefault();
   closeAuthModal();
@@ -683,6 +735,7 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     closeDrawer();
     closeAuthModal();
+    closeSettingsModal();
   }
 });
 

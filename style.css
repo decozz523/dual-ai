@@ -56,6 +56,13 @@ body {
   gap: 12px;
 }
 
+.topbar-title {
+  display: grid;
+  gap: 2px;
+  text-align: center;
+}
+
+
 .icon-btn {
   appearance: none;
   border: 1px solid var(--border);
@@ -207,14 +214,6 @@ input:focus, textarea:focus { border-color: rgba(139, 109, 255, 0.7); box-shadow
 .status-pill.error { color: rgba(255, 92, 122, 0.95); }
 .status-pill.ok { color: rgba(21, 195, 154, 0.95); }
 
-.auth-pill {
-  font-size: 12px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--muted);
-}
 
 .chat {
   background: var(--panel);
@@ -393,8 +392,13 @@ input:focus, textarea:focus { border-color: rgba(139, 109, 255, 0.7); box-shadow
   padding: 18px;
 }
 
-.auth-open .modal-overlay,
-.auth-open .modal {
+.auth-open .auth-overlay,
+.auth-open .auth-modal {
+  display: grid;
+}
+
+.settings-open .settings-overlay,
+.settings-open .settings-modal {
   display: grid;
 }
 
@@ -563,3 +567,11 @@ input:focus, textarea:focus { border-color: rgba(139, 109, 255, 0.7); box-shadow
 
 
 
+
+.account-box {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.04);
+  font-size: 13px;
+}
