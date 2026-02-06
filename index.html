@@ -7,20 +7,21 @@
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
-    <div class="layout">
+    <div class="layout mode-home">
       <header class="topbar">
         <div class="topbar-left">
-          <button id="menuBtn" class="icon-btn" aria-label="Открыть меню">
-            <span class="icon">☰</span>
-          </button>
-          <div class="title">
-            <div class="h1">Dual AI Chat</div>
-            <div class="subtitle">Bot R (рациональный) + Bot S (творческий) через OpenRouter</div>
-          </div>
+          <button id="loginBtn" class="btn btn-secondary">Войти</button>
+        </div>
+        <div class="title topbar-title">
+          <div class="h1">Dual AI Chat</div>
+          <div class="subtitle">Bot R (рациональный) + Bot S (творческий) через OpenRouter</div>
         </div>
         <div class="topbar-right">
           <div class="status-pill" id="status">Готов.</div>
-          <button id="authBtn" class="btn btn-secondary">Войти</button>
+          <button id="homeBtn" class="btn btn-secondary">Главное меню</button>
+          <button id="menuBtn" class="icon-btn" aria-label="Открыть меню">
+            <span class="icon">☰</span>
+          </button>
         </div>
       </header>
 
@@ -33,7 +34,7 @@
               варианты. Управляй настройками через меню.
             </div>
           <div class="hero-actions">
-              <button id="openDrawerBtn" class="btn btn-secondary">Открыть настройки</button>
+              <button id="openSettingsHeroBtn" class="btn btn-secondary">Открыть настройки</button>
               <button id="newChatBtn" class="btn btn-primary">Новый диалог</button>
           </div>
           </div>
@@ -86,7 +87,7 @@
       <div class="drawer-head">
         <div>
           <div class="drawer-title">Меню</div>
-          <div class="drawer-subtitle">Настройки, авторизация и управление</div>
+          <div class="drawer-subtitle">История диалогов и настройки</div>
         </div>
         <button id="closeDrawerBtn" class="icon-btn" aria-label="Закрыть меню">
           <span class="icon">✕</span>
@@ -94,58 +95,121 @@
       </div>
 
       <section class="drawer-section">
-        <div class="section-title">Авторизация</div>
-        <div class="auth-status" id="authStatus">Не выполнен вход</div>
-        <button id="googleAuthBtn" class="btn btn-primary btn-google">
-          <span class="icon">G</span>
-          Войти через Google
-        </button>
-        <button id="logoutBtn" class="btn btn-secondary" type="button" hidden>Выйти</button>
-        <label class="field">
-          <div class="label">Google Client ID</div>
-          <input id="googleClientId" type="text" placeholder="xxxxx.apps.googleusercontent.com" />
-          <div class="hint">Нужен для работы Google Identity Services.</div>
-        </label>
-        <div class="hint">Авторизация опциональна. Можно работать без входа.</div>
-      </section>
-
-      <section class="drawer-section">
-        <div class="section-title">Подключение OpenRouter</div>
-        <div class="field">
-          <div class="label">OpenRouter API key</div>
-          <div class="hint">
-            Ключ хранится на сервере через Vercel Environment Variables и не вводится пользователем.
-          </div>
-        </div>
-
-        <label class="field">
-          <div class="label">Модель (OpenRouter slug)</div>
-          <input id="model" type="text" value="arcee-ai/trinity-large-preview:free" />
-          <div class="hint">Можно менять на любую доступную в твоём аккаунте.</div>
-        </label>
-      </section>
-
-      <section class="drawer-section">
-        <div class="section-title">Диалог</div>
-        <label class="field">
-          <div class="label">Авто-диалог ботов (ходов после твоего сообщения)</div>
-          <input id="turns" type="number" min="0" max="10" value="0" />
-          <div class="hint">0 = только один ответ каждого бота на твоё сообщение.</div>
-        </label>
-      </section>
-
-      <section class="drawer-section">
-        <div class="section-title">Управление</div>
-        <div class="row">
-          <button id="saveBtn" class="btn">Сохранить настройки</button>
-          <button id="clearBtn" class="btn btn-secondary">Очистить чат</button>
-        </div>
+        <div class="section-title">Диалоги</div>
+        <div id="dialogList" class="dialog-list" aria-live="polite"></div>
+        <button id="drawerNewChatBtn" class="btn btn-primary">Новый диалог</button>
+        <button id="openSettingsBtn" class="btn btn-secondary">Настройки</button>
       </section>
     </aside>
+
+    <div id="settingsOverlay" class="modal-overlay settings-overlay"></div>
+    <div id="settingsModal" class="modal settings-modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <div class="modal-head">
+        <div>
+          <div class="modal-title" id="settingsTitle">Настройки</div>
+          <div class="modal-subtitle">Параметры модели, аккаунта и диалогов</div>
+        </div>
+        <button id="settingsCloseBtn" class="icon-btn" type="button" aria-label="Закрыть окно настроек">
+          <span class="icon">✕</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <section class="drawer-section">
+          <div class="section-title">Модель и ответы</div>
+          <label class="field">
+            <div class="label">Модель (OpenRouter slug)</div>
+            <select id="model">
+              <option value="arcee-ai/trinity-large-preview:free">arcee-ai/trinity-large-preview:free</option>
+              <option value="deepseek/deepseek-r1-0528:free">deepseek/deepseek-r1-0528:free</option>
+              <option value="stepfun/step-3.5-flash:free">stepfun/step-3.5-flash:free</option>
+            </select>
+          </label>
+          <label class="field">
+            <div class="label">Авто-диалог ботов (ходов после твоего сообщения)</div>
+            <input id="turns" type="number" min="0" max="10" value="0" />
+          </label>
+          <button id="saveBtn" class="btn btn-primary">Сохранить настройки</button>
+        </section>
+
+        <section class="drawer-section">
+          <div class="section-title">Тариф и лимиты</div>
+          <div class="field">
+            <div class="label">Текущий тариф</div>
+            <div class="account-box" id="planName">Free</div>
+          </div>
+          <div class="field">
+            <div class="label">Сообщения сегодня</div>
+            <div class="account-box" id="planUsage">0 / 0</div>
+          </div>
+          <div class="field">
+            <div class="label">Остаток</div>
+            <div class="account-box" id="planRemaining">0</div>
+          </div>
+          <div class="row">
+            <button id="upgradeBtn" class="btn btn-primary">Купить Pro</button>
+          </div>
+          <label class="field">
+            <div class="label">Код активации</div>
+            <input id="redeemCodeInput" type="text" placeholder="Введите код из Telegram" />
+          </label>
+          <div class="row">
+            <button id="redeemCodeBtn" class="btn btn-secondary">Активировать</button>
+          </div>
+          <div id="billingNotice" class="hint"></div>
+        </section>
+
+        <section class="drawer-section">
+          <div class="section-title">Аккаунт</div>
+          <div class="account-box" id="settingsAccountEmail">Гость (не выполнен вход)</div>
+          <div class="row">
+            <button id="settingsLogoutBtn" class="btn btn-secondary">Выйти из аккаунта</button>
+          </div>
+        </section>
+
+        <section class="drawer-section">
+          <div class="section-title">Диалоги</div>
+          <div class="row">
+            <button id="clearBtn" class="btn btn-secondary">Очистить текущий чат</button>
+            <button id="clearDialogsBtn" class="btn btn-secondary">Удалить все диалоги</button>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div id="authOverlay" class="modal-overlay auth-overlay"></div>
+    <div id="authModal" class="modal auth-modal" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+      <div class="modal-head">
+        <div>
+          <div class="modal-title" id="authTitle">Вход в аккаунт</div>
+          <div class="modal-subtitle">Используем Supabase Email/Password.</div>
+        </div>
+        <button id="authCloseBtn" class="icon-btn" type="button" aria-label="Закрыть окно" data-close-auth="true">
+          <span class="icon">✕</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <label class="field">
+          <div class="label">Email</div>
+          <input id="authEmail" type="email" placeholder="you@example.com" autocomplete="email" />
+        </label>
+        <label class="field">
+          <div class="label">Пароль</div>
+          <input id="authPassword" type="password" placeholder="••••••••" autocomplete="current-password" />
+        </label>
+        <div id="authMessage" class="auth-message" role="status"></div>
+        <div class="auth-hint">
+          Если письмо с подтверждением не пришло, проверьте спам или запросите повторную отправку.
+        </div>
+        <div class="row">
+          <button id="authSignInBtn" class="btn btn-primary">Войти</button>
+          <button id="authSignUpBtn" class="btn btn-secondary">Создать аккаунт</button>
+          <button id="authResendBtn" class="btn btn-secondary">Отправить письмо ещё раз</button>
+        </div>
+      </div>
+    </div>
 
     <script type="module" src="./app.js"></script>
   </body>
 </html>
-
 
 
