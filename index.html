@@ -11,6 +11,7 @@
       <header class="topbar">
         <div class="topbar-left">
           <button id="loginBtn" class="btn btn-secondary">Войти</button>
+          <button id="upgradeBtn" class="btn btn-primary">Оплатить / Upgrade</button>
         </div>
         <div class="title topbar-title">
           <div class="h1">Dual AI Chat</div>
@@ -18,6 +19,7 @@
         </div>
         <div class="topbar-right">
           <div class="status-pill" id="status">Готов.</div>
+          <div class="plan-pill" id="planPill">Free</div>
           <button id="homeBtn" class="btn btn-secondary">Главное меню</button>
           <button id="menuBtn" class="icon-btn" aria-label="Открыть меню">
             <span class="icon">☰</span>
@@ -36,6 +38,7 @@
           <div class="hero-actions">
               <button id="openSettingsHeroBtn" class="btn btn-secondary">Открыть настройки</button>
               <button id="newChatBtn" class="btn btn-primary">Новый диалог</button>
+              <button id="heroUpgradeBtn" class="btn btn-secondary">Оплатить / Upgrade</button>
           </div>
           </div>
           <div class="hero-cards">
@@ -113,7 +116,11 @@
           <span class="icon">✕</span>
         </button>
       </div>
-      <div class="modal-body">
+      <div class="modal-body" id="settingsBody">
+        <div class="scroll-hint" id="settingsScrollHint">
+          <span class="scroll-text">Прокрутите вниз для остальных настроек</span>
+          <span class="scroll-arrow">↓</span>
+        </div>
         <section class="drawer-section">
           <div class="section-title">Модель и ответы</div>
           <label class="field">
@@ -128,7 +135,54 @@
             <div class="label">Авто-диалог ботов (ходов после твоего сообщения)</div>
             <input id="turns" type="number" min="0" max="10" value="0" />
           </label>
+          <label class="field">
+            <div class="label">Глубокий режим ответа (Pro)</div>
+            <div class="hint">Более развернутые ответы с дополнительными пояснениями.</div>
+            <button id="deepModeToggle" class="btn btn-secondary" type="button">Включить</button>
+          </label>
+          <div class="row">
+            <button id="exportChatBtn" class="btn btn-secondary" type="button">Экспортировать диалог</button>
+          </div>
           <button id="saveBtn" class="btn btn-primary">Сохранить настройки</button>
+        </section>
+
+        <section class="drawer-section">
+          <div class="section-title">Подписка и лимиты</div>
+          <div class="plan-notice premium-badge" id="planNotice">
+            <div class="plan-notice-title" id="planNoticeTitle">Free активен</div>
+            <div class="plan-notice-text" id="planNoticeText">
+              Доступно 30 сообщений в день. Можно перейти на Plus или Pro.
+            </div>
+          </div>
+          <div class="plan-perks" id="planPerks">
+            <div class="plan-perks-title">Преимущества тарифа</div>
+            <ul class="plan-perks-list" id="planPerksList">
+              <li>30 сообщений в день</li>
+              <li>Доступ к Bot R + Bot S</li>
+              <li>История диалогов сохраняется</li>
+            </ul>
+          </div>
+          <div class="plan-card premium-card" id="planCard">
+            <div class="plan-card-head">
+              <div>
+                <div class="plan-title" id="planTitle">Free</div>
+                <div class="plan-subtitle" id="planSubtitle">30 сообщений в день</div>
+              </div>
+              <div class="plan-badge" id="planBadge">Free</div>
+            </div>
+            <div class="plan-usage" id="planUsage">Сегодня: 0 / 30</div>
+            <div class="plan-hint">
+              После оплаты в Telegram-боте вы получите код активации формата <strong>dual-xxxxxxx</strong>.
+            </div>
+          </div>
+          <div class="field">
+            <div class="label">Код активации</div>
+            <input id="activationCodeInput" type="text" placeholder="dual-xxxxxxx" />
+          </div>
+          <div class="row">
+            <button id="activateCodeBtn" class="btn btn-primary">Активировать код</button>
+            <button id="openUpgradeBtn" class="btn btn-secondary">Оплатить / Upgrade</button>
+          </div>
         </section>
 
         <section class="drawer-section">
@@ -181,9 +235,38 @@
       </div>
     </div>
 
+    <div id="upgradeOverlay" class="modal-overlay upgrade-overlay"></div>
+    <div id="upgradeModal" class="modal upgrade-modal" role="dialog" aria-modal="true" aria-labelledby="upgradeTitle">
+      <div class="modal-head">
+        <div>
+          <div class="modal-title" id="upgradeTitle">Оплата подписки</div>
+          <div class="modal-subtitle">Оплатите через Telegram Stars и активируйте код.</div>
+        </div>
+        <button id="upgradeCloseBtn" class="icon-btn" type="button" aria-label="Закрыть окно оплаты">
+          <span class="icon">✕</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="upgrade-steps">
+          <div class="upgrade-step">
+            <div class="step-title">1. Перейдите в Telegram-бота</div>
+            <div class="step-text">Оплатите тариф Plus или Pro за Telegram Stars (XTR).</div>
+            <a id="telegramPayBtn" class="btn btn-primary" href="#" target="_blank" rel="noreferrer">
+              Открыть Telegram-бота
+            </a>
+          </div>
+          <div class="upgrade-step">
+            <div class="step-title">2. Введите код активации</div>
+            <div class="step-text">Бот пришлёт код формата <strong>dual-xxxxxxx</strong>.</div>
+            <label class="field">
+              <input id="upgradeCodeInput" type="text" placeholder="dual-xxxxxxx" />
+            </label>
+            <button id="upgradeActivateBtn" class="btn btn-secondary">Активировать код</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script type="module" src="./app.js"></script>
   </body>
 </html>
-
-
-
