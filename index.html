@@ -279,14 +279,23 @@
         </button>
       </div>
       <div class="modal-body">
-        <div class="plan-notice">
-          <div class="plan-notice-title">В разработке</div>
-          <div class="plan-notice-text">
-            Мы готовим общий чат и доступ для участников. Следите за обновлениями.
+        <div class="plan-notice" id="communityNotice">
+          <div class="plan-notice-title">Тема дня</div>
+          <div class="plan-notice-text" id="communityTheme">
+            Новый день — новая тема. Комната очищается каждые 24 часа.
           </div>
         </div>
-        <div class="row">
-          <button id="communityNotifyBtn" class="btn btn-secondary" type="button">Понятно</button>
+        <div class="community-messages" id="communityMessages"></div>
+        <div class="community-footer">
+          <div class="community-limit" id="communityLimit">Доступно сообщений сегодня: 0 / 3</div>
+          <div class="community-readonly" id="communityReadOnly">
+            Писать могут только Pro пользователи (3 сообщения в день).
+          </div>
+          <textarea id="communityInput" rows="3" placeholder="Поделитесь идеей…"></textarea>
+          <div class="row">
+            <button id="communitySendBtn" class="btn btn-primary" type="button">Отправить в общий чат</button>
+            <button id="communityNotifyBtn" class="btn btn-secondary" type="button">Понятно</button>
+          </div>
         </div>
       </div>
     </div>

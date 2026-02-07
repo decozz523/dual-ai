@@ -66,6 +66,12 @@ const communityOverlay = $("communityOverlay");
 const communityModal = $("communityModal");
 const communityCloseBtn = $("communityCloseBtn");
 const communityNotifyBtn = $("communityNotifyBtn");
+const communityMessagesEl = $("communityMessages");
+const communityInputEl = $("communityInput");
+const communitySendBtn = $("communitySendBtn");
+const communityLimitEl = $("communityLimit");
+const communityReadOnlyEl = $("communityReadOnly");
+const communityThemeEl = $("communityTheme");
 const telegramPayBtn = $("telegramPayBtn");
 const upgradeCodeInput = $("upgradeCodeInput");
 const upgradeActivateBtn = $("upgradeActivateBtn");
@@ -86,6 +92,10 @@ const PLAN_LIMITS = {
   plus: 100,
   pro: Number.POSITIVE_INFINITY,
 };
+
+const COMMUNITY_KEY = "dual-ai-community-messages-v1";
+const COMMUNITY_DAY_KEY = "dual-ai-community-day-v1";
+const COMMUNITY_LIMIT_PRO = 3;
 
 const PERSONAS = {
   R: {
@@ -252,6 +262,7 @@ function closeUpgradeModal() {
 
 function openCommunityModal() {
   document.body.classList.toggle("community-open", true);
+  renderCommunity();
 }
 
 function closeCommunityModal() {
@@ -263,6 +274,104 @@ function escapeHtml(s) {
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;");
+}
+
+function loadCommunityMessages() {
+  try {
+    const raw = localStorage.getItem(COMMUNITY_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((m) => m && m.content && m.ts);
+  } catch {
+    return [];
+  }
+}
+
+function saveCommunityMessages(messages) {
+  localStorage.setItem(COMMUNITY_KEY, JSON.stringify(messages));
+}
+
+function pruneCommunityMessages(messages) {
+  const now = Date.now();
+  const cutoff = now - 24 * 60 * 60 * 1000;
+  return messages.filter((m) => m.ts >= cutoff);
+}
+
+function getCommunityUsage() {
+  const today = getTodayKey();
+  try {
+    const raw = localStorage.getItem(COMMUNITY_DAY_KEY);
+    if (!raw) return { day: today, count: 0 };
+    const parsed = JSON.parse(raw);
+    if (parsed?.day !== today) return { day: today, count: 0 };
+    return { day: parsed.day, count: Number(parsed.count) || 0 };
+  } catch {
+    return { day: today, count: 0 };
+  }
+}
+
+function setCommunityUsage(count) {
+  const today = getTodayKey();
+  localStorage.setItem(COMMUNITY_DAY_KEY, JSON.stringify({ day: today, count }));
+}
+
+function ensureCommunitySeed(messages) {
+  if (messages.length > 0) return messages;
+  const now = Date.now();
+  return [
+    {
+      author: "Admin",
+      content: "Тема дня: как вы используете Dual AI в работе?",
+      ts: now - 1000 * 60 * 20,
+    },
+    {
+      author: "Bot R",
+      content: "Поделитесь кейсами — структурируем лучшие практики.",
+      ts: now - 1000 * 60 * 18,
+    },
+  ];
+}
+
+function renderCommunity() {
+  if (!communityMessagesEl) return;
+  let messages = pruneCommunityMessages(loadCommunityMessages());
+  messages = ensureCommunitySeed(messages);
+  saveCommunityMessages(messages);
+  communityMessagesEl.innerHTML = "";
+  for (const msg of messages) {
+    const item = document.createElement("div");
+    item.className = "community-message";
+    const header = document.createElement("div");
+    header.className = "community-meta";
+    header.textContent = `${msg.author} · ${new Date(msg.ts).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    })}`;
+    const body = document.createElement("div");
+    body.className = "community-content";
+    body.innerHTML = escapeHtml(msg.content);
+    item.appendChild(header);
+    item.appendChild(body);
+    communityMessagesEl.appendChild(item);
+  }
+  const usage = getCommunityUsage();
+  if (communityLimitEl) {
+    communityLimitEl.textContent = `Доступно сообщений сегодня: ${usage.count} / ${COMMUNITY_LIMIT_PRO}`;
+  }
+  const isPro = currentPlan === "pro";
+  if (communityReadOnlyEl) {
+    communityReadOnlyEl.hidden = isPro;
+  }
+  if (communityInputEl) {
+    communityInputEl.disabled = !isPro;
+  }
+  if (communitySendBtn) {
+    communitySendBtn.disabled = !isPro || usage.count >= COMMUNITY_LIMIT_PRO;
+  }
+  if (communityThemeEl) {
+    communityThemeEl.textContent = "Новый день — новая тема. Комната очищается каждые 24 часа.";
+  }
 }
 
 function render() {
@@ -1040,6 +1149,29 @@ upgradeOverlay?.addEventListener("click", closeUpgradeModal);
 communityCloseBtn?.addEventListener("click", closeCommunityModal);
 communityOverlay?.addEventListener("click", closeCommunityModal);
 communityNotifyBtn?.addEventListener("click", closeCommunityModal);
+communitySendBtn?.addEventListener("click", () => {
+  if (currentPlan !== "pro") {
+    setStatus("Писать в общий чат можно только с Pro.", "error");
+    return;
+  }
+  const usage = getCommunityUsage();
+  if (usage.count >= COMMUNITY_LIMIT_PRO) {
+    setStatus("Достигнут лимит сообщений для общего чата.", "error");
+    return;
+  }
+  const text = communityInputEl?.value.trim();
+  if (!text) return;
+  const messages = pruneCommunityMessages(loadCommunityMessages());
+  messages.push({
+    author: "Pro",
+    content: text,
+    ts: Date.now(),
+  });
+  saveCommunityMessages(messages);
+  setCommunityUsage(usage.count + 1);
+  if (communityInputEl) communityInputEl.value = "";
+  renderCommunity();
+});
 activateCodeBtn?.addEventListener("click", () => {
   void applyActivationCode(activationCodeInputEl.value);
 });
