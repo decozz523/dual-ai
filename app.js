@@ -46,6 +46,9 @@ const planTitleEl = $("planTitle");
 const planSubtitleEl = $("planSubtitle");
 const planBadgeEl = $("planBadge");
 const planUsageEl = $("planUsage");
+const planNoticeEl = $("planNotice");
+const planNoticeTitleEl = $("planNoticeTitle");
+const planNoticeTextEl = $("planNoticeText");
 const activationCodeInputEl = $("activationCodeInput");
 const activateCodeBtn = $("activateCodeBtn");
 const openUpgradeBtn = $("openUpgradeBtn");
@@ -307,11 +310,33 @@ function setPlanState(plan, usageCount = 0) {
   if (planTitleEl) planTitleEl.textContent = label;
   if (planSubtitleEl) planSubtitleEl.textContent = subtitle;
   if (planBadgeEl) planBadgeEl.textContent = label;
+  if (planPillEl) {
+    planPillEl.dataset.plan = currentPlan;
+  }
+  if (planNoticeEl) {
+    planNoticeEl.dataset.plan = currentPlan;
+  }
   const limit = getPlanLimit(currentPlan);
   if (planUsageEl) {
     planUsageEl.textContent = Number.isFinite(limit)
       ? `Сегодня: ${usageCount} / ${limit}`
       : `Сегодня: ${usageCount} / без ограничений`;
+  }
+  if (planNoticeTitleEl) {
+    planNoticeTitleEl.textContent =
+      currentPlan === "pro"
+        ? "Pro активирован"
+        : currentPlan === "plus"
+        ? "Plus активирован"
+        : "Free активен";
+  }
+  if (planNoticeTextEl) {
+    planNoticeTextEl.textContent =
+      currentPlan === "pro"
+        ? "Безлимитные сообщения. Спасибо за поддержку!"
+        : currentPlan === "plus"
+        ? "Лимит увеличен до 100 сообщений в день."
+        : "Доступно 30 сообщений в день. Можно перейти на Plus или Pro.";
   }
 }
 
@@ -457,6 +482,7 @@ async function applyActivationCode(rawCode) {
   }
   activationCodeInputEl.value = "";
   if (upgradeCodeInput) upgradeCodeInput.value = "";
+  setPlanState(nextPlan, currentUsageCount);
   await refreshPlanAndUsage({ force: true });
   setStatus("Подписка активирована.", "ok");
 }
