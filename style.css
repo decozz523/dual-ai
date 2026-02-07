@@ -152,6 +152,22 @@ body {
   background: rgba(255, 176, 124, 0.12);
 }
 
+.premium-badge {
+  position: relative;
+  overflow: hidden;
+}
+
+.premium-badge::after {
+  content: "";
+  position: absolute;
+  top: -40%;
+  right: -40%;
+  width: 120px;
+  height: 120px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.16), transparent 70%);
+  pointer-events: none;
+}
+
 .plan-perks {
   padding: 12px 14px;
   border-radius: 12px;
@@ -176,6 +192,53 @@ body {
   font-size: 13px;
 }
 
+.plan-card[data-plan="plus"] {
+  border-color: rgba(34, 211, 163, 0.4);
+  background: linear-gradient(140deg, rgba(34, 211, 163, 0.18), rgba(9, 12, 22, 0.78));
+}
+
+.plan-card[data-plan="pro"] {
+  border-color: rgba(255, 176, 124, 0.45);
+  background: linear-gradient(140deg, rgba(255, 176, 124, 0.18), rgba(9, 12, 22, 0.78));
+}
+
+.scroll-hint {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(12, 16, 28, 0.85);
+  font-size: 12px;
+  color: var(--muted);
+  z-index: 2;
+}
+
+.scroll-text {
+  font-size: 12px;
+}
+
+.scroll-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: rgba(139, 109, 255, 0.22);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.settings-modal .modal-body {
+  max-height: min(72vh, 620px);
+  overflow-y: auto;
+  padding-top: 6px;
+}
 .hero {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);

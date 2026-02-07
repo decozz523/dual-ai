@@ -30,6 +30,8 @@ const closeDrawerBtn = $("closeDrawerBtn");
 const settingsOverlay = $("settingsOverlay");
 const settingsModal = $("settingsModal");
 const settingsCloseBtn = $("settingsCloseBtn");
+const settingsBody = $("settingsBody");
+const settingsScrollHint = $("settingsScrollHint");
 const settingsLogoutBtn = $("settingsLogoutBtn");
 const settingsAccountEmailEl = $("settingsAccountEmail");
 const authOverlay = $("authOverlay");
@@ -50,6 +52,7 @@ const planNoticeEl = $("planNotice");
 const planNoticeTitleEl = $("planNoticeTitle");
 const planNoticeTextEl = $("planNoticeText");
 const planPerksListEl = $("planPerksList");
+const planCardEl = $("planCard");
 const activationCodeInputEl = $("activationCodeInput");
 const activateCodeBtn = $("activateCodeBtn");
 const openUpgradeBtn = $("openUpgradeBtn");
@@ -224,6 +227,7 @@ function closeDrawer() {
 
 function openSettingsModal() {
   setSettingsScene(true);
+  queueMicrotask(updateSettingsScrollHint);
 }
 
 function closeSettingsModal() {
@@ -317,6 +321,9 @@ function setPlanState(plan, usageCount = 0) {
   if (planNoticeEl) {
     planNoticeEl.dataset.plan = currentPlan;
   }
+  if (planCardEl) {
+    planCardEl.dataset.plan = currentPlan;
+  }
   const limit = getPlanLimit(currentPlan);
   if (planUsageEl) {
     planUsageEl.textContent = Number.isFinite(limit)
@@ -345,12 +352,12 @@ function setPlanState(plan, usageCount = 0) {
         ? [
             "Безлимитные сообщения",
             "Приоритетный доступ к новым функциям",
-            "Поддержка развития проекта",
+            "Персональные подсказки и сценарии",
           ]
         : currentPlan === "plus"
         ? [
             "100 сообщений в день",
-            "Доступ к Bot R + Bot S",
+            "Больше ходов в авто-диалоге",
             "История диалогов сохраняется",
           ]
         : [
@@ -369,6 +376,15 @@ function setPlanState(plan, usageCount = 0) {
   if (upgradeBtn) upgradeBtn.hidden = hideUpgrade;
   if (heroUpgradeBtn) heroUpgradeBtn.hidden = hideUpgrade;
   if (openUpgradeBtn) openUpgradeBtn.hidden = hideUpgrade;
+}
+
+function updateSettingsScrollHint() {
+  if (!settingsBody || !settingsScrollHint) return;
+  const canScroll = settingsBody.scrollHeight > settingsBody.clientHeight + 4;
+  const atBottom =
+    Math.ceil(settingsBody.scrollTop + settingsBody.clientHeight) >=
+    settingsBody.scrollHeight - 2;
+  settingsScrollHint.hidden = !canScroll || atBottom;
 }
 
 function getTodayKey() {
@@ -966,6 +982,7 @@ settingsLogoutBtn.addEventListener("click", async () => {
 });
 settingsCloseBtn.addEventListener("click", closeSettingsModal);
 settingsOverlay.addEventListener("click", closeSettingsModal);
+settingsBody?.addEventListener("scroll", updateSettingsScrollHint);
 authCloseBtn?.addEventListener("click", (event) => {
   event.preventDefault();
   closeAuthModal();
