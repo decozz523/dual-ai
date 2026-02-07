@@ -49,6 +49,7 @@ const planUsageEl = $("planUsage");
 const planNoticeEl = $("planNotice");
 const planNoticeTitleEl = $("planNoticeTitle");
 const planNoticeTextEl = $("planNoticeText");
+const planPerksListEl = $("planPerksList");
 const activationCodeInputEl = $("activationCodeInput");
 const activateCodeBtn = $("activateCodeBtn");
 const openUpgradeBtn = $("openUpgradeBtn");
@@ -338,6 +339,36 @@ function setPlanState(plan, usageCount = 0) {
         ? "Лимит увеличен до 100 сообщений в день."
         : "Доступно 30 сообщений в день. Можно перейти на Plus или Pro.";
   }
+  if (planPerksListEl) {
+    const perks =
+      currentPlan === "pro"
+        ? [
+            "Безлимитные сообщения",
+            "Приоритетный доступ к новым функциям",
+            "Поддержка развития проекта",
+          ]
+        : currentPlan === "plus"
+        ? [
+            "100 сообщений в день",
+            "Доступ к Bot R + Bot S",
+            "История диалогов сохраняется",
+          ]
+        : [
+            "30 сообщений в день",
+            "Доступ к Bot R + Bot S",
+            "История диалогов сохраняется",
+          ];
+    planPerksListEl.innerHTML = "";
+    for (const perk of perks) {
+      const li = document.createElement("li");
+      li.textContent = perk;
+      planPerksListEl.appendChild(li);
+    }
+  }
+  const hideUpgrade = currentPlan === "pro";
+  if (upgradeBtn) upgradeBtn.hidden = hideUpgrade;
+  if (heroUpgradeBtn) heroUpgradeBtn.hidden = hideUpgrade;
+  if (openUpgradeBtn) openUpgradeBtn.hidden = hideUpgrade;
 }
 
 function getTodayKey() {
