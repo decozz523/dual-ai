@@ -17,6 +17,7 @@ const statusEl = $("status");
 const loginBtn = $("loginBtn");
 const upgradeBtn = $("upgradeBtn");
 const heroUpgradeBtn = $("heroUpgradeBtn");
+const communityBtn = $("communityBtn");
 const layoutEl = document.querySelector(".layout");
 const homeBtn = $("homeBtn");
 const menuBtn = $("menuBtn");
@@ -61,6 +62,10 @@ const openUpgradeBtn = $("openUpgradeBtn");
 const upgradeOverlay = $("upgradeOverlay");
 const upgradeModal = $("upgradeModal");
 const upgradeCloseBtn = $("upgradeCloseBtn");
+const communityOverlay = $("communityOverlay");
+const communityModal = $("communityModal");
+const communityCloseBtn = $("communityCloseBtn");
+const communityNotifyBtn = $("communityNotifyBtn");
 const telegramPayBtn = $("telegramPayBtn");
 const upgradeCodeInput = $("upgradeCodeInput");
 const upgradeActivateBtn = $("upgradeActivateBtn");
@@ -243,6 +248,14 @@ function openUpgradeModal() {
 
 function closeUpgradeModal() {
   setUpgradeScene(false);
+}
+
+function openCommunityModal() {
+  document.body.classList.toggle("community-open", true);
+}
+
+function closeCommunityModal() {
+  document.body.classList.toggle("community-open", false);
 }
 
 function escapeHtml(s) {
@@ -1011,6 +1024,9 @@ heroUpgradeBtn?.addEventListener("click", () => {
   }
   openUpgradeModal();
 });
+communityBtn?.addEventListener("click", () => {
+  openCommunityModal();
+});
 openUpgradeBtn?.addEventListener("click", () => {
   if (!authSession) {
     upgradePending = true;
@@ -1021,6 +1037,9 @@ openUpgradeBtn?.addEventListener("click", () => {
 });
 upgradeCloseBtn?.addEventListener("click", closeUpgradeModal);
 upgradeOverlay?.addEventListener("click", closeUpgradeModal);
+communityCloseBtn?.addEventListener("click", closeCommunityModal);
+communityOverlay?.addEventListener("click", closeCommunityModal);
+communityNotifyBtn?.addEventListener("click", closeCommunityModal);
 activateCodeBtn?.addEventListener("click", () => {
   void applyActivationCode(activationCodeInputEl.value);
 });
@@ -1133,6 +1152,7 @@ document.addEventListener("keydown", (e) => {
     closeAuthModal();
     closeSettingsModal();
     closeUpgradeModal();
+    closeCommunityModal();
   }
 });
 

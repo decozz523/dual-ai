@@ -15,7 +15,7 @@
         </div>
         <div class="title topbar-title">
           <div class="h1">Dual AI Chat</div>
-          <div class="subtitle">Bot R (рациональный) + Bot S (творческий) через OpenRouter</div>
+          <div class="subtitle">Bot R (рациональный) + Bot S (творческий) через наш сервер</div>
         </div>
         <div class="topbar-right">
           <div class="status-pill" id="status">Готов.</div>
@@ -31,14 +31,14 @@
         <section class="hero">
           <div>
             <div class="hero-title">Профессиональный чат для стратегий и идей</div>
-            <div class="hero-subtitle">
+          <div class="hero-subtitle">
               Пара ботов ведёт дискуссию с тобой: рациональный бот структурирует, творческий — расширяет
               варианты. Управляй настройками через меню.
             </div>
           <div class="hero-actions">
               <button id="openSettingsHeroBtn" class="btn btn-secondary">Открыть настройки</button>
               <button id="newChatBtn" class="btn btn-primary">Новый диалог</button>
-              <button id="heroUpgradeBtn" class="btn btn-secondary">Оплатить / Upgrade</button>
+              <button id="communityBtn" class="btn btn-secondary">Общий чат</button>
           </div>
           </div>
           <div class="hero-cards">
@@ -124,7 +124,7 @@
         <section class="drawer-section">
           <div class="section-title">Модель и ответы</div>
           <label class="field">
-            <div class="label">Модель (OpenRouter slug)</div>
+            <div class="label">Соединение (наш сервер)</div>
             <select id="model">
               <option value="arcee-ai/trinity-large-preview:free">arcee-ai/trinity-large-preview:free</option>
               <option value="deepseek/deepseek-r1-0528:free">deepseek/deepseek-r1-0528:free</option>
@@ -263,6 +263,30 @@
             </label>
             <button id="upgradeActivateBtn" class="btn btn-secondary">Активировать код</button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="communityOverlay" class="modal-overlay community-overlay"></div>
+    <div id="communityModal" class="modal community-modal" role="dialog" aria-modal="true" aria-labelledby="communityTitle">
+      <div class="modal-head">
+        <div>
+          <div class="modal-title" id="communityTitle">Общий чат</div>
+          <div class="modal-subtitle">Публичная комната для обсуждений и идей.</div>
+        </div>
+        <button id="communityCloseBtn" class="icon-btn" type="button" aria-label="Закрыть окно общего чата">
+          <span class="icon">✕</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="plan-notice">
+          <div class="plan-notice-title">В разработке</div>
+          <div class="plan-notice-text">
+            Мы готовим общий чат и доступ для участников. Следите за обновлениями.
+          </div>
+        </div>
+        <div class="row">
+          <button id="communityNotifyBtn" class="btn btn-secondary" type="button">Понятно</button>
         </div>
       </div>
     </div>

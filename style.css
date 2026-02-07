@@ -615,6 +615,11 @@ input:focus, textarea:focus { border-color: rgba(139, 109, 255, 0.7); box-shadow
   display: grid;
 }
 
+.community-open .community-overlay,
+.community-open .community-modal {
+  display: grid;
+}
+
 .modal-head {
   display: flex;
   justify-content: space-between;
