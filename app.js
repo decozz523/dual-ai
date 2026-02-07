@@ -14,6 +14,8 @@ const clearBtn = $("clearBtn");
 const clearDialogsBtn = $("clearDialogsBtn");
 const statusEl = $("status");
 const loginBtn = $("loginBtn");
+const upgradeBtn = $("upgradeBtn");
+const heroUpgradeBtn = $("heroUpgradeBtn");
 const layoutEl = document.querySelector(".layout");
 const homeBtn = $("homeBtn");
 const menuBtn = $("menuBtn");
@@ -28,6 +30,8 @@ const closeDrawerBtn = $("closeDrawerBtn");
 const settingsOverlay = $("settingsOverlay");
 const settingsModal = $("settingsModal");
 const settingsCloseBtn = $("settingsCloseBtn");
+const settingsBody = $("settingsBody");
+const settingsScrollHint = $("settingsScrollHint");
 const settingsLogoutBtn = $("settingsLogoutBtn");
 const settingsAccountEmailEl = $("settingsAccountEmail");
 const authOverlay = $("authOverlay");
@@ -39,10 +43,41 @@ const authMessageEl = $("authMessage");
 const authSignInBtn = $("authSignInBtn");
 const authSignUpBtn = $("authSignUpBtn");
 const authResendBtn = $("authResendBtn");
+const planPillEl = $("planPill");
+const planTitleEl = $("planTitle");
+const planSubtitleEl = $("planSubtitle");
+const planBadgeEl = $("planBadge");
+const planUsageEl = $("planUsage");
+const planNoticeEl = $("planNotice");
+const planNoticeTitleEl = $("planNoticeTitle");
+const planNoticeTextEl = $("planNoticeText");
+const planPerksListEl = $("planPerksList");
+const planCardEl = $("planCard");
+const activationCodeInputEl = $("activationCodeInput");
+const activateCodeBtn = $("activateCodeBtn");
+const openUpgradeBtn = $("openUpgradeBtn");
+const upgradeOverlay = $("upgradeOverlay");
+const upgradeModal = $("upgradeModal");
+const upgradeCloseBtn = $("upgradeCloseBtn");
+const telegramPayBtn = $("telegramPayBtn");
+const upgradeCodeInput = $("upgradeCodeInput");
+const upgradeActivateBtn = $("upgradeActivateBtn");
 
 let supabase = null;
 let authSession = null;
 let supabaseReady = null;
+let upgradePending = false;
+let planReady = null;
+let currentPlan = "free";
+let currentUsageCount = 0;
+
+const TELEGRAM_BOT_URL = "https://t.me/dual_ai_pay_bot";
+
+const PLAN_LIMITS = {
+  free: 30,
+  plus: 100,
+  pro: Number.POSITIVE_INFINITY,
+};
 
 const PERSONAS = {
   R: {
@@ -103,6 +138,7 @@ function closeAuthModal() {
 
 function updateAuthUI(session) {
   authSession = session;
+  planReady = null;
   const email = session?.user?.email;
   loginBtn.hidden = !!email;
   settingsAccountEmailEl.textContent = email || "Гость (не выполнен вход)";
@@ -111,11 +147,17 @@ function updateAuthUI(session) {
   }
   if (email) {
     void syncDialogsFromSupabase();
+    void refreshPlanAndUsage({ force: true });
+    if (upgradePending) {
+      upgradePending = false;
+      openUpgradeModal();
+    }
   } else {
     dialogs = loadDialogsLocal();
     ensureActiveDialog();
     render();
     renderDialogList();
+    setPlanState("free", 0);
   }
 }
 
@@ -136,6 +178,10 @@ function setAuthScene(isOpen) {
 
 function setSettingsScene(isOpen) {
   document.body.classList.toggle("settings-open", isOpen);
+}
+
+function setUpgradeScene(isOpen) {
+  document.body.classList.toggle("upgrade-open", isOpen);
 }
 
 async function initSupabase() {
@@ -181,10 +227,19 @@ function closeDrawer() {
 
 function openSettingsModal() {
   setSettingsScene(true);
+  queueMicrotask(updateSettingsScrollHint);
 }
 
 function closeSettingsModal() {
   setSettingsScene(false);
+}
+
+function openUpgradeModal() {
+  setUpgradeScene(true);
+}
+
+function closeUpgradeModal() {
+  setUpgradeScene(false);
 }
 
 function escapeHtml(s) {
@@ -231,6 +286,252 @@ function render() {
     messagesEl.appendChild(wrap);
   }
   messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function getPlanLabel(plan) {
+  const normalized = String(plan || "free").toLowerCase();
+  if (normalized === "pro") return "Pro";
+  if (normalized === "plus") return "Plus";
+  return "Free";
+}
+
+function getPlanLimit(plan) {
+  const normalized = String(plan || "free").toLowerCase();
+  return PLAN_LIMITS[normalized] ?? PLAN_LIMITS.free;
+}
+
+function getPlanSubtitle(plan) {
+  const limit = getPlanLimit(plan);
+  if (!Number.isFinite(limit)) return "Без ограничений";
+  return `${limit} сообщений в день`;
+}
+
+function setPlanState(plan, usageCount = 0) {
+  currentPlan = String(plan || "free").toLowerCase();
+  currentUsageCount = usageCount;
+  const label = getPlanLabel(currentPlan);
+  const subtitle = getPlanSubtitle(currentPlan);
+  if (planPillEl) planPillEl.textContent = label;
+  if (planTitleEl) planTitleEl.textContent = label;
+  if (planSubtitleEl) planSubtitleEl.textContent = subtitle;
+  if (planBadgeEl) planBadgeEl.textContent = label;
+  if (planPillEl) {
+    planPillEl.dataset.plan = currentPlan;
+  }
+  if (planNoticeEl) {
+    planNoticeEl.dataset.plan = currentPlan;
+  }
+  if (planCardEl) {
+    planCardEl.dataset.plan = currentPlan;
+  }
+  const limit = getPlanLimit(currentPlan);
+  if (planUsageEl) {
+    planUsageEl.textContent = Number.isFinite(limit)
+      ? `Сегодня: ${usageCount} / ${limit}`
+      : `Сегодня: ${usageCount} / без ограничений`;
+  }
+  if (planNoticeTitleEl) {
+    planNoticeTitleEl.textContent =
+      currentPlan === "pro"
+        ? "Pro активирован"
+        : currentPlan === "plus"
+        ? "Plus активирован"
+        : "Free активен";
+  }
+  if (planNoticeTextEl) {
+    planNoticeTextEl.textContent =
+      currentPlan === "pro"
+        ? "Безлимитные сообщения. Спасибо за поддержку!"
+        : currentPlan === "plus"
+        ? "Лимит увеличен до 100 сообщений в день."
+        : "Доступно 30 сообщений в день. Можно перейти на Plus или Pro.";
+  }
+  if (planPerksListEl) {
+    const perks =
+      currentPlan === "pro"
+        ? [
+            "Безлимитные сообщения",
+            "Приоритетный доступ к новым функциям",
+            "Персональные подсказки и сценарии",
+          ]
+        : currentPlan === "plus"
+        ? [
+            "100 сообщений в день",
+            "Больше ходов в авто-диалоге",
+            "История диалогов сохраняется",
+          ]
+        : [
+            "30 сообщений в день",
+            "Доступ к Bot R + Bot S",
+            "История диалогов сохраняется",
+          ];
+    planPerksListEl.innerHTML = "";
+    for (const perk of perks) {
+      const li = document.createElement("li");
+      li.textContent = perk;
+      planPerksListEl.appendChild(li);
+    }
+  }
+  const hideUpgrade = currentPlan === "pro";
+  if (upgradeBtn) upgradeBtn.hidden = hideUpgrade;
+  if (heroUpgradeBtn) heroUpgradeBtn.hidden = hideUpgrade;
+  if (openUpgradeBtn) openUpgradeBtn.hidden = hideUpgrade;
+}
+
+function updateSettingsScrollHint() {
+  if (!settingsBody || !settingsScrollHint) return;
+  const canScroll = settingsBody.scrollHeight > settingsBody.clientHeight + 4;
+  const atBottom =
+    Math.ceil(settingsBody.scrollTop + settingsBody.clientHeight) >=
+    settingsBody.scrollHeight - 2;
+  settingsScrollHint.hidden = !canScroll || atBottom;
+}
+
+function getTodayKey() {
+  const now = new Date();
+  return now.toISOString().slice(0, 10);
+}
+
+async function ensureUserPlan() {
+  if (!supabase || !authSession?.user?.id) {
+    setPlanState("free", 0);
+    return "free";
+  }
+  const { data, error } = await supabase
+    .from("user_plans")
+    .select("plan")
+    .eq("user_id", authSession.user.id)
+    .maybeSingle();
+  if (error) {
+    setStatus(`Supabase plans: ${error.message}`, "error");
+    setPlanState("free", currentUsageCount);
+    return "free";
+  }
+  if (!data?.plan) {
+    const { error: insertError } = await supabase.from("user_plans").insert({
+      user_id: authSession.user.id,
+      plan: "free",
+      updated_at: new Date().toISOString(),
+    });
+    if (insertError) {
+      setStatus(`Supabase plans: ${insertError.message}`, "error");
+    }
+    return "free";
+  }
+  return data.plan;
+}
+
+async function fetchUsageCount() {
+  if (!supabase || !authSession?.user?.id) return 0;
+  const today = getTodayKey();
+  const { data, error } = await supabase
+    .from("daily_usage")
+    .select("count")
+    .eq("user_id", authSession.user.id)
+    .eq("day", today)
+    .maybeSingle();
+  if (error) {
+    setStatus(`Supabase usage: ${error.message}`, "error");
+    return currentUsageCount;
+  }
+  return data?.count ?? 0;
+}
+
+async function incrementUsageCount() {
+  if (!supabase || !authSession?.user?.id) return;
+  const today = getTodayKey();
+  const { data, error } = await supabase
+    .from("daily_usage")
+    .select("count")
+    .eq("user_id", authSession.user.id)
+    .eq("day", today)
+    .maybeSingle();
+  if (error) {
+    setStatus(`Supabase usage: ${error.message}`, "error");
+    return;
+  }
+  if (!data) {
+    const { error: insertError } = await supabase.from("daily_usage").insert({
+      user_id: authSession.user.id,
+      day: today,
+      count: 1,
+    });
+    if (insertError) {
+      setStatus(`Supabase usage: ${insertError.message}`, "error");
+      return;
+    }
+    currentUsageCount = 1;
+    setPlanState(currentPlan, currentUsageCount);
+    return;
+  }
+  const nextCount = Number(data.count || 0) + 1;
+  const { error: updateError } = await supabase
+    .from("daily_usage")
+    .update({ count: nextCount })
+    .eq("user_id", authSession.user.id)
+    .eq("day", today);
+  if (updateError) {
+    setStatus(`Supabase usage: ${updateError.message}`, "error");
+    return;
+  }
+  currentUsageCount = nextCount;
+  setPlanState(currentPlan, currentUsageCount);
+}
+
+async function refreshPlanAndUsage({ force = false } = {}) {
+  if (force) planReady = null;
+  if (planReady) return planReady;
+  planReady = (async () => {
+    const plan = await ensureUserPlan();
+    const usage = await fetchUsageCount();
+    setPlanState(plan, usage);
+    return true;
+  })();
+  return planReady;
+}
+
+function canSendMessage() {
+  const limit = getPlanLimit(currentPlan);
+  if (!Number.isFinite(limit)) return true;
+  return currentUsageCount < limit;
+}
+
+function normalizeActivationCode(code) {
+  return String(code || "").trim().toLowerCase();
+}
+
+function isActivationCodeValid(code) {
+  return /^dual-[a-z0-9]{7}$/i.test(code);
+}
+
+async function applyActivationCode(rawCode) {
+  if (!supabase || !authSession?.user?.id) {
+    setStatus("Сначала войдите в аккаунт.", "error");
+    openAuthModal();
+    return;
+  }
+  const code = normalizeActivationCode(rawCode);
+  if (!isActivationCodeValid(code)) {
+    setStatus("Код должен быть в формате dual-xxxxxxx.", "error");
+    return;
+  }
+  const { data, error } = await supabase.rpc("redeem_activation_code", {
+    code_input: code,
+  });
+  if (error) {
+    setStatus(`Supabase codes: ${error.message}`, "error");
+    return;
+  }
+  const nextPlan = String(data?.plan || "").toLowerCase();
+  if (!nextPlan) {
+    setStatus("Код не найден или уже использован.", "error");
+    return;
+  }
+  activationCodeInputEl.value = "";
+  if (upgradeCodeInput) upgradeCodeInput.value = "";
+  setPlanState(nextPlan, currentUsageCount);
+  await refreshPlanAndUsage({ force: true });
+  setStatus("Подписка активирована.", "ok");
 }
 
 function setMode(mode) {
@@ -551,6 +852,7 @@ async function sendUserMessage(text) {
   transcript.push({ speaker: "user", content: text, ts: Date.now() });
   render();
   persistActiveDialog();
+  await incrementUsageCount();
   await runTurn("R");
   await runTurn("S");
 
@@ -570,6 +872,12 @@ async function onSend() {
   const text = inputEl.value.trim();
   if (!text) return;
   if (!requireAuth()) return;
+  await refreshPlanAndUsage();
+  if (!canSendMessage()) {
+    setStatus("Достигнут лимит сообщений. Перейдите на Plus или Pro.", "error");
+    openUpgradeModal();
+    return;
+  }
 
   sendBtn.disabled = true;
   demoBtn.disabled = true;
@@ -634,13 +942,47 @@ loginBtn.addEventListener("click", () => {
   }
   openAuthModal();
 });
+upgradeBtn.addEventListener("click", () => {
+  if (!authSession) {
+    upgradePending = true;
+    openAuthModal();
+    return;
+  }
+  openUpgradeModal();
+});
+heroUpgradeBtn?.addEventListener("click", () => {
+  if (!authSession) {
+    upgradePending = true;
+    openAuthModal();
+    return;
+  }
+  openUpgradeModal();
+});
+openUpgradeBtn?.addEventListener("click", () => {
+  if (!authSession) {
+    upgradePending = true;
+    openAuthModal();
+    return;
+  }
+  openUpgradeModal();
+});
+upgradeCloseBtn?.addEventListener("click", closeUpgradeModal);
+upgradeOverlay?.addEventListener("click", closeUpgradeModal);
+activateCodeBtn?.addEventListener("click", () => {
+  void applyActivationCode(activationCodeInputEl.value);
+});
+upgradeActivateBtn?.addEventListener("click", () => {
+  void applyActivationCode(upgradeCodeInput.value);
+});
 settingsLogoutBtn.addEventListener("click", async () => {
   if (!supabase) return;
   await supabase.auth.signOut();
   closeSettingsModal();
+  closeUpgradeModal();
 });
 settingsCloseBtn.addEventListener("click", closeSettingsModal);
 settingsOverlay.addEventListener("click", closeSettingsModal);
+settingsBody?.addEventListener("scroll", updateSettingsScrollHint);
 authCloseBtn?.addEventListener("click", (event) => {
   event.preventDefault();
   closeAuthModal();
@@ -736,6 +1078,7 @@ document.addEventListener("keydown", (e) => {
     closeDrawer();
     closeAuthModal();
     closeSettingsModal();
+    closeUpgradeModal();
   }
 });
 
@@ -746,6 +1089,7 @@ render();
 renderDialogList();
 setMode("home");
 initSupabase();
-
-
-
+setPlanState("free", 0);
+if (telegramPayBtn) {
+  telegramPayBtn.href = TELEGRAM_BOT_URL;
+}
