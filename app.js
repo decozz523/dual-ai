@@ -9,11 +9,17 @@ const messagesEl = $("messages");
 const inputEl = $("input");
 const sendBtn = $("sendBtn");
 const demoBtn = $("demoBtn");
+const observeBtn = $("observeBtn");
 const saveBtn = $("saveBtn");
+const exportChatBtn = $("exportChatBtn");
 const clearBtn = $("clearBtn");
 const clearDialogsBtn = $("clearDialogsBtn");
 const statusEl = $("status");
 const loginBtn = $("loginBtn");
+const upgradeBtn = $("upgradeBtn");
+const heroUpgradeBtn = $("heroUpgradeBtn");
+const quickStartButtons = document.querySelectorAll("[data-template]");
+const ideaBtn = $("ideaBtn");
 const layoutEl = document.querySelector(".layout");
 const homeBtn = $("homeBtn");
 const menuBtn = $("menuBtn");
@@ -28,6 +34,8 @@ const closeDrawerBtn = $("closeDrawerBtn");
 const settingsOverlay = $("settingsOverlay");
 const settingsModal = $("settingsModal");
 const settingsCloseBtn = $("settingsCloseBtn");
+const settingsBody = $("settingsBody");
+const settingsScrollHint = $("settingsScrollHint");
 const settingsLogoutBtn = $("settingsLogoutBtn");
 const settingsAccountEmailEl = $("settingsAccountEmail");
 const authOverlay = $("authOverlay");
@@ -39,10 +47,75 @@ const authMessageEl = $("authMessage");
 const authSignInBtn = $("authSignInBtn");
 const authSignUpBtn = $("authSignUpBtn");
 const authResendBtn = $("authResendBtn");
+const planPillEl = $("planPill");
+const planTitleEl = $("planTitle");
+const planSubtitleEl = $("planSubtitle");
+const planBadgeEl = $("planBadge");
+const planUsageEl = $("planUsage");
+const planNoticeEl = $("planNotice");
+const planNoticeTitleEl = $("planNoticeTitle");
+const planNoticeTextEl = $("planNoticeText");
+const planPerksListEl = $("planPerksList");
+const planCardEl = $("planCard");
+const deepModeToggle = $("deepModeToggle");
+const modelHintEl = $("modelHint");
+const activationCodeInputEl = $("activationCodeInput");
+const activateCodeBtn = $("activateCodeBtn");
+const openUpgradeBtn = $("openUpgradeBtn");
+const upgradeOverlay = $("upgradeOverlay");
+const upgradeModal = $("upgradeModal");
+const upgradeCloseBtn = $("upgradeCloseBtn");
+const ideaOverlay = $("ideaOverlay");
+const ideaModal = $("ideaModal");
+const ideaCloseBtn = $("ideaCloseBtn");
+const ideaCancelBtn = $("ideaCancelBtn");
+const ideaListEl = $("ideaList");
+const ideaInputEl = $("ideaInput");
+const ideaSubmitBtn = $("ideaSubmitBtn");
+const ideaPromptEl = $("ideaPrompt");
+const telegramPayBtn = $("telegramPayBtn");
+const upgradeCodeInput = $("upgradeCodeInput");
+const upgradeActivateBtn = $("upgradeActivateBtn");
+const openPrivacyBtn = $("openPrivacyBtn");
+const openTermsBtn = $("openTermsBtn");
+const privacyOverlay = $("privacyOverlay");
+const privacyModal = $("privacyModal");
+const privacyCloseBtn = $("privacyCloseBtn");
+const termsOverlay = $("termsOverlay");
+const termsModal = $("termsModal");
+const termsCloseBtn = $("termsCloseBtn");
 
 let supabase = null;
 let authSession = null;
 let supabaseReady = null;
+let upgradePending = false;
+let planReady = null;
+let currentPlan = "free";
+let currentUsageCount = 0;
+let deepModeEnabled = false;
+let lastProModel = null;
+
+const TELEGRAM_BOT_URL = "https://t.me/dual_ai_pay_bot";
+
+const PLAN_LIMITS = {
+  free: 30,
+  plus: 100,
+  pro: Number.POSITIVE_INFINITY,
+};
+
+const DEFAULT_FREE_MODEL = "deepseek/deepseek-r1-0528:free";
+
+const IDEAS_KEY = "dual-ai-ideas-v1";
+const IDEA_DAY_KEY = "dual-ai-idea-day-v1";
+
+const IDEA_PROMPTS = [
+  "Какой сценарий использования вы хотите улучшить?",
+  "Что бы вы автоматизировали в своём рабочем процессе?",
+  "Какая функция сделает чат более полезным?",
+  "Какая аналитика или отчёт вам нужнее всего?",
+  "Что мешает пользоваться чатом чаще?",
+];
+
 
 const PERSONAS = {
   R: {
@@ -103,6 +176,7 @@ function closeAuthModal() {
 
 function updateAuthUI(session) {
   authSession = session;
+  planReady = null;
   const email = session?.user?.email;
   loginBtn.hidden = !!email;
   settingsAccountEmailEl.textContent = email || "Гость (не выполнен вход)";
@@ -111,11 +185,17 @@ function updateAuthUI(session) {
   }
   if (email) {
     void syncDialogsFromSupabase();
+    void refreshPlanAndUsage({ force: true });
+    if (upgradePending) {
+      upgradePending = false;
+      openUpgradeModal();
+    }
   } else {
     dialogs = loadDialogsLocal();
     ensureActiveDialog();
     render();
     renderDialogList();
+    setPlanState("free", 0);
   }
 }
 
@@ -136,6 +216,18 @@ function setAuthScene(isOpen) {
 
 function setSettingsScene(isOpen) {
   document.body.classList.toggle("settings-open", isOpen);
+}
+
+function setPrivacyScene(isOpen) {
+  document.body.classList.toggle("privacy-open", isOpen);
+}
+
+function setTermsScene(isOpen) {
+  document.body.classList.toggle("terms-open", isOpen);
+}
+
+function setUpgradeScene(isOpen) {
+  document.body.classList.toggle("upgrade-open", isOpen);
 }
 
 async function initSupabase() {
@@ -181,10 +273,44 @@ function closeDrawer() {
 
 function openSettingsModal() {
   setSettingsScene(true);
+  queueMicrotask(updateSettingsScrollHint);
 }
 
 function closeSettingsModal() {
   setSettingsScene(false);
+}
+
+function openUpgradeModal() {
+  setUpgradeScene(true);
+}
+
+function closeUpgradeModal() {
+  setUpgradeScene(false);
+}
+
+function openPrivacyModal() {
+  setPrivacyScene(true);
+}
+
+function closePrivacyModal() {
+  setPrivacyScene(false);
+}
+
+function openTermsModal() {
+  setTermsScene(true);
+}
+
+function closeTermsModal() {
+  setTermsScene(false);
+}
+
+function openIdeaModal() {
+  document.body.classList.toggle("idea-open", true);
+  renderIdeas();
+}
+
+function closeIdeaModal() {
+  document.body.classList.toggle("idea-open", false);
 }
 
 function escapeHtml(s) {
@@ -193,6 +319,66 @@ function escapeHtml(s) {
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;");
 }
+
+function loadIdeas() {
+  try {
+    const raw = localStorage.getItem(IDEAS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((i) => i && i.text && i.ts);
+  } catch {
+    return [];
+  }
+}
+
+function saveIdeas(ideas) {
+  localStorage.setItem(IDEAS_KEY, JSON.stringify(ideas));
+}
+
+function setDailyIdeaPrompt() {
+  if (!ideaPromptEl) return;
+  const today = getTodayKey();
+  const stored = localStorage.getItem(IDEA_DAY_KEY);
+  if (stored === today) return;
+  const index = Math.abs(
+    Array.from(today).reduce((acc, c) => acc + c.charCodeAt(0), 0)
+  ) % IDEA_PROMPTS.length;
+  ideaPromptEl.textContent = IDEA_PROMPTS[index];
+  localStorage.setItem(IDEA_DAY_KEY, today);
+}
+
+function renderIdeas() {
+  if (!ideaListEl) return;
+  const ideas = loadIdeas().slice(-5).reverse();
+  ideaListEl.innerHTML = "";
+  if (ideas.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "idea-empty";
+    empty.textContent = "Пока нет идей. Начните первым.";
+    ideaListEl.appendChild(empty);
+    return;
+  }
+  for (const idea of ideas) {
+    const item = document.createElement("div");
+    item.className = "idea-item";
+    const meta = document.createElement("div");
+    meta.className = "idea-meta";
+    meta.textContent = new Date(idea.ts).toLocaleString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      day: "2-digit",
+      month: "short",
+    });
+    const body = document.createElement("div");
+    body.className = "idea-text";
+    body.innerHTML = escapeHtml(idea.text);
+    item.appendChild(meta);
+    item.appendChild(body);
+    ideaListEl.appendChild(item);
+  }
+}
+
 
 function render() {
   messagesEl.innerHTML = "";
@@ -231,6 +417,286 @@ function render() {
     messagesEl.appendChild(wrap);
   }
   messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function getPlanLabel(plan) {
+  const normalized = String(plan || "free").toLowerCase();
+  if (normalized === "pro") return "Pro";
+  if (normalized === "plus") return "Plus";
+  return "Free";
+}
+
+function getPlanLimit(plan) {
+  const normalized = String(plan || "free").toLowerCase();
+  return PLAN_LIMITS[normalized] ?? PLAN_LIMITS.free;
+}
+
+function getPlanSubtitle(plan) {
+  const limit = getPlanLimit(plan);
+  if (!Number.isFinite(limit)) return "Без ограничений";
+  return `${limit} сообщений в день`;
+}
+
+function setPlanState(plan, usageCount = 0) {
+  currentPlan = String(plan || "free").toLowerCase();
+  currentUsageCount = usageCount;
+  const label = getPlanLabel(currentPlan);
+  const subtitle = getPlanSubtitle(currentPlan);
+  if (planPillEl) planPillEl.textContent = label;
+  if (planTitleEl) planTitleEl.textContent = label;
+  if (planSubtitleEl) planSubtitleEl.textContent = subtitle;
+  if (planBadgeEl) planBadgeEl.textContent = label;
+  if (planPillEl) {
+    planPillEl.dataset.plan = currentPlan;
+  }
+  if (planNoticeEl) {
+    planNoticeEl.dataset.plan = currentPlan;
+  }
+  if (planCardEl) {
+    planCardEl.dataset.plan = currentPlan;
+  }
+  const limit = getPlanLimit(currentPlan);
+  if (planUsageEl) {
+    planUsageEl.textContent = Number.isFinite(limit)
+      ? `Сегодня: ${usageCount} / ${limit}`
+      : `Сегодня: ${usageCount} / без ограничений`;
+  }
+  if (planNoticeTitleEl) {
+    planNoticeTitleEl.textContent =
+      currentPlan === "pro"
+        ? "Pro активирован"
+        : currentPlan === "plus"
+        ? "Plus активирован"
+        : "Free активен";
+  }
+  if (planNoticeTextEl) {
+    planNoticeTextEl.textContent =
+      currentPlan === "pro"
+        ? "Безлимитные сообщения. Спасибо за поддержку!"
+        : currentPlan === "plus"
+        ? "Лимит увеличен до 100 сообщений в день."
+        : "Доступно 30 сообщений в день. Можно перейти на Plus или Pro.";
+  }
+  if (planPerksListEl) {
+    const perks =
+      currentPlan === "pro"
+        ? [
+            "Безлимитные сообщения",
+            "Приоритетный доступ к новым функциям",
+            "Глубокий режим ответа",
+          ]
+        : currentPlan === "plus"
+        ? [
+            "100 сообщений в день",
+            "Больше ходов в авто-диалоге",
+            "История диалогов сохраняется",
+          ]
+        : [
+            "30 сообщений в день",
+            "Доступ к Bot R + Bot S",
+            "История диалогов сохраняется",
+          ];
+    planPerksListEl.innerHTML = "";
+    for (const perk of perks) {
+      const li = document.createElement("li");
+      li.textContent = perk;
+      planPerksListEl.appendChild(li);
+    }
+  }
+  const hideUpgrade = currentPlan === "pro";
+  if (upgradeBtn) upgradeBtn.hidden = hideUpgrade;
+  if (heroUpgradeBtn) heroUpgradeBtn.hidden = hideUpgrade;
+  if (openUpgradeBtn) openUpgradeBtn.hidden = hideUpgrade;
+  if (deepModeToggle) {
+    deepModeToggle.disabled = currentPlan !== "pro";
+    deepModeToggle.textContent = deepModeEnabled ? "Выключить" : "Включить";
+    deepModeToggle.title =
+      currentPlan === "pro"
+        ? "Включить или выключить глубокий режим"
+        : "Доступно только для тарифа Pro";
+  }
+  if (modelEl) {
+    const canChooseModel = currentPlan === "pro";
+    modelEl.disabled = !canChooseModel;
+    if (!canChooseModel) {
+      if (!lastProModel) {
+        lastProModel = modelEl.value;
+      }
+      const hasDefault = Array.from(modelEl.options).some(
+        (option) => option.value === DEFAULT_FREE_MODEL
+      );
+      if (hasDefault) modelEl.value = DEFAULT_FREE_MODEL;
+    } else if (lastProModel) {
+      modelEl.value = lastProModel;
+      lastProModel = null;
+    }
+  }
+  if (modelHintEl) {
+    modelHintEl.hidden = currentPlan === "pro";
+  }
+  if (observeBtn) {
+    observeBtn.disabled = currentPlan === "free";
+    observeBtn.title =
+      currentPlan === "free"
+        ? "Доступно с Plus"
+        : "Наблюдать диалог ботов";
+  }
+}
+
+function updateSettingsScrollHint() {
+  if (!settingsBody || !settingsScrollHint) return;
+  const canScroll = settingsBody.scrollHeight > settingsBody.clientHeight + 4;
+  const atBottom =
+    Math.ceil(settingsBody.scrollTop + settingsBody.clientHeight) >=
+    settingsBody.scrollHeight - 2;
+  settingsScrollHint.hidden = !canScroll || atBottom;
+}
+
+function getTodayKey() {
+  const now = new Date();
+  return now.toISOString().slice(0, 10);
+}
+
+async function ensureUserPlan() {
+  if (!supabase || !authSession?.user?.id) {
+    setPlanState("free", 0);
+    return "free";
+  }
+  const { data, error } = await supabase
+    .from("user_plans")
+    .select("plan")
+    .eq("user_id", authSession.user.id)
+    .maybeSingle();
+  if (error) {
+    setStatus(`Supabase plans: ${error.message}`, "error");
+    setPlanState("free", currentUsageCount);
+    return "free";
+  }
+  if (!data?.plan) {
+    const { error: insertError } = await supabase.from("user_plans").insert({
+      user_id: authSession.user.id,
+      plan: "free",
+      updated_at: new Date().toISOString(),
+    });
+    if (insertError) {
+      setStatus(`Supabase plans: ${insertError.message}`, "error");
+    }
+    return "free";
+  }
+  return data.plan;
+}
+
+async function fetchUsageCount() {
+  if (!supabase || !authSession?.user?.id) return 0;
+  const today = getTodayKey();
+  const { data, error } = await supabase
+    .from("daily_usage")
+    .select("count")
+    .eq("user_id", authSession.user.id)
+    .eq("day", today)
+    .maybeSingle();
+  if (error) {
+    setStatus(`Supabase usage: ${error.message}`, "error");
+    return currentUsageCount;
+  }
+  return data?.count ?? 0;
+}
+
+async function incrementUsageCount() {
+  if (!supabase || !authSession?.user?.id) return;
+  const today = getTodayKey();
+  const { data, error } = await supabase
+    .from("daily_usage")
+    .select("count")
+    .eq("user_id", authSession.user.id)
+    .eq("day", today)
+    .maybeSingle();
+  if (error) {
+    setStatus(`Supabase usage: ${error.message}`, "error");
+    return;
+  }
+  if (!data) {
+    const { error: insertError } = await supabase.from("daily_usage").insert({
+      user_id: authSession.user.id,
+      day: today,
+      count: 1,
+    });
+    if (insertError) {
+      setStatus(`Supabase usage: ${insertError.message}`, "error");
+      return;
+    }
+    currentUsageCount = 1;
+    setPlanState(currentPlan, currentUsageCount);
+    return;
+  }
+  const nextCount = Number(data.count || 0) + 1;
+  const { error: updateError } = await supabase
+    .from("daily_usage")
+    .update({ count: nextCount })
+    .eq("user_id", authSession.user.id)
+    .eq("day", today);
+  if (updateError) {
+    setStatus(`Supabase usage: ${updateError.message}`, "error");
+    return;
+  }
+  currentUsageCount = nextCount;
+  setPlanState(currentPlan, currentUsageCount);
+}
+
+async function refreshPlanAndUsage({ force = false } = {}) {
+  if (force) planReady = null;
+  if (planReady) return planReady;
+  planReady = (async () => {
+    const plan = await ensureUserPlan();
+    const usage = await fetchUsageCount();
+    setPlanState(plan, usage);
+    return true;
+  })();
+  return planReady;
+}
+
+function canSendMessage() {
+  const limit = getPlanLimit(currentPlan);
+  if (!Number.isFinite(limit)) return true;
+  return currentUsageCount < limit;
+}
+
+function normalizeActivationCode(code) {
+  return String(code || "").trim().toLowerCase();
+}
+
+function isActivationCodeValid(code) {
+  return /^dual-[a-z0-9]{7}$/i.test(code);
+}
+
+async function applyActivationCode(rawCode) {
+  if (!supabase || !authSession?.user?.id) {
+    setStatus("Сначала войдите в аккаунт.", "error");
+    openAuthModal();
+    return;
+  }
+  const code = normalizeActivationCode(rawCode);
+  if (!isActivationCodeValid(code)) {
+    setStatus("Код должен быть в формате dual-xxxxxxx.", "error");
+    return;
+  }
+  const { data, error } = await supabase.rpc("redeem_activation_code", {
+    code_input: code,
+  });
+  if (error) {
+    setStatus(`Supabase codes: ${error.message}`, "error");
+    return;
+  }
+  const nextPlan = String(data?.plan || "").toLowerCase();
+  if (!nextPlan) {
+    setStatus("Код не найден или уже использован.", "error");
+    return;
+  }
+  activationCodeInputEl.value = "";
+  if (upgradeCodeInput) upgradeCodeInput.value = "";
+  setPlanState(nextPlan, currentUsageCount);
+  await refreshPlanAndUsage({ force: true });
+  setStatus("Подписка активирована.", "ok");
 }
 
 function setMode(mode) {
@@ -396,6 +862,10 @@ function loadSettings() {
       modelEl.value = exists ? s.model : modelEl.options[0]?.value || "";
     }
     if (typeof s.turns === "number") turnsEl.value = String(s.turns);
+    if (typeof s.deepModeEnabled === "boolean") {
+      deepModeEnabled = s.deepModeEnabled;
+    }
+    lastProModel = modelEl.value;
   } catch {
     // ignore
   }
@@ -404,7 +874,10 @@ function loadSettings() {
 function saveSettings() {
   const model = modelEl.value.trim();
   const turns = getExtraTurns();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ model, turns }));
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({ model, turns, deepModeEnabled })
+  );
   setStatus("Настройки сохранены.", "ok");
 }
 
@@ -534,6 +1007,12 @@ async function runTurn(speaker) {
   }
 
   const messages = toOpenRouterMessages();
+  if (deepModeEnabled && currentPlan === "pro") {
+    messages.push({
+      role: "user",
+      content: "Пожалуйста, дай более глубокий, развернутый ответ с пояснениями.",
+    });
+  }
   setStatus(`${speaker === "R" ? "Bot R" : "Bot S"} думает…`);
   const text = await callOpenRouter({
     model,
@@ -551,6 +1030,7 @@ async function sendUserMessage(text) {
   transcript.push({ speaker: "user", content: text, ts: Date.now() });
   render();
   persistActiveDialog();
+  await incrementUsageCount();
   await runTurn("R");
   await runTurn("S");
 
@@ -560,16 +1040,36 @@ async function sendUserMessage(text) {
   }
 }
 
+async function sendUserMessageWithTurns(text, extraTurnsOverride) {
+  transcript.push({ speaker: "user", content: text, ts: Date.now() });
+  render();
+  persistActiveDialog();
+  await incrementUsageCount();
+  await runTurn("R");
+  await runTurn("S");
+
+  for (let i = 0; i < extraTurnsOverride; i++) {
+    await runTurn(i % 2 === 0 ? "R" : "S");
+  }
+}
+
 function getExtraTurns() {
   const parsed = Number(turnsEl.value || 0);
   if (!Number.isFinite(parsed)) return 0;
-  return Math.max(0, Math.min(10, parsed));
+  const maxTurns = currentPlan === "plus" || currentPlan === "pro" ? 20 : 10;
+  return Math.max(0, Math.min(maxTurns, parsed));
 }
 
 async function onSend() {
   const text = inputEl.value.trim();
   if (!text) return;
   if (!requireAuth()) return;
+  await refreshPlanAndUsage();
+  if (!canSendMessage()) {
+    setStatus("Достигнут лимит сообщений. Перейдите на Plus или Pro.", "error");
+    openUpgradeModal();
+    return;
+  }
 
   sendBtn.disabled = true;
   demoBtn.disabled = true;
@@ -589,6 +1089,58 @@ demoBtn.addEventListener("click", () => {
   if (!requireAuth()) return;
   inputEl.value = "Что думаете о будущем ИИ?";
   inputEl.focus();
+});
+observeBtn?.addEventListener("click", async () => {
+  if (!requireAuth()) return;
+  await refreshPlanAndUsage();
+  if (currentPlan === "free") {
+    setStatus("Функция доступна с Plus.", "error");
+    openUpgradeModal();
+    return;
+  }
+  const hasUserMessage = transcript.some((m) => m.speaker === "user");
+  const text = hasUserMessage ? "Продолжите обсуждение." : "Привет";
+  sendBtn.disabled = true;
+  demoBtn.disabled = true;
+  observeBtn.disabled = true;
+  try {
+    await sendUserMessageWithTurns(text, 6);
+  } catch (e) {
+    setStatus(String(e?.message || e), "error");
+  } finally {
+    sendBtn.disabled = false;
+    demoBtn.disabled = false;
+    observeBtn.disabled = false;
+  }
+});
+deepModeToggle?.addEventListener("click", () => {
+  if (currentPlan !== "pro") {
+    setStatus("Глубокий режим доступен только для Pro.", "error");
+    return;
+  }
+  deepModeEnabled = !deepModeEnabled;
+  setPlanState(currentPlan, currentUsageCount);
+  saveSettings();
+});
+exportChatBtn?.addEventListener("click", () => {
+  if (transcript.length === 0) {
+    setStatus("Нет сообщений для экспорта.", "error");
+    return;
+  }
+  const data = {
+    title: dialogs.find((d) => d.id === activeDialogId)?.title || "Диалог",
+    exportedAt: new Date().toISOString(),
+    messages: transcript,
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "dual-ai-chat.json";
+  link.click();
+  URL.revokeObjectURL(url);
 });
 saveBtn.addEventListener("click", saveSettings);
 clearBtn.addEventListener("click", clearChat);
@@ -634,13 +1186,81 @@ loginBtn.addEventListener("click", () => {
   }
   openAuthModal();
 });
+upgradeBtn.addEventListener("click", () => {
+  if (!authSession) {
+    upgradePending = true;
+    openAuthModal();
+    return;
+  }
+  openUpgradeModal();
+});
+heroUpgradeBtn?.addEventListener("click", () => {
+  if (!authSession) {
+    upgradePending = true;
+    openAuthModal();
+    return;
+  }
+  openUpgradeModal();
+});
+quickStartButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const template = btn.getAttribute("data-template");
+    if (!template) return;
+    inputEl.value = template;
+    setMode("chat");
+    inputEl.focus();
+  });
+});
+ideaBtn?.addEventListener("click", () => {
+  openIdeaModal();
+});
+openUpgradeBtn?.addEventListener("click", () => {
+  if (!authSession) {
+    upgradePending = true;
+    openAuthModal();
+    return;
+  }
+  openUpgradeModal();
+});
+upgradeCloseBtn?.addEventListener("click", closeUpgradeModal);
+upgradeOverlay?.addEventListener("click", closeUpgradeModal);
+ideaCloseBtn?.addEventListener("click", closeIdeaModal);
+ideaOverlay?.addEventListener("click", closeIdeaModal);
+ideaCancelBtn?.addEventListener("click", closeIdeaModal);
+openPrivacyBtn?.addEventListener("click", openPrivacyModal);
+openTermsBtn?.addEventListener("click", openTermsModal);
+privacyCloseBtn?.addEventListener("click", closePrivacyModal);
+privacyOverlay?.addEventListener("click", closePrivacyModal);
+termsCloseBtn?.addEventListener("click", closeTermsModal);
+termsOverlay?.addEventListener("click", closeTermsModal);
+ideaSubmitBtn?.addEventListener("click", () => {
+  const text = ideaInputEl?.value.trim();
+  if (!text) {
+    setStatus("Введите идею перед отправкой.", "error");
+    return;
+  }
+  const ideas = loadIdeas();
+  ideas.push({ text, ts: Date.now() });
+  saveIdeas(ideas);
+  if (ideaInputEl) ideaInputEl.value = "";
+  renderIdeas();
+  setStatus("Идея сохранена. Спасибо!", "ok");
+});
+activateCodeBtn?.addEventListener("click", () => {
+  void applyActivationCode(activationCodeInputEl.value);
+});
+upgradeActivateBtn?.addEventListener("click", () => {
+  void applyActivationCode(upgradeCodeInput.value);
+});
 settingsLogoutBtn.addEventListener("click", async () => {
   if (!supabase) return;
   await supabase.auth.signOut();
   closeSettingsModal();
+  closeUpgradeModal();
 });
 settingsCloseBtn.addEventListener("click", closeSettingsModal);
 settingsOverlay.addEventListener("click", closeSettingsModal);
+settingsBody?.addEventListener("scroll", updateSettingsScrollHint);
 authCloseBtn?.addEventListener("click", (event) => {
   event.preventDefault();
   closeAuthModal();
@@ -736,6 +1356,10 @@ document.addEventListener("keydown", (e) => {
     closeDrawer();
     closeAuthModal();
     closeSettingsModal();
+    closeUpgradeModal();
+    closeIdeaModal();
+    closePrivacyModal();
+    closeTermsModal();
   }
 });
 
@@ -746,6 +1370,8 @@ render();
 renderDialogList();
 setMode("home");
 initSupabase();
-
-
-
+setPlanState("free", 0);
+if (telegramPayBtn) {
+  telegramPayBtn.href = TELEGRAM_BOT_URL;
+}
+setDailyIdeaPrompt();
