@@ -38,9 +38,17 @@
           <div class="hero-actions">
               <button id="openSettingsHeroBtn" class="btn btn-secondary">Открыть настройки</button>
               <button id="newChatBtn" class="btn btn-primary">Новый диалог</button>
-              <button id="communityBtn" class="btn btn-secondary">Общий чат</button>
               <button id="ideaBtn" class="btn btn-secondary">Предложить идею</button>
           </div>
+          </div>
+          <div class="quick-start">
+            <div class="quick-title">Быстрый старт</div>
+            <div class="quick-actions">
+              <button class="chip-btn" data-template="Составь план на 7 дней для моей цели.">План на 7 дней</button>
+              <button class="chip-btn" data-template="Придумай 10 идей для контента на неделю.">Идеи контента</button>
+              <button class="chip-btn" data-template="Сделай стратегию запуска продукта в 5 шагах.">Стратегия запуска</button>
+              <button class="chip-btn" data-template="Сформулируй 3 гипотезы роста для моего продукта.">Гипотезы роста</button>
+            </div>
           </div>
           <div class="hero-cards">
             <div class="info-card">
@@ -57,11 +65,6 @@
               <div class="info-title">Режим диалога</div>
               <div class="info-value">Dual AI</div>
               <div class="info-hint">Bot R + Bot S ведут сессию.</div>
-            </div>
-            <div class="info-card">
-              <div class="info-title">Общий чат</div>
-              <div class="info-value">Тема дня</div>
-              <div class="info-hint">Обсуждаем одну тему, комната чистится каждые 24 часа.</div>
             </div>
             <div class="info-card">
               <div class="info-title">Идея дня</div>
@@ -273,40 +276,6 @@
               <input id="upgradeCodeInput" type="text" placeholder="dual-xxxxxxx" />
             </label>
             <button id="upgradeActivateBtn" class="btn btn-secondary">Активировать код</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div id="communityOverlay" class="modal-overlay community-overlay"></div>
-    <div id="communityModal" class="modal community-modal" role="dialog" aria-modal="true" aria-labelledby="communityTitle">
-      <div class="modal-head">
-        <div>
-          <div class="modal-title" id="communityTitle">Общий чат</div>
-          <div class="modal-subtitle">Публичная комната для обсуждений и идей.</div>
-        </div>
-        <button id="communityCloseBtn" class="icon-btn" type="button" aria-label="Закрыть окно общего чата">
-          <span class="icon">✕</span>
-        </button>
-      </div>
-      <div class="modal-body">
-        <div class="plan-notice" id="communityNotice">
-          <div class="plan-notice-title">Тема дня</div>
-          <div class="plan-notice-text" id="communityTheme">
-            Новый день — новая тема. Комната очищается каждые 24 часа.
-          </div>
-        </div>
-        <div class="community-messages" id="communityMessages"></div>
-        <div class="community-footer">
-          <div class="community-limit" id="communityLimit">Доступно сообщений сегодня: 0 / 3</div>
-          <div class="community-readonly" id="communityReadOnly">
-            Писать могут только Pro пользователи (3 сообщения в день).
-          </div>
-          <textarea id="communityInput" rows="3" placeholder="Поделитесь идеей…"></textarea>
-          <div class="row">
-            <button id="communitySendBtn" class="btn btn-primary" type="button">Отправить в общий чат</button>
-            <button id="communityRefreshBtn" class="btn btn-secondary" type="button">Обновить</button>
-            <button id="communityNotifyBtn" class="btn btn-secondary" type="button">Понятно</button>
           </div>
         </div>
       </div>
