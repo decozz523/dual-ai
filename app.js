@@ -9,6 +9,7 @@ const messagesEl = $("messages");
 const inputEl = $("input");
 const sendBtn = $("sendBtn");
 const demoBtn = $("demoBtn");
+const observeBtn = $("observeBtn");
 const saveBtn = $("saveBtn");
 const exportChatBtn = $("exportChatBtn");
 const clearBtn = $("clearBtn");
@@ -17,7 +18,8 @@ const statusEl = $("status");
 const loginBtn = $("loginBtn");
 const upgradeBtn = $("upgradeBtn");
 const heroUpgradeBtn = $("heroUpgradeBtn");
-const communityBtn = $("communityBtn");
+const quickStartButtons = document.querySelectorAll("[data-template]");
+const ideaBtn = $("ideaBtn");
 const layoutEl = document.querySelector(".layout");
 const homeBtn = $("homeBtn");
 const menuBtn = $("menuBtn");
@@ -56,25 +58,32 @@ const planNoticeTextEl = $("planNoticeText");
 const planPerksListEl = $("planPerksList");
 const planCardEl = $("planCard");
 const deepModeToggle = $("deepModeToggle");
+const modelHintEl = $("modelHint");
 const activationCodeInputEl = $("activationCodeInput");
 const activateCodeBtn = $("activateCodeBtn");
 const openUpgradeBtn = $("openUpgradeBtn");
 const upgradeOverlay = $("upgradeOverlay");
 const upgradeModal = $("upgradeModal");
 const upgradeCloseBtn = $("upgradeCloseBtn");
-const communityOverlay = $("communityOverlay");
-const communityModal = $("communityModal");
-const communityCloseBtn = $("communityCloseBtn");
-const communityNotifyBtn = $("communityNotifyBtn");
-const communityMessagesEl = $("communityMessages");
-const communityInputEl = $("communityInput");
-const communitySendBtn = $("communitySendBtn");
-const communityLimitEl = $("communityLimit");
-const communityReadOnlyEl = $("communityReadOnly");
-const communityThemeEl = $("communityTheme");
+const ideaOverlay = $("ideaOverlay");
+const ideaModal = $("ideaModal");
+const ideaCloseBtn = $("ideaCloseBtn");
+const ideaCancelBtn = $("ideaCancelBtn");
+const ideaListEl = $("ideaList");
+const ideaInputEl = $("ideaInput");
+const ideaSubmitBtn = $("ideaSubmitBtn");
+const ideaPromptEl = $("ideaPrompt");
 const telegramPayBtn = $("telegramPayBtn");
 const upgradeCodeInput = $("upgradeCodeInput");
 const upgradeActivateBtn = $("upgradeActivateBtn");
+const openPrivacyBtn = $("openPrivacyBtn");
+const openTermsBtn = $("openTermsBtn");
+const privacyOverlay = $("privacyOverlay");
+const privacyModal = $("privacyModal");
+const privacyCloseBtn = $("privacyCloseBtn");
+const termsOverlay = $("termsOverlay");
+const termsModal = $("termsModal");
+const termsCloseBtn = $("termsCloseBtn");
 
 let supabase = null;
 let authSession = null;
@@ -84,6 +93,7 @@ let planReady = null;
 let currentPlan = "free";
 let currentUsageCount = 0;
 let deepModeEnabled = false;
+let lastProModel = null;
 
 const TELEGRAM_BOT_URL = "https://t.me/dual_ai_pay_bot";
 
@@ -93,9 +103,19 @@ const PLAN_LIMITS = {
   pro: Number.POSITIVE_INFINITY,
 };
 
-const COMMUNITY_KEY = "dual-ai-community-messages-v1";
-const COMMUNITY_DAY_KEY = "dual-ai-community-day-v1";
-const COMMUNITY_LIMIT_PRO = 3;
+const DEFAULT_FREE_MODEL = "deepseek/deepseek-r1-0528:free";
+
+const IDEAS_KEY = "dual-ai-ideas-v1";
+const IDEA_DAY_KEY = "dual-ai-idea-day-v1";
+
+const IDEA_PROMPTS = [
+  "Какой сценарий использования вы хотите улучшить?",
+  "Что бы вы автоматизировали в своём рабочем процессе?",
+  "Какая функция сделает чат более полезным?",
+  "Какая аналитика или отчёт вам нужнее всего?",
+  "Что мешает пользоваться чатом чаще?",
+];
+
 
 const PERSONAS = {
   R: {
@@ -198,6 +218,14 @@ function setSettingsScene(isOpen) {
   document.body.classList.toggle("settings-open", isOpen);
 }
 
+function setPrivacyScene(isOpen) {
+  document.body.classList.toggle("privacy-open", isOpen);
+}
+
+function setTermsScene(isOpen) {
+  document.body.classList.toggle("terms-open", isOpen);
+}
+
 function setUpgradeScene(isOpen) {
   document.body.classList.toggle("upgrade-open", isOpen);
 }
@@ -260,13 +288,29 @@ function closeUpgradeModal() {
   setUpgradeScene(false);
 }
 
-function openCommunityModal() {
-  document.body.classList.toggle("community-open", true);
-  renderCommunity();
+function openPrivacyModal() {
+  setPrivacyScene(true);
 }
 
-function closeCommunityModal() {
-  document.body.classList.toggle("community-open", false);
+function closePrivacyModal() {
+  setPrivacyScene(false);
+}
+
+function openTermsModal() {
+  setTermsScene(true);
+}
+
+function closeTermsModal() {
+  setTermsScene(false);
+}
+
+function openIdeaModal() {
+  document.body.classList.toggle("idea-open", true);
+  renderIdeas();
+}
+
+function closeIdeaModal() {
+  document.body.classList.toggle("idea-open", false);
 }
 
 function escapeHtml(s) {
@@ -276,103 +320,65 @@ function escapeHtml(s) {
     .replaceAll(">", "&gt;");
 }
 
-function loadCommunityMessages() {
+function loadIdeas() {
   try {
-    const raw = localStorage.getItem(COMMUNITY_KEY);
+    const raw = localStorage.getItem(IDEAS_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter((m) => m && m.content && m.ts);
+    return parsed.filter((i) => i && i.text && i.ts);
   } catch {
     return [];
   }
 }
 
-function saveCommunityMessages(messages) {
-  localStorage.setItem(COMMUNITY_KEY, JSON.stringify(messages));
+function saveIdeas(ideas) {
+  localStorage.setItem(IDEAS_KEY, JSON.stringify(ideas));
 }
 
-function pruneCommunityMessages(messages) {
-  const now = Date.now();
-  const cutoff = now - 24 * 60 * 60 * 1000;
-  return messages.filter((m) => m.ts >= cutoff);
-}
-
-function getCommunityUsage() {
+function setDailyIdeaPrompt() {
+  if (!ideaPromptEl) return;
   const today = getTodayKey();
-  try {
-    const raw = localStorage.getItem(COMMUNITY_DAY_KEY);
-    if (!raw) return { day: today, count: 0 };
-    const parsed = JSON.parse(raw);
-    if (parsed?.day !== today) return { day: today, count: 0 };
-    return { day: parsed.day, count: Number(parsed.count) || 0 };
-  } catch {
-    return { day: today, count: 0 };
+  const stored = localStorage.getItem(IDEA_DAY_KEY);
+  if (stored === today) return;
+  const index = Math.abs(
+    Array.from(today).reduce((acc, c) => acc + c.charCodeAt(0), 0)
+  ) % IDEA_PROMPTS.length;
+  ideaPromptEl.textContent = IDEA_PROMPTS[index];
+  localStorage.setItem(IDEA_DAY_KEY, today);
+}
+
+function renderIdeas() {
+  if (!ideaListEl) return;
+  const ideas = loadIdeas().slice(-5).reverse();
+  ideaListEl.innerHTML = "";
+  if (ideas.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "idea-empty";
+    empty.textContent = "Пока нет идей. Начните первым.";
+    ideaListEl.appendChild(empty);
+    return;
   }
-}
-
-function setCommunityUsage(count) {
-  const today = getTodayKey();
-  localStorage.setItem(COMMUNITY_DAY_KEY, JSON.stringify({ day: today, count }));
-}
-
-function ensureCommunitySeed(messages) {
-  if (messages.length > 0) return messages;
-  const now = Date.now();
-  return [
-    {
-      author: "Admin",
-      content: "Тема дня: как вы используете Dual AI в работе?",
-      ts: now - 1000 * 60 * 20,
-    },
-    {
-      author: "Bot R",
-      content: "Поделитесь кейсами — структурируем лучшие практики.",
-      ts: now - 1000 * 60 * 18,
-    },
-  ];
-}
-
-function renderCommunity() {
-  if (!communityMessagesEl) return;
-  let messages = pruneCommunityMessages(loadCommunityMessages());
-  messages = ensureCommunitySeed(messages);
-  saveCommunityMessages(messages);
-  communityMessagesEl.innerHTML = "";
-  for (const msg of messages) {
+  for (const idea of ideas) {
     const item = document.createElement("div");
-    item.className = "community-message";
-    const header = document.createElement("div");
-    header.className = "community-meta";
-    header.textContent = `${msg.author} · ${new Date(msg.ts).toLocaleTimeString([], {
+    item.className = "idea-item";
+    const meta = document.createElement("div");
+    meta.className = "idea-meta";
+    meta.textContent = new Date(idea.ts).toLocaleString([], {
       hour: "2-digit",
       minute: "2-digit",
-    })}`;
+      day: "2-digit",
+      month: "short",
+    });
     const body = document.createElement("div");
-    body.className = "community-content";
-    body.innerHTML = escapeHtml(msg.content);
-    item.appendChild(header);
+    body.className = "idea-text";
+    body.innerHTML = escapeHtml(idea.text);
+    item.appendChild(meta);
     item.appendChild(body);
-    communityMessagesEl.appendChild(item);
-  }
-  const usage = getCommunityUsage();
-  if (communityLimitEl) {
-    communityLimitEl.textContent = `Доступно сообщений сегодня: ${usage.count} / ${COMMUNITY_LIMIT_PRO}`;
-  }
-  const isPro = currentPlan === "pro";
-  if (communityReadOnlyEl) {
-    communityReadOnlyEl.hidden = isPro;
-  }
-  if (communityInputEl) {
-    communityInputEl.disabled = !isPro;
-  }
-  if (communitySendBtn) {
-    communitySendBtn.disabled = !isPro || usage.count >= COMMUNITY_LIMIT_PRO;
-  }
-  if (communityThemeEl) {
-    communityThemeEl.textContent = "Новый день — новая тема. Комната очищается каждые 24 часа.";
+    ideaListEl.appendChild(item);
   }
 }
+
 
 function render() {
   messagesEl.innerHTML = "";
@@ -508,6 +514,32 @@ function setPlanState(plan, usageCount = 0) {
       currentPlan === "pro"
         ? "Включить или выключить глубокий режим"
         : "Доступно только для тарифа Pro";
+  }
+  if (modelEl) {
+    const canChooseModel = currentPlan === "pro";
+    modelEl.disabled = !canChooseModel;
+    if (!canChooseModel) {
+      if (!lastProModel) {
+        lastProModel = modelEl.value;
+      }
+      const hasDefault = Array.from(modelEl.options).some(
+        (option) => option.value === DEFAULT_FREE_MODEL
+      );
+      if (hasDefault) modelEl.value = DEFAULT_FREE_MODEL;
+    } else if (lastProModel) {
+      modelEl.value = lastProModel;
+      lastProModel = null;
+    }
+  }
+  if (modelHintEl) {
+    modelHintEl.hidden = currentPlan === "pro";
+  }
+  if (observeBtn) {
+    observeBtn.disabled = currentPlan === "free";
+    observeBtn.title =
+      currentPlan === "free"
+        ? "Доступно с Plus"
+        : "Наблюдать диалог ботов";
   }
 }
 
@@ -833,6 +865,7 @@ function loadSettings() {
     if (typeof s.deepModeEnabled === "boolean") {
       deepModeEnabled = s.deepModeEnabled;
     }
+    lastProModel = modelEl.value;
   } catch {
     // ignore
   }
@@ -1007,6 +1040,19 @@ async function sendUserMessage(text) {
   }
 }
 
+async function sendUserMessageWithTurns(text, extraTurnsOverride) {
+  transcript.push({ speaker: "user", content: text, ts: Date.now() });
+  render();
+  persistActiveDialog();
+  await incrementUsageCount();
+  await runTurn("R");
+  await runTurn("S");
+
+  for (let i = 0; i < extraTurnsOverride; i++) {
+    await runTurn(i % 2 === 0 ? "R" : "S");
+  }
+}
+
 function getExtraTurns() {
   const parsed = Number(turnsEl.value || 0);
   if (!Number.isFinite(parsed)) return 0;
@@ -1043,6 +1089,29 @@ demoBtn.addEventListener("click", () => {
   if (!requireAuth()) return;
   inputEl.value = "Что думаете о будущем ИИ?";
   inputEl.focus();
+});
+observeBtn?.addEventListener("click", async () => {
+  if (!requireAuth()) return;
+  await refreshPlanAndUsage();
+  if (currentPlan === "free") {
+    setStatus("Функция доступна с Plus.", "error");
+    openUpgradeModal();
+    return;
+  }
+  const hasUserMessage = transcript.some((m) => m.speaker === "user");
+  const text = hasUserMessage ? "Продолжите обсуждение." : "Привет";
+  sendBtn.disabled = true;
+  demoBtn.disabled = true;
+  observeBtn.disabled = true;
+  try {
+    await sendUserMessageWithTurns(text, 6);
+  } catch (e) {
+    setStatus(String(e?.message || e), "error");
+  } finally {
+    sendBtn.disabled = false;
+    demoBtn.disabled = false;
+    observeBtn.disabled = false;
+  }
 });
 deepModeToggle?.addEventListener("click", () => {
   if (currentPlan !== "pro") {
@@ -1133,8 +1202,17 @@ heroUpgradeBtn?.addEventListener("click", () => {
   }
   openUpgradeModal();
 });
-communityBtn?.addEventListener("click", () => {
-  openCommunityModal();
+quickStartButtons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const template = btn.getAttribute("data-template");
+    if (!template) return;
+    inputEl.value = template;
+    setMode("chat");
+    inputEl.focus();
+  });
+});
+ideaBtn?.addEventListener("click", () => {
+  openIdeaModal();
 });
 openUpgradeBtn?.addEventListener("click", () => {
   if (!authSession) {
@@ -1146,31 +1224,27 @@ openUpgradeBtn?.addEventListener("click", () => {
 });
 upgradeCloseBtn?.addEventListener("click", closeUpgradeModal);
 upgradeOverlay?.addEventListener("click", closeUpgradeModal);
-communityCloseBtn?.addEventListener("click", closeCommunityModal);
-communityOverlay?.addEventListener("click", closeCommunityModal);
-communityNotifyBtn?.addEventListener("click", closeCommunityModal);
-communitySendBtn?.addEventListener("click", () => {
-  if (currentPlan !== "pro") {
-    setStatus("Писать в общий чат можно только с Pro.", "error");
+ideaCloseBtn?.addEventListener("click", closeIdeaModal);
+ideaOverlay?.addEventListener("click", closeIdeaModal);
+ideaCancelBtn?.addEventListener("click", closeIdeaModal);
+openPrivacyBtn?.addEventListener("click", openPrivacyModal);
+openTermsBtn?.addEventListener("click", openTermsModal);
+privacyCloseBtn?.addEventListener("click", closePrivacyModal);
+privacyOverlay?.addEventListener("click", closePrivacyModal);
+termsCloseBtn?.addEventListener("click", closeTermsModal);
+termsOverlay?.addEventListener("click", closeTermsModal);
+ideaSubmitBtn?.addEventListener("click", () => {
+  const text = ideaInputEl?.value.trim();
+  if (!text) {
+    setStatus("Введите идею перед отправкой.", "error");
     return;
   }
-  const usage = getCommunityUsage();
-  if (usage.count >= COMMUNITY_LIMIT_PRO) {
-    setStatus("Достигнут лимит сообщений для общего чата.", "error");
-    return;
-  }
-  const text = communityInputEl?.value.trim();
-  if (!text) return;
-  const messages = pruneCommunityMessages(loadCommunityMessages());
-  messages.push({
-    author: "Pro",
-    content: text,
-    ts: Date.now(),
-  });
-  saveCommunityMessages(messages);
-  setCommunityUsage(usage.count + 1);
-  if (communityInputEl) communityInputEl.value = "";
-  renderCommunity();
+  const ideas = loadIdeas();
+  ideas.push({ text, ts: Date.now() });
+  saveIdeas(ideas);
+  if (ideaInputEl) ideaInputEl.value = "";
+  renderIdeas();
+  setStatus("Идея сохранена. Спасибо!", "ok");
 });
 activateCodeBtn?.addEventListener("click", () => {
   void applyActivationCode(activationCodeInputEl.value);
@@ -1186,7 +1260,6 @@ settingsLogoutBtn.addEventListener("click", async () => {
 });
 settingsCloseBtn.addEventListener("click", closeSettingsModal);
 settingsOverlay.addEventListener("click", closeSettingsModal);
-settingsBody?.addEventListener("scroll", updateSettingsScrollHint);
 settingsBody?.addEventListener("scroll", updateSettingsScrollHint);
 authCloseBtn?.addEventListener("click", (event) => {
   event.preventDefault();
@@ -1284,7 +1357,9 @@ document.addEventListener("keydown", (e) => {
     closeAuthModal();
     closeSettingsModal();
     closeUpgradeModal();
-    closeCommunityModal();
+    closeIdeaModal();
+    closePrivacyModal();
+    closeTermsModal();
   }
 });
 
@@ -1299,3 +1374,4 @@ setPlanState("free", 0);
 if (telegramPayBtn) {
   telegramPayBtn.href = TELEGRAM_BOT_URL;
 }
+setDailyIdeaPrompt();
