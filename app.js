@@ -9,6 +9,7 @@ const messagesEl = $("messages");
 const inputEl = $("input");
 const sendBtn = $("sendBtn");
 const demoBtn = $("demoBtn");
+const observeBtn = $("observeBtn");
 const saveBtn = $("saveBtn");
 const exportChatBtn = $("exportChatBtn");
 const clearBtn = $("clearBtn");
@@ -57,6 +58,7 @@ const planNoticeTextEl = $("planNoticeText");
 const planPerksListEl = $("planPerksList");
 const planCardEl = $("planCard");
 const deepModeToggle = $("deepModeToggle");
+const modelHintEl = $("modelHint");
 const activationCodeInputEl = $("activationCodeInput");
 const activateCodeBtn = $("activateCodeBtn");
 const openUpgradeBtn = $("openUpgradeBtn");
@@ -83,6 +85,7 @@ let planReady = null;
 let currentPlan = "free";
 let currentUsageCount = 0;
 let deepModeEnabled = false;
+let lastProModel = null;
 
 const TELEGRAM_BOT_URL = "https://t.me/dual_ai_pay_bot";
 
@@ -91,6 +94,8 @@ const PLAN_LIMITS = {
   plus: 100,
   pro: Number.POSITIVE_INFINITY,
 };
+
+const DEFAULT_FREE_MODEL = "deepseek/deepseek-r1-0528:free";
 
 const IDEAS_KEY = "dual-ai-ideas-v1";
 const IDEA_DAY_KEY = "dual-ai-idea-day-v1";
@@ -478,6 +483,32 @@ function setPlanState(plan, usageCount = 0) {
         ? "Включить или выключить глубокий режим"
         : "Доступно только для тарифа Pro";
   }
+  if (modelEl) {
+    const canChooseModel = currentPlan === "pro";
+    modelEl.disabled = !canChooseModel;
+    if (!canChooseModel) {
+      if (!lastProModel) {
+        lastProModel = modelEl.value;
+      }
+      const hasDefault = Array.from(modelEl.options).some(
+        (option) => option.value === DEFAULT_FREE_MODEL
+      );
+      if (hasDefault) modelEl.value = DEFAULT_FREE_MODEL;
+    } else if (lastProModel) {
+      modelEl.value = lastProModel;
+      lastProModel = null;
+    }
+  }
+  if (modelHintEl) {
+    modelHintEl.hidden = currentPlan === "pro";
+  }
+  if (observeBtn) {
+    observeBtn.disabled = currentPlan === "free";
+    observeBtn.title =
+      currentPlan === "free"
+        ? "Доступно с Plus"
+        : "Наблюдать диалог ботов";
+  }
 }
 
 function updateSettingsScrollHint() {
@@ -802,6 +833,7 @@ function loadSettings() {
     if (typeof s.deepModeEnabled === "boolean") {
       deepModeEnabled = s.deepModeEnabled;
     }
+    lastProModel = modelEl.value;
   } catch {
     // ignore
   }
@@ -976,6 +1008,19 @@ async function sendUserMessage(text) {
   }
 }
 
+async function sendUserMessageWithTurns(text, extraTurnsOverride) {
+  transcript.push({ speaker: "user", content: text, ts: Date.now() });
+  render();
+  persistActiveDialog();
+  await incrementUsageCount();
+  await runTurn("R");
+  await runTurn("S");
+
+  for (let i = 0; i < extraTurnsOverride; i++) {
+    await runTurn(i % 2 === 0 ? "R" : "S");
+  }
+}
+
 function getExtraTurns() {
   const parsed = Number(turnsEl.value || 0);
   if (!Number.isFinite(parsed)) return 0;
@@ -1012,6 +1057,29 @@ demoBtn.addEventListener("click", () => {
   if (!requireAuth()) return;
   inputEl.value = "Что думаете о будущем ИИ?";
   inputEl.focus();
+});
+observeBtn?.addEventListener("click", async () => {
+  if (!requireAuth()) return;
+  await refreshPlanAndUsage();
+  if (currentPlan === "free") {
+    setStatus("Функция доступна с Plus.", "error");
+    openUpgradeModal();
+    return;
+  }
+  const hasUserMessage = transcript.some((m) => m.speaker === "user");
+  const text = hasUserMessage ? "Продолжите обсуждение." : "Привет";
+  sendBtn.disabled = true;
+  demoBtn.disabled = true;
+  observeBtn.disabled = true;
+  try {
+    await sendUserMessageWithTurns(text, 6);
+  } catch (e) {
+    setStatus(String(e?.message || e), "error");
+  } finally {
+    sendBtn.disabled = false;
+    demoBtn.disabled = false;
+    observeBtn.disabled = false;
+  }
 });
 deepModeToggle?.addEventListener("click", () => {
   if (currentPlan !== "pro") {
@@ -1154,7 +1222,6 @@ settingsLogoutBtn.addEventListener("click", async () => {
 });
 settingsCloseBtn.addEventListener("click", closeSettingsModal);
 settingsOverlay.addEventListener("click", closeSettingsModal);
-settingsBody?.addEventListener("scroll", updateSettingsScrollHint);
 settingsBody?.addEventListener("scroll", updateSettingsScrollHint);
 authCloseBtn?.addEventListener("click", (event) => {
   event.preventDefault();
