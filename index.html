@@ -222,8 +222,8 @@
         <section class="drawer-section">
           <div class="section-title">Документы</div>
           <div class="doc-links">
-            <a class="doc-link" href="./privacy.txt" target="_blank" rel="noreferrer">Политика конфиденциальности</a>
-            <a class="doc-link" href="./terms.txt" target="_blank" rel="noreferrer">Условия использования</a>
+            <button id="openPrivacyBtn" class="doc-link" type="button">Политика конфиденциальности</button>
+            <button id="openTermsBtn" class="doc-link" type="button">Условия использования</button>
           </div>
         </section>
 
@@ -324,6 +324,93 @@
         </div>
       </div>
     </div>
+
+    <div id="privacyOverlay" class="modal-overlay privacy-overlay"></div>
+    <div id="privacyModal" class="modal policy-modal" role="dialog" aria-modal="true" aria-labelledby="privacyTitle">
+      <div class="modal-head">
+        <div>
+          <div class="modal-title" id="privacyTitle">Политика конфиденциальности</div>
+          <div class="modal-subtitle">Как мы защищаем ваши данные.</div>
+        </div>
+        <button id="privacyCloseBtn" class="icon-btn" type="button" aria-label="Закрыть политику">
+          <span class="icon">✕</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="policy-text">
+          <p><strong>Дата обновления:</strong> 2025-02-01</p>
+          <p>Мы уважаем вашу конфиденциальность и стремимся защищать персональные данные. Настоящая политика описывает,
+            какие данные могут обрабатываться и как мы их защищаем.</p>
+          <h4>Какие данные обрабатываются</h4>
+          <ul>
+            <li>Данные аккаунта (email, если вы входите через Supabase).</li>
+            <li>Технические данные (тип устройства, браузер, ошибки).</li>
+            <li>Данные чатов и настроек, если вы сохраняете их в браузере или при использовании сервера.</li>
+          </ul>
+          <h4>Цели обработки</h4>
+          <ul>
+            <li>Обеспечение работы сервиса, качества ответов и стабильности.</li>
+            <li>Улучшение продукта и поддержки пользователей.</li>
+          </ul>
+          <h4>Хранение и безопасность</h4>
+          <p>Мы применяем организационные и технические меры защиты, включая ограничение доступа и контроль событий.
+            Данные защищены настоящей политикой и условиями использования.</p>
+          <h4>Передача третьим лицам</h4>
+          <p>Мы не передаем персональные данные третьим лицам, кроме случаев, предусмотренных законом, или для обеспечения
+            работы сервиса (например, инфраструктурные провайдеры).</p>
+          <h4>Права пользователя</h4>
+          <p>Вы можете запросить удаление данных или уточнение информации, связавшись с поддержкой.</p>
+          <h4>Контакты</h4>
+          <p>По вопросам конфиденциальности пишите в поддержку, указанную в приложении или на сайте.</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="termsOverlay" class="modal-overlay terms-overlay"></div>
+    <div id="termsModal" class="modal policy-modal" role="dialog" aria-modal="true" aria-labelledby="termsTitle">
+      <div class="modal-head">
+        <div>
+          <div class="modal-title" id="termsTitle">Условия использования</div>
+          <div class="modal-subtitle">Правила использования сервиса.</div>
+        </div>
+        <button id="termsCloseBtn" class="icon-btn" type="button" aria-label="Закрыть условия">
+          <span class="icon">✕</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="policy-text">
+          <p><strong>Дата обновления:</strong> 2025-02-01</p>
+          <h4>Принятие условий</h4>
+          <p>Используя сервис, вы соглашаетесь с настоящими условиями использования и политикой конфиденциальности.</p>
+          <h4>Назначение сервиса</h4>
+          <p>Сервис предоставляет доступ к диалогам с ботами Bot R и Bot S для поиска идей, стратегий и контента.</p>
+          <h4>Ограничения</h4>
+          <ul>
+            <li>Запрещено использовать сервис для незаконных действий или нарушений прав третьих лиц.</li>
+            <li>Запрещено распространение вредоносного контента.</li>
+            <li>Запрещены попытки взлома или перегрузки инфраструктуры.</li>
+          </ul>
+          <h4>Контент</h4>
+          <p>Ответы ботов являются рекомендациями и не заменяют профессиональные консультации. Вы несете ответственность
+            за использование результатов.</p>
+          <h4>Подписки и оплата</h4>
+          <p>Условия тарифов могут обновляться. Актуальные лимиты и функции указаны в интерфейсе.</p>
+          <h4>Изменения условий</h4>
+          <p>Мы можем обновлять условия использования. Актуальная версия всегда доступна в настройках.</p>
+          <h4>Контакты</h4>
+          <p>По вопросам использования сервиса обращайтесь в поддержку, указанную в приложении или на сайте.</p>
+        </div>
+      </div>
+    </div>
+
+    <footer class="site-footer">
+      <div class="footer-content">
+        <span class="footer-title">Dual AI Chat</span>
+        <a class="footer-link" href="https://t.me/dual_ai_channel" target="_blank" rel="noreferrer">
+          Наш канал в Telegram — публикуем промокоды, инсайды и обновления
+        </a>
+      </div>
+    </footer>
 
     <script type="module" src="./app.js"></script>
   </body>

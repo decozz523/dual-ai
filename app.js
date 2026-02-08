@@ -76,6 +76,14 @@ const ideaPromptEl = $("ideaPrompt");
 const telegramPayBtn = $("telegramPayBtn");
 const upgradeCodeInput = $("upgradeCodeInput");
 const upgradeActivateBtn = $("upgradeActivateBtn");
+const openPrivacyBtn = $("openPrivacyBtn");
+const openTermsBtn = $("openTermsBtn");
+const privacyOverlay = $("privacyOverlay");
+const privacyModal = $("privacyModal");
+const privacyCloseBtn = $("privacyCloseBtn");
+const termsOverlay = $("termsOverlay");
+const termsModal = $("termsModal");
+const termsCloseBtn = $("termsCloseBtn");
 
 let supabase = null;
 let authSession = null;
@@ -210,6 +218,14 @@ function setSettingsScene(isOpen) {
   document.body.classList.toggle("settings-open", isOpen);
 }
 
+function setPrivacyScene(isOpen) {
+  document.body.classList.toggle("privacy-open", isOpen);
+}
+
+function setTermsScene(isOpen) {
+  document.body.classList.toggle("terms-open", isOpen);
+}
+
 function setUpgradeScene(isOpen) {
   document.body.classList.toggle("upgrade-open", isOpen);
 }
@@ -270,6 +286,22 @@ function openUpgradeModal() {
 
 function closeUpgradeModal() {
   setUpgradeScene(false);
+}
+
+function openPrivacyModal() {
+  setPrivacyScene(true);
+}
+
+function closePrivacyModal() {
+  setPrivacyScene(false);
+}
+
+function openTermsModal() {
+  setTermsScene(true);
+}
+
+function closeTermsModal() {
+  setTermsScene(false);
 }
 
 function openIdeaModal() {
@@ -1195,6 +1227,12 @@ upgradeOverlay?.addEventListener("click", closeUpgradeModal);
 ideaCloseBtn?.addEventListener("click", closeIdeaModal);
 ideaOverlay?.addEventListener("click", closeIdeaModal);
 ideaCancelBtn?.addEventListener("click", closeIdeaModal);
+openPrivacyBtn?.addEventListener("click", openPrivacyModal);
+openTermsBtn?.addEventListener("click", openTermsModal);
+privacyCloseBtn?.addEventListener("click", closePrivacyModal);
+privacyOverlay?.addEventListener("click", closePrivacyModal);
+termsCloseBtn?.addEventListener("click", closeTermsModal);
+termsOverlay?.addEventListener("click", closeTermsModal);
 ideaSubmitBtn?.addEventListener("click", () => {
   const text = ideaInputEl?.value.trim();
   if (!text) {
@@ -1320,6 +1358,8 @@ document.addEventListener("keydown", (e) => {
     closeSettingsModal();
     closeUpgradeModal();
     closeIdeaModal();
+    closePrivacyModal();
+    closeTermsModal();
   }
 });
 
