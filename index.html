@@ -11,13 +11,21 @@
       <header class="topbar">
         <div class="topbar-left">
           <button id="loginBtn" class="btn btn-secondary">Войти</button>
+          <button id="upgradeBtn" class="btn btn-primary">Оплатить / Upgrade</button>
+          <a
+            class="btn btn-secondary"
+            href="https://www.donationalerts.com/r/SHADOWVOID1https://www.donationalerts.com/r/SHADOWVOID1"
+            target="_blank"
+            rel="noreferrer"
+          >Поддержать</a>
         </div>
         <div class="title topbar-title">
           <div class="h1">Dual AI Chat</div>
-          <div class="subtitle">Bot R (рациональный) + Bot S (творческий) через OpenRouter</div>
+          <div class="subtitle">Bot R (рациональный) + Bot S (творческий) через наш сервер</div>
         </div>
         <div class="topbar-right">
           <div class="status-pill" id="status">Готов.</div>
+          <div class="plan-pill" id="planPill">Free</div>
           <button id="homeBtn" class="btn btn-secondary">Главное меню</button>
           <button id="menuBtn" class="icon-btn" aria-label="Открыть меню">
             <span class="icon">☰</span>
@@ -29,30 +37,55 @@
         <section class="hero">
           <div>
             <div class="hero-title">Профессиональный чат для стратегий и идей</div>
-            <div class="hero-subtitle">
+          <div class="hero-subtitle">
               Пара ботов ведёт дискуссию с тобой: рациональный бот структурирует, творческий — расширяет
               варианты. Управляй настройками через меню.
             </div>
           <div class="hero-actions">
+              <button id="newChatBtn" class="btn btn-primary btn-cta">Начать чат</button>
               <button id="openSettingsHeroBtn" class="btn btn-secondary">Открыть настройки</button>
-              <button id="newChatBtn" class="btn btn-primary">Новый диалог</button>
+              <button id="ideaBtn" class="btn btn-secondary">Предложить идею</button>
           </div>
+          </div>
+          <div class="quick-start">
+            <div class="quick-title">Быстрый старт</div>
+            <div class="quick-actions">
+              <button class="chip-btn" data-template="Составь план на 7 дней для моей цели.">План на 7 дней</button>
+              <button class="chip-btn" data-template="Придумай 10 идей для контента на неделю.">Идеи контента</button>
+              <button class="chip-btn" data-template="Сделай стратегию запуска продукта в 5 шагах.">Стратегия запуска</button>
+              <button class="chip-btn" data-template="Сформулируй 3 гипотезы роста для моего продукта.">Гипотезы роста</button>
+            </div>
           </div>
           <div class="hero-cards">
             <div class="info-card">
               <div class="info-title">Горячая клавиша</div>
-              <div class="info-value">Ctrl / ⌘ + Enter</div>
-              <div class="info-hint">Отправляй сообщение без мыши.</div>
+              <div class="info-value">Enter</div>
+              <div class="info-hint">Отправляй сообщение одним нажатием.</div>
             </div>
             <div class="info-card">
-              <div class="info-title">Конфиденциальность</div>
-              <div class="info-value">Только локально</div>
-              <div class="info-hint">Настройки сохраняются в браузере.</div>
+              <div class="info-title">Безопасность</div>
+              <div class="info-value">Все данные защищены</div>
+              <div class="info-hint">Политикой конфиденциальности и условиями использования.</div>
             </div>
             <div class="info-card">
               <div class="info-title">Режим диалога</div>
               <div class="info-value">Dual AI</div>
               <div class="info-hint">Bot R + Bot S ведут сессию.</div>
+            </div>
+            <div class="info-card">
+              <div class="info-title">Идея дня</div>
+              <div class="info-value" id="ideaPrompt">Сформулируйте главный вопрос дня.</div>
+              <div class="info-hint">Поделитесь своей идеей с командой.</div>
+            </div>
+            <div class="info-card">
+              <div class="info-title">Фокус сессии</div>
+              <div class="info-value">3 ключевые цели</div>
+              <div class="info-hint">Запросите у ботов приоритетный план.</div>
+            </div>
+            <div class="info-card">
+              <div class="info-title">Шаблоны</div>
+              <div class="info-value">Маркетинг и продукт</div>
+              <div class="info-hint">Готовые сценарии для быстрого старта.</div>
             </div>
           </div>
         </section>
@@ -77,6 +110,7 @@
           <div class="row">
             <button id="sendBtn" class="btn btn-primary">Отправить</button>
             <button id="demoBtn" class="btn btn-secondary">Демо-вопрос</button>
+            <button id="observeBtn" class="btn btn-secondary">Смотреть диалог</button>
           </div>
         </section>
       </main>
@@ -113,22 +147,74 @@
           <span class="icon">✕</span>
         </button>
       </div>
-      <div class="modal-body">
+      <div class="modal-body" id="settingsBody">
+        <div class="scroll-hint" id="settingsScrollHint">
+          <span class="scroll-text">Прокрутите вниз для остальных настроек</span>
+          <span class="scroll-arrow">↓</span>
+        </div>
         <section class="drawer-section">
           <div class="section-title">Модель и ответы</div>
           <label class="field">
-            <div class="label">Модель (OpenRouter slug)</div>
+            <div class="label">Соединение (наш сервер)</div>
             <select id="model">
               <option value="arcee-ai/trinity-large-preview:free">arcee-ai/trinity-large-preview:free</option>
               <option value="deepseek/deepseek-r1-0528:free">deepseek/deepseek-r1-0528:free</option>
               <option value="stepfun/step-3.5-flash:free">stepfun/step-3.5-flash:free</option>
             </select>
+            <div class="hint" id="modelHint">Выбор соединения доступен на Pro.</div>
           </label>
           <label class="field">
             <div class="label">Авто-диалог ботов (ходов после твоего сообщения)</div>
             <input id="turns" type="number" min="0" max="10" value="0" />
           </label>
+          <label class="field">
+            <div class="label">Глубокий режим ответа (Pro)</div>
+            <div class="hint">Более развернутые ответы с дополнительными пояснениями.</div>
+            <button id="deepModeToggle" class="btn btn-secondary" type="button">Включить</button>
+          </label>
+          <div class="row">
+            <button id="exportChatBtn" class="btn btn-secondary" type="button">Экспортировать диалог</button>
+          </div>
           <button id="saveBtn" class="btn btn-primary">Сохранить настройки</button>
+        </section>
+
+        <section class="drawer-section">
+          <div class="section-title">Подписка и лимиты</div>
+          <div class="plan-notice premium-badge" id="planNotice">
+            <div class="plan-notice-title" id="planNoticeTitle">Free активен</div>
+            <div class="plan-notice-text" id="planNoticeText">
+              Доступно 30 сообщений в день. Можно перейти на Plus или Pro.
+            </div>
+          </div>
+          <div class="plan-perks" id="planPerks">
+            <div class="plan-perks-title">Преимущества тарифа</div>
+            <ul class="plan-perks-list" id="planPerksList">
+              <li>30 сообщений в день</li>
+              <li>Доступ к Bot R + Bot S</li>
+              <li>История диалогов сохраняется</li>
+            </ul>
+          </div>
+          <div class="plan-card premium-card" id="planCard">
+            <div class="plan-card-head">
+              <div>
+                <div class="plan-title" id="planTitle">Free</div>
+                <div class="plan-subtitle" id="planSubtitle">30 сообщений в день</div>
+              </div>
+              <div class="plan-badge" id="planBadge">Free</div>
+            </div>
+            <div class="plan-usage" id="planUsage">Сегодня: 0 / 30</div>
+            <div class="plan-hint">
+              После оплаты в Telegram-боте вы получите код активации формата <strong>dual-xxxxxxx</strong>.
+            </div>
+          </div>
+          <div class="field">
+            <div class="label">Код активации</div>
+            <input id="activationCodeInput" type="text" placeholder="dual-xxxxxxx" />
+          </div>
+          <div class="row">
+            <button id="activateCodeBtn" class="btn btn-primary">Активировать код</button>
+            <button id="openUpgradeBtn" class="btn btn-secondary">Оплатить / Upgrade</button>
+          </div>
         </section>
 
         <section class="drawer-section">
@@ -136,6 +222,14 @@
           <div class="account-box" id="settingsAccountEmail">Гость (не выполнен вход)</div>
           <div class="row">
             <button id="settingsLogoutBtn" class="btn btn-secondary">Выйти из аккаунта</button>
+          </div>
+        </section>
+
+        <section class="drawer-section">
+          <div class="section-title">Документы</div>
+          <div class="doc-links">
+            <button id="openPrivacyBtn" class="doc-link" type="button">Политика конфиденциальности</button>
+            <button id="openTermsBtn" class="doc-link" type="button">Условия использования</button>
           </div>
         </section>
 
@@ -173,6 +267,15 @@
         <div class="auth-hint">
           Если письмо с подтверждением не пришло, проверьте спам или запросите повторную отправку.
         </div>
+        <label class="consent auth-consent">
+          <input id="consentCheckbox" type="checkbox" checked />
+          <span>
+            Я принимаю
+            <button id="authPrivacyLink" class="consent-link" type="button">политику конфиденциальности</button>
+            и
+            <button id="authTermsLink" class="consent-link" type="button">условия использования</button>.
+          </span>
+        </label>
         <div class="row">
           <button id="authSignInBtn" class="btn btn-primary">Войти</button>
           <button id="authSignUpBtn" class="btn btn-secondary">Создать аккаунт</button>
@@ -181,9 +284,149 @@
       </div>
     </div>
 
+    <div id="upgradeOverlay" class="modal-overlay upgrade-overlay"></div>
+    <div id="upgradeModal" class="modal upgrade-modal" role="dialog" aria-modal="true" aria-labelledby="upgradeTitle">
+      <div class="modal-head">
+        <div>
+          <div class="modal-title" id="upgradeTitle">Оплата подписки</div>
+          <div class="modal-subtitle">Оплатите через Telegram Stars и активируйте код.</div>
+        </div>
+        <button id="upgradeCloseBtn" class="icon-btn" type="button" aria-label="Закрыть окно оплаты">
+          <span class="icon">✕</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="upgrade-steps">
+          <div class="upgrade-step">
+            <div class="step-title">1. Перейдите в Telegram-бота</div>
+            <div class="step-text">Оплатите тариф Plus или Pro за Telegram Stars (XTR).</div>
+            <a id="telegramPayBtn" class="btn btn-primary" href="#" target="_blank" rel="noreferrer">
+              Открыть Telegram-бота
+            </a>
+          </div>
+          <div class="upgrade-step">
+            <div class="step-title">2. Введите код активации</div>
+            <div class="step-text">Бот пришлёт код формата <strong>dual-xxxxxxx</strong>.</div>
+            <label class="field">
+              <input id="upgradeCodeInput" type="text" placeholder="dual-xxxxxxx" />
+            </label>
+            <button id="upgradeActivateBtn" class="btn btn-secondary">Активировать код</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="ideaOverlay" class="modal-overlay idea-overlay"></div>
+    <div id="ideaModal" class="modal idea-modal" role="dialog" aria-modal="true" aria-labelledby="ideaTitle">
+      <div class="modal-head">
+        <div>
+          <div class="modal-title" id="ideaTitle">Идеи и предложения</div>
+          <div class="modal-subtitle">Собираем предложения для улучшения продукта.</div>
+        </div>
+        <button id="ideaCloseBtn" class="icon-btn" type="button" aria-label="Закрыть окно идей">
+          <span class="icon">✕</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="idea-list" id="ideaList"></div>
+        <label class="field">
+          <div class="label">Новая идея</div>
+          <textarea id="ideaInput" rows="3" placeholder="Опишите идею или улучшение…"></textarea>
+        </label>
+        <div class="row">
+          <button id="ideaSubmitBtn" class="btn btn-primary" type="button">Отправить идею</button>
+          <button id="ideaCancelBtn" class="btn btn-secondary" type="button">Закрыть</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="privacyOverlay" class="modal-overlay privacy-overlay"></div>
+    <div id="privacyModal" class="modal policy-modal privacy-modal" role="dialog" aria-modal="true" aria-labelledby="privacyTitle">
+      <div class="modal-head">
+        <div>
+          <div class="modal-title" id="privacyTitle">Политика конфиденциальности</div>
+          <div class="modal-subtitle">Как мы защищаем ваши данные.</div>
+        </div>
+        <button id="privacyCloseBtn" class="icon-btn" type="button" aria-label="Закрыть политику">
+          <span class="icon">✕</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="policy-text">
+          <p><strong>Дата обновления:</strong> 2025-02-01</p>
+          <p>Мы уважаем вашу конфиденциальность и стремимся защищать персональные данные. Настоящая политика описывает,
+            какие данные могут обрабатываться и как мы их защищаем.</p>
+          <h4>Какие данные обрабатываются</h4>
+          <ul>
+            <li>Данные аккаунта (email, если вы входите через Supabase).</li>
+            <li>Технические данные (тип устройства, браузер, ошибки).</li>
+            <li>Данные чатов и настроек, если вы сохраняете их в браузере или при использовании сервера.</li>
+          </ul>
+          <h4>Цели обработки</h4>
+          <ul>
+            <li>Обеспечение работы сервиса, качества ответов и стабильности.</li>
+            <li>Улучшение продукта и поддержки пользователей.</li>
+          </ul>
+          <h4>Хранение и безопасность</h4>
+          <p>Мы применяем организационные и технические меры защиты, включая ограничение доступа и контроль событий.
+            Данные защищены настоящей политикой и условиями использования.</p>
+          <h4>Передача третьим лицам</h4>
+          <p>Мы не передаем персональные данные третьим лицам, кроме случаев, предусмотренных законом, или для обеспечения
+            работы сервиса (например, инфраструктурные провайдеры).</p>
+          <h4>Права пользователя</h4>
+          <p>Вы можете запросить удаление данных или уточнение информации, связавшись с поддержкой.</p>
+          <h4>Контакты</h4>
+          <p>По вопросам конфиденциальности пишите в поддержку, указанную в приложении или на сайте.</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="termsOverlay" class="modal-overlay terms-overlay"></div>
+    <div id="termsModal" class="modal policy-modal terms-modal" role="dialog" aria-modal="true" aria-labelledby="termsTitle">
+      <div class="modal-head">
+        <div>
+          <div class="modal-title" id="termsTitle">Условия использования</div>
+          <div class="modal-subtitle">Правила использования сервиса.</div>
+        </div>
+        <button id="termsCloseBtn" class="icon-btn" type="button" aria-label="Закрыть условия">
+          <span class="icon">✕</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="policy-text">
+          <p><strong>Дата обновления:</strong> 2025-02-01</p>
+          <h4>Принятие условий</h4>
+          <p>Используя сервис, вы соглашаетесь с настоящими условиями использования и политикой конфиденциальности.</p>
+          <h4>Назначение сервиса</h4>
+          <p>Сервис предоставляет доступ к диалогам с ботами Bot R и Bot S для поиска идей, стратегий и контента.</p>
+          <h4>Ограничения</h4>
+          <ul>
+            <li>Запрещено использовать сервис для незаконных действий или нарушений прав третьих лиц.</li>
+            <li>Запрещено распространение вредоносного контента.</li>
+            <li>Запрещены попытки взлома или перегрузки инфраструктуры.</li>
+          </ul>
+          <h4>Контент</h4>
+          <p>Ответы ботов являются рекомендациями и не заменяют профессиональные консультации. Вы несете ответственность
+            за использование результатов.</p>
+          <h4>Подписки и оплата</h4>
+          <p>Условия тарифов могут обновляться. Актуальные лимиты и функции указаны в интерфейсе.</p>
+          <h4>Изменения условий</h4>
+          <p>Мы можем обновлять условия использования. Актуальная версия всегда доступна в настройках.</p>
+          <h4>Контакты</h4>
+          <p>По вопросам использования сервиса обращайтесь в поддержку, указанную в приложении или на сайте.</p>
+        </div>
+      </div>
+    </div>
+
+    <footer class="site-footer">
+      <div class="footer-content">
+        <span class="footer-title">Dual AI Chat</span>
+        <a class="footer-link" href="https://t.me/dual_ai_channel" target="_blank" rel="noreferrer">
+          Наш канал в Telegram — публикуем промокоды, инсайды и обновления
+        </a>
+      </div>
+    </footer>
+
     <script type="module" src="./app.js"></script>
   </body>
 </html>
-
-
-
