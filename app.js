@@ -289,6 +289,7 @@ function closeUpgradeModal() {
 }
 
 function openPrivacyModal() {
+  setTermsScene(false);
   setPrivacyScene(true);
 }
 
@@ -297,6 +298,7 @@ function closePrivacyModal() {
 }
 
 function openTermsModal() {
+  setPrivacyScene(false);
   setTermsScene(true);
 }
 

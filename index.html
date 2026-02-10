@@ -12,6 +12,12 @@
         <div class="topbar-left">
           <button id="loginBtn" class="btn btn-secondary">Войти</button>
           <button id="upgradeBtn" class="btn btn-primary">Оплатить / Upgrade</button>
+          <a
+            class="btn btn-secondary"
+            href="https://www.donationalerts.com/r/SHADOWVOID1https://www.donationalerts.com/r/SHADOWVOID1"
+            target="_blank"
+            rel="noreferrer"
+          >Поддержать</a>
         </div>
         <div class="title topbar-title">
           <div class="h1">Dual AI Chat</div>
@@ -261,6 +267,10 @@
         <div class="auth-hint">
           Если письмо с подтверждением не пришло, проверьте спам или запросите повторную отправку.
         </div>
+        <label class="consent auth-consent">
+          <input id="consentCheckbox" type="checkbox" checked />
+          <span>Я принимаю политику конфиденциальности и условия использования.</span>
+        </label>
         <div class="row">
           <button id="authSignInBtn" class="btn btn-primary">Войти</button>
           <button id="authSignUpBtn" class="btn btn-secondary">Создать аккаунт</button>
@@ -326,7 +336,7 @@
     </div>
 
     <div id="privacyOverlay" class="modal-overlay privacy-overlay"></div>
-    <div id="privacyModal" class="modal policy-modal" role="dialog" aria-modal="true" aria-labelledby="privacyTitle">
+    <div id="privacyModal" class="modal policy-modal privacy-modal" role="dialog" aria-modal="true" aria-labelledby="privacyTitle">
       <div class="modal-head">
         <div>
           <div class="modal-title" id="privacyTitle">Политика конфиденциальности</div>
@@ -367,7 +377,7 @@
     </div>
 
     <div id="termsOverlay" class="modal-overlay terms-overlay"></div>
-    <div id="termsModal" class="modal policy-modal" role="dialog" aria-modal="true" aria-labelledby="termsTitle">
+    <div id="termsModal" class="modal policy-modal terms-modal" role="dialog" aria-modal="true" aria-labelledby="termsTitle">
       <div class="modal-head">
         <div>
           <div class="modal-title" id="termsTitle">Условия использования</div>

@@ -666,12 +666,12 @@ input:focus, textarea:focus { border-color: rgba(139, 109, 255, 0.7); box-shadow
 }
 
 .privacy-open .privacy-overlay,
-.privacy-open .policy-modal {
+.privacy-open .privacy-modal {
   display: grid;
 }
 
 .terms-open .terms-overlay,
-.terms-open .policy-modal {
+.terms-open .terms-modal {
   display: grid;
 }
 
@@ -770,6 +770,29 @@ input:focus, textarea:focus { border-color: rgba(139, 109, 255, 0.7); box-shadow
 .doc-links {
   display: grid;
   gap: 8px;
+}
+
+.consent {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.consent input {
+  margin-top: 3px;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+}
+
+.auth-consent {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .doc-link {
