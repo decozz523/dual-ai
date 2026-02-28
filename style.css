@@ -271,6 +271,24 @@ body {
   flex-wrap: wrap;
 }
 
+.hero-highlights {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hero-highlight {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(79, 149, 228, 0.35);
+  background: rgba(221, 240, 255, 0.88);
+  font-size: 12px;
+  color: #245b91;
+}
+
 .btn-cta {
   position: relative;
   font-weight: 700;
@@ -326,6 +344,39 @@ body {
   display: grid;
   gap: 12px;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.more-cards {
+  margin-top: 12px;
+}
+
+.more-cards summary {
+  list-style: none;
+  cursor: pointer;
+  width: fit-content;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(47, 126, 216, 0.35);
+  background: rgba(214, 236, 255, 0.84);
+  color: #245b91;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.more-cards summary::-webkit-details-marker {
+  display: none;
+}
+
+.more-cards summary::after {
+  content: " ▾";
+}
+
+.more-cards[open] summary::after {
+  content: " ▴";
+}
+
+.hero-cards-extra {
+  margin-top: 12px;
 }
 
 .info-card {
@@ -988,6 +1039,8 @@ input:focus, textarea:focus { border-color: rgba(47, 126, 216, 0.9); box-shadow:
   .topbar-right { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
   .hero-actions { flex-direction: column; align-items: stretch; }
   .hero-actions .btn { width: 100%; }
+  .hero-highlights { flex-direction: column; }
+  .hero-highlight { width: 100%; justify-content: center; }
   .quick-actions { gap: 8px; }
 }
 
