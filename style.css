@@ -349,7 +349,19 @@ body {
 .hero-cards {
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-column: 1 / -1;
+}
+
+.hero-cards-primary .info-card-mode {
+  grid-column: span 7;
+}
+
+.hero-cards-primary .info-card-focus {
+  grid-column: span 5;
+}
+
+.hero-cards-primary .info-card-shortcut {
   grid-column: 1 / -1;
 }
 
@@ -385,6 +397,10 @@ body {
 
 .hero-cards-extra {
   margin-top: 12px;
+}
+
+.hero-cards-extra .info-card {
+  grid-column: span 4;
 }
 
 .info-card {
@@ -1043,6 +1059,21 @@ input:focus, textarea:focus { border-color: rgba(47, 126, 216, 0.9); box-shadow:
 @media (max-width: 860px) {
   .hero { grid-template-columns: 1fr; }
   .hero-main { gap: 0; }
+  .hero-cards,
+  .hero-cards-extra {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .hero-cards-primary .info-card-mode,
+  .hero-cards-primary .info-card-focus,
+  .hero-cards-primary .info-card-shortcut {
+    grid-column: auto;
+  }
+  .hero-cards-primary .info-card-shortcut {
+    grid-column: 1 / -1;
+  }
+  .hero-cards-extra .info-card {
+    grid-column: auto;
+  }
   .composer-head { flex-direction: column; }
   .topbar { flex-direction: column; align-items: flex-start; padding: 14px 16px; }
   .topbar-right { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
@@ -1054,6 +1085,13 @@ input:focus, textarea:focus { border-color: rgba(47, 126, 216, 0.9); box-shadow:
 }
 
 @media (max-width: 600px) {
+  .hero-cards,
+  .hero-cards-extra {
+    grid-template-columns: 1fr;
+  }
+  .hero-cards-primary .info-card-shortcut {
+    grid-column: auto;
+  }
   .app { padding: 20px 14px 40px; }
   .hero { padding: 16px; }
   .hero-title { font-size: 22px; }
