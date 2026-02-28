@@ -251,6 +251,7 @@ body {
   border: 1px solid var(--border);
   background: linear-gradient(140deg, rgba(132, 192, 255, 0.28), rgba(255, 255, 255, 0.95));
   box-shadow: var(--shadow);
+  overflow: hidden;
 }
 
 .hero-main {
@@ -368,6 +369,11 @@ body {
 .more-cards {
   margin-top: 2px;
   grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.more-cards[open] {
+  padding-bottom: 2px;
 }
 
 .more-cards summary {
@@ -397,6 +403,7 @@ body {
 
 .hero-cards-extra {
   margin-top: 12px;
+  min-width: 0;
 }
 
 .hero-cards-extra .info-card {
