@@ -1120,6 +1120,14 @@ input:focus, textarea:focus { border-color: rgba(47, 126, 216, 0.9); box-shadow:
   color: #205489;
 }
 
+body.theme-switching,
+body.theme-switching *,
+body.theme-switching *::before,
+body.theme-switching *::after {
+  transition: none !important;
+  animation: none !important;
+}
+
 body.theme-dark {
   --bg: #0d1b2b;
   --panel: rgba(19, 33, 50, 0.92);
@@ -1128,15 +1136,11 @@ body.theme-dark {
   --text: #e5f0ff;
   --muted: #9eb7d8;
   --border: rgba(102, 142, 190, 0.45);
-  --shadow: 0 14px 38px rgba(0, 8, 18, 0.45);
+  --shadow: 0 10px 24px rgba(0, 8, 18, 0.32);
   --accent: #5ea8ff;
   --accent-2: #78bdff;
   --accent-3: #9fd1ff;
-  background:
-    radial-gradient(900px 520px at 18% -10%, rgba(43, 95, 170, 0.38), transparent 60%),
-    radial-gradient(900px 520px at 85% 15%, rgba(56, 107, 180, 0.24), transparent 60%),
-    radial-gradient(900px 520px at 55% 100%, rgba(36, 82, 145, 0.24), transparent 60%),
-    var(--bg);
+  background: var(--bg);
 }
 
 body.theme-dark .topbar,
@@ -1163,6 +1167,12 @@ body.theme-dark .msg {
 
 body.theme-dark .hero {
   background: linear-gradient(140deg, rgba(32, 66, 110, 0.58), rgba(16, 27, 41, 0.95));
+}
+
+body.theme-dark .topbar,
+body.theme-dark .drawer,
+body.theme-dark .modal {
+  backdrop-filter: none;
 }
 
 body.theme-dark .btn {

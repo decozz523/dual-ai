@@ -859,8 +859,17 @@ function deleteDialog(id) {
 function applyTheme(theme) {
   const nextTheme = theme === "dark" ? "dark" : "light";
   currentTheme = nextTheme;
-  document.body.classList.toggle("theme-dark", nextTheme === "dark");
+
+  const body = document.body;
+  body.classList.add("theme-switching");
+  body.classList.toggle("theme-dark", nextTheme === "dark");
   themeToggleEl && (themeToggleEl.checked = nextTheme === "dark");
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      body.classList.remove("theme-switching");
+    });
+  });
 }
 
 function loadSettings() {
@@ -1142,7 +1151,6 @@ deepModeToggle?.addEventListener("click", () => {
 themeToggleEl?.addEventListener("change", () => {
   applyTheme(themeToggleEl.checked ? "dark" : "light");
   saveSettings(false);
-  setStatus(`Тема: ${currentTheme === "dark" ? "тёмная" : "светлая"}.`, "ok");
 });
 
 exportChatBtn?.addEventListener("click", () => {
