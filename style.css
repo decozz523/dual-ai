@@ -1099,23 +1099,42 @@ input:focus, textarea:focus { border-color: rgba(47, 126, 216, 0.9); box-shadow:
   .hero-cards-primary .info-card-shortcut {
     grid-column: auto;
   }
-  .app { padding: 20px 14px 40px; }
+  .app { padding: 18px 14px 36px; }
   .hero { padding: 16px; }
   .hero-title { font-size: 22px; }
   .hero-subtitle { font-size: 13px; }
-  .topbar-left, .topbar-right { width: 100%; justify-content: flex-start; gap: 8px; }
-  .topbar-right { order: 3; }
+  .topbar {
+    gap: 8px;
+    padding: 10px 12px;
+  }
+  .topbar-left, .topbar-right {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 6px;
+  }
+  .topbar-right { order: 3; align-items: center; }
   .topbar-left { order: 2; flex-wrap: wrap; }
   .topbar-title { order: 1; width: 100%; text-align: left; }
+  .topbar-title .h1 { font-size: 18px; line-height: 1.15; }
+  .topbar-title .subtitle { display: none; }
+  .topbar .btn,
+  .topbar .icon-btn {
+    min-height: 32px;
+    padding: 7px 10px;
+    border-radius: 10px;
+    font-size: 13px;
+  }
   .topbar-left .btn,
   .topbar-right .btn,
   .topbar-right .icon-btn {
-    flex: 1 1 auto;
+    flex: 1 1 calc(50% - 3px);
     min-width: 0;
   }
   .topbar-right .status-pill,
   .topbar-right .plan-pill {
-    flex: 1 1 100%;
+    flex: 0 1 auto;
+    padding: 4px 8px;
+    font-size: 11px;
   }
   .messages { max-height: 52vh; }
   .composer { padding: 12px; }
