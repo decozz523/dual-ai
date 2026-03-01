@@ -384,7 +384,44 @@ function renderIdeas() {
 }
 
 
+async function copyToClipboard(text) {
+  const value = String(text || "");
+  try {
+    if (navigator?.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+    } else {
+      const area = document.createElement("textarea");
+      area.value = value;
+      area.setAttribute("readonly", "");
+      area.style.position = "absolute";
+      area.style.left = "-9999px";
+      document.body.appendChild(area);
+      area.select();
+      document.execCommand("copy");
+      area.remove();
+    }
+    setStatus("Текст скопирован.", "ok");
+  } catch {
+    setStatus("Не удалось скопировать текст.", "error");
+  }
+}
+
+function findPrevUserMessage(index) {
+  for (let i = index - 1; i >= 0; i--) {
+    if (transcript[i]?.speaker === "user") return transcript[i];
+  }
+  return null;
+}
+
+function submitQuickPrompt(text) {
+  const value = String(text || "").trim();
+  if (!value || sendBtn.disabled) return;
+  inputEl.value = value;
+  void onSend();
+}
+
 function render() {
+
   messagesEl.innerHTML = "";
   if (transcript.length === 0) {
     const empty = document.createElement("div");
@@ -395,7 +432,7 @@ function render() {
     messagesEl.appendChild(empty);
     return;
   }
-  for (const m of transcript) {
+  for (const [index, m] of transcript.entries()) {
     const wrap = document.createElement("div");
     wrap.className = `msg msg-${m.speaker}`;
     const meta = document.createElement("div");
@@ -416,8 +453,46 @@ function render() {
     content.className = "content";
     content.innerHTML = escapeHtml(m.content);
 
+    const actions = document.createElement("div");
+    actions.className = "msg-actions";
+
+    const copyBtn = document.createElement("button");
+    copyBtn.className = "msg-action-btn";
+    copyBtn.type = "button";
+    copyBtn.dataset.action = "copy";
+    copyBtn.dataset.index = String(index);
+    copyBtn.textContent = "Копировать";
+    actions.appendChild(copyBtn);
+
+    if (m.speaker === "user") {
+      const resendBtn = document.createElement("button");
+      resendBtn.className = "msg-action-btn";
+      resendBtn.type = "button";
+      resendBtn.dataset.action = "resend";
+      resendBtn.dataset.index = String(index);
+      resendBtn.textContent = "Повторить";
+      actions.appendChild(resendBtn);
+    } else {
+      const continueBtn = document.createElement("button");
+      continueBtn.className = "msg-action-btn";
+      continueBtn.type = "button";
+      continueBtn.dataset.action = "continue";
+      continueBtn.dataset.index = String(index);
+      continueBtn.textContent = "Продолжить";
+      actions.appendChild(continueBtn);
+
+      const regenerateBtn = document.createElement("button");
+      regenerateBtn.className = "msg-action-btn";
+      regenerateBtn.type = "button";
+      regenerateBtn.dataset.action = "regenerate";
+      regenerateBtn.dataset.index = String(index);
+      regenerateBtn.textContent = "Перегенерировать";
+      actions.appendChild(regenerateBtn);
+    }
+
     wrap.appendChild(meta);
     wrap.appendChild(content);
+    wrap.appendChild(actions);
     messagesEl.appendChild(wrap);
   }
   messagesEl.scrollTop = messagesEl.scrollHeight;
@@ -1292,6 +1367,48 @@ settingsLogoutBtn.addEventListener("click", async () => {
 settingsCloseBtn.addEventListener("click", closeSettingsModal);
 settingsOverlay.addEventListener("click", closeSettingsModal);
 settingsBody?.addEventListener("scroll", updateSettingsScrollHint);
+messagesEl?.addEventListener("click", (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) return;
+  const btn = target.closest(".msg-action-btn");
+  if (!(btn instanceof HTMLButtonElement)) return;
+
+  const index = Number(btn.dataset.index);
+  if (!Number.isFinite(index) || index < 0 || index >= transcript.length) return;
+  const action = btn.dataset.action;
+  const message = transcript[index];
+
+  if (action === "copy") {
+    void copyToClipboard(message.content);
+    return;
+  }
+
+  if (action === "resend") {
+    if (!requireAuth()) return;
+    submitQuickPrompt(message.content);
+    return;
+  }
+
+  if (action === "continue") {
+    if (!requireAuth()) return;
+    inputEl.value = `${message.content}
+
+Продолжи и углуби мысль с практическими шагами.`;
+    inputEl.focus();
+    setStatus("Текст добавлен в поле ввода.", "ok");
+    return;
+  }
+
+  if (action === "regenerate") {
+    if (!requireAuth()) return;
+    const prevUser = findPrevUserMessage(index);
+    if (!prevUser) {
+      setStatus("Не найдено исходное сообщение пользователя.", "error");
+      return;
+    }
+    submitQuickPrompt(prevUser.content);
+  }
+});
 authCloseBtn?.addEventListener("click", (event) => {
   event.preventDefault();
   closeAuthModal();
