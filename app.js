@@ -58,6 +58,7 @@ const planNoticeTextEl = $("planNoticeText");
 const planPerksListEl = $("planPerksList");
 const planCardEl = $("planCard");
 const deepModeToggle = $("deepModeToggle");
+const themeToggleEl = $("themeToggle");
 const modelHintEl = $("modelHint");
 const activationCodeInputEl = $("activationCodeInput");
 const activateCodeBtn = $("activateCodeBtn");
@@ -94,6 +95,7 @@ let currentPlan = "free";
 let currentUsageCount = 0;
 let deepModeEnabled = false;
 let lastProModel = null;
+let currentTheme = "light";
 
 const TELEGRAM_BOT_URL = "https://t.me/dual_ai_pay_bot";
 
@@ -854,6 +856,13 @@ function deleteDialog(id) {
   }
 }
 
+function applyTheme(theme) {
+  const nextTheme = theme === "dark" ? "dark" : "light";
+  currentTheme = nextTheme;
+  document.body.classList.toggle("theme-dark", nextTheme === "dark");
+  themeToggleEl && (themeToggleEl.checked = nextTheme === "dark");
+}
+
 function loadSettings() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -867,21 +876,27 @@ function loadSettings() {
     if (typeof s.deepModeEnabled === "boolean") {
       deepModeEnabled = s.deepModeEnabled;
     }
+    if (typeof s.theme === "string") {
+      applyTheme(s.theme);
+    }
     lastProModel = modelEl.value;
   } catch {
     // ignore
   }
 }
 
-function saveSettings() {
+function saveSettings(showStatus = true) {
   const model = modelEl.value.trim();
   const turns = getExtraTurns();
   localStorage.setItem(
     STORAGE_KEY,
-    JSON.stringify({ model, turns, deepModeEnabled })
+    JSON.stringify({ model, turns, deepModeEnabled, theme: currentTheme })
   );
-  setStatus("Настройки сохранены.", "ok");
+  if (showStatus) {
+    setStatus("Настройки сохранены.", "ok");
+  }
 }
+
 
 function clearChat() {
   transcript = [];
@@ -1124,6 +1139,12 @@ deepModeToggle?.addEventListener("click", () => {
   setPlanState(currentPlan, currentUsageCount);
   saveSettings();
 });
+themeToggleEl?.addEventListener("change", () => {
+  applyTheme(themeToggleEl.checked ? "dark" : "light");
+  saveSettings(false);
+  setStatus(`Тема: ${currentTheme === "dark" ? "тёмная" : "светлая"}.`, "ok");
+});
+
 exportChatBtn?.addEventListener("click", () => {
   if (transcript.length === 0) {
     setStatus("Нет сообщений для экспорта.", "error");
@@ -1365,6 +1386,7 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
+applyTheme("light");
 loadSettings();
 dialogs = loadDialogs();
 ensureActiveDialog();
