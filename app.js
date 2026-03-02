@@ -85,6 +85,7 @@ const privacyCloseBtn = $("privacyCloseBtn");
 const termsOverlay = $("termsOverlay");
 const termsModal = $("termsModal");
 const termsCloseBtn = $("termsCloseBtn");
+const chatHeadTitleEl = $("chatHeadTitle");
 
 let supabase = null;
 let authSession = null;
@@ -421,6 +422,10 @@ function submitQuickPrompt(text) {
 }
 
 function render() {
+  const activeTitle = dialogs.find((d) => d.id === activeDialogId)?.title || "Новый диалог";
+  if (chatHeadTitleEl) {
+    chatHeadTitleEl.textContent = `Dual AI — ${activeTitle}`;
+  }
 
   messagesEl.innerHTML = "";
   if (transcript.length === 0) {
@@ -443,7 +448,7 @@ function render() {
 
     const badge = document.createElement("span");
     badge.className = "badge " + (m.speaker === "user" ? "user" : m.speaker === "R" ? "r" : "s");
-    badge.textContent = m.speaker === "user" ? "Вы" : m.speaker;
+    badge.textContent = m.speaker === "user" ? "Вы" : m.speaker === "R" ? "Bot R" : "Bot S";
     left.appendChild(badge);
 
     meta.appendChild(left);
