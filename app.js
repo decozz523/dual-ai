@@ -10,6 +10,7 @@ const inputEl = $("input");
 const sendBtn = $("sendBtn");
 const demoBtn = $("demoBtn");
 const observeBtn = $("observeBtn");
+const debateBtn = $("debateBtn");
 const saveBtn = $("saveBtn");
 const exportChatBtn = $("exportChatBtn");
 const clearBtn = $("clearBtn");
@@ -85,6 +86,7 @@ const privacyCloseBtn = $("privacyCloseBtn");
 const termsOverlay = $("termsOverlay");
 const termsModal = $("termsModal");
 const termsCloseBtn = $("termsCloseBtn");
+const vibeModeEl = $("vibeMode");
 
 let supabase = null;
 let authSession = null;
@@ -117,6 +119,22 @@ const IDEA_PROMPTS = [
   "Какая аналитика или отчёт вам нужнее всего?",
   "Что мешает пользоваться чатом чаще?",
 ];
+
+const VIBE_INSTRUCTIONS = {
+  standard: "",
+  biz: "Стиль ответа: как опытный product/marketing coach, структурно, с KPI и рисками.",
+  chill: "Стиль ответа: дружелюбно, просто, короткими блоками, без сложного жаргона.",
+  creator: "Стиль ответа: как creator-стратег для TikTok/Reels, с хуками и вовлекающими форматами.",
+  study: "Стиль ответа: как учебный наставник, пошагово, с акцентом на запоминание и практику.",
+};
+
+const DEMO_BY_VIBE = {
+  standard: "Что думаете о будущем ИИ?",
+  biz: "Собери план запуска продукта на 14 дней с KPI и рисками.",
+  chill: "Помоги спокойно разобрать мой план и выбрать лучший следующий шаг.",
+  creator: "Придумай 10 коротких TikTok-идей с хуком на первые 2 секунды.",
+  study: "Сделай учебный план на 5 дней, чтобы быстро подготовиться к экзамену.",
+};
 
 
 const PERSONAS = {
@@ -516,6 +534,25 @@ function getPlanSubtitle(plan) {
   return `${limit} сообщений в день`;
 }
 
+function hasPlusAccess() {
+  return currentPlan === "plus" || currentPlan === "pro";
+}
+
+function hasProAccess() {
+  return currentPlan === "pro";
+}
+
+function getAllowedVibe(mode) {
+  const normalized = String(mode || "standard").toLowerCase();
+  if (normalized === "creator" || normalized === "study") {
+    return hasProAccess() ? normalized : "standard";
+  }
+  if (normalized === "biz" || normalized === "chill") {
+    return hasPlusAccess() ? normalized : "standard";
+  }
+  return "standard";
+}
+
 function setPlanState(plan, usageCount = 0) {
   currentPlan = String(plan || "free").toLowerCase();
   currentUsageCount = usageCount;
@@ -619,6 +656,29 @@ function setPlanState(plan, usageCount = 0) {
       currentPlan === "free"
         ? "Доступно с Plus"
         : "Наблюдать диалог ботов";
+  }
+  if (debateBtn) {
+    debateBtn.disabled = currentPlan === "free";
+    debateBtn.title = currentPlan === "free" ? "Доступно с Plus" : "Запустить баттл мнений";
+  }
+  if (vibeModeEl) {
+    const options = Array.from(vibeModeEl.options);
+    for (const option of options) {
+      const value = option.value;
+      option.disabled =
+        (value === "biz" || value === "chill") && !hasPlusAccess() ||
+        (value === "creator" || value === "study") && !hasProAccess();
+    }
+    const allowed = getAllowedVibe(vibeModeEl.value);
+    if (allowed !== vibeModeEl.value) {
+      vibeModeEl.value = allowed;
+    }
+    vibeModeEl.title =
+      currentPlan === "free"
+        ? "Доп. стили доступны с Plus/Pro"
+        : currentPlan === "plus"
+        ? "Creator/Study доступны на Pro"
+        : "Выберите стиль ответа";
   }
 }
 
@@ -1114,6 +1174,11 @@ async function runTurn(speaker) {
       content: "Пожалуйста, дай более глубокий, развернутый ответ с пояснениями.",
     });
   }
+  const vibeMode = getAllowedVibe(vibeModeEl?.value || "standard");
+  const vibeInstruction = VIBE_INSTRUCTIONS[vibeMode];
+  if (vibeInstruction) {
+    messages.push({ role: "user", content: vibeInstruction });
+  }
   setStatus(`${speaker === "R" ? "Bot R" : "Bot S"} думает…`);
   const text = await callOpenRouter({
     model,
@@ -1188,8 +1253,32 @@ async function onSend() {
 sendBtn.addEventListener("click", onSend);
 demoBtn.addEventListener("click", () => {
   if (!requireAuth()) return;
-  inputEl.value = "Что думаете о будущем ИИ?";
+  const vibeMode = vibeModeEl?.value || "standard";
+  inputEl.value = DEMO_BY_VIBE[vibeMode] || DEMO_BY_VIBE.standard;
   inputEl.focus();
+});
+debateBtn?.addEventListener("click", () => {
+  if (!requireAuth()) return;
+  if (!hasPlusAccess()) {
+    setStatus("Баттл доступен с Plus.", "error");
+    openUpgradeModal();
+    return;
+  }
+  inputEl.value =
+    "Устройте баттл мнений между Bot R и Bot S по моей теме: дайте 2 позиции, контраргументы и итоговый вердикт.";
+  inputEl.focus();
+});
+vibeModeEl?.addEventListener("change", () => {
+  const selected = vibeModeEl.value;
+  const allowed = getAllowedVibe(selected);
+  if (allowed === selected) return;
+  vibeModeEl.value = allowed;
+  const message =
+    selected === "creator" || selected === "study"
+      ? "Режим Creator/Study доступен только на Pro."
+      : "Этот стиль доступен с Plus.";
+  setStatus(message, "error");
+  openUpgradeModal();
 });
 observeBtn?.addEventListener("click", async () => {
   if (!requireAuth()) return;

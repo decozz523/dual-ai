@@ -54,11 +54,19 @@
           </div>
           <div class="quick-start">
             <div class="quick-title">Быстрый старт</div>
+            <div class="quick-section-title">Для предпринимателей</div>
             <div class="quick-actions">
               <button class="chip-btn" data-template="Составь план на 7 дней для моей цели.">План на 7 дней</button>
               <button class="chip-btn" data-template="Придумай 10 идей для контента на неделю.">Идеи контента</button>
               <button class="chip-btn" data-template="Сделай стратегию запуска продукта в 5 шагах.">Стратегия запуска</button>
               <button class="chip-btn" data-template="Сформулируй 3 гипотезы роста для моего продукта.">Гипотезы роста</button>
+            </div>
+            <div class="quick-section-title">Для молодёжи и TikTok</div>
+            <div class="quick-actions">
+              <button class="chip-btn" data-template="Придумай 12 идей для TikTok на неделю в моём стиле.">TikTok идеи</button>
+              <button class="chip-btn" data-template="Собери учебный план на 5 дней, чтобы быстро подготовиться к зачёту.">Учёба за 5 дней</button>
+              <button class="chip-btn" data-template="Сделай челлендж на 7 дней для прокачки привычки без выгорания.">7-дневный челлендж</button>
+              <button class="chip-btn" data-template="Напиши сценарий для короткого видео: хук, основа, финальный CTA.">Сценарий для Reels</button>
             </div>
           </div>
           <div class="hero-cards hero-cards-primary">
@@ -101,26 +109,36 @@
         </section>
 
         <section class="chat">
+          <div class="chat-head">
+            <div class="chat-avatar" aria-hidden="true">◉</div>
+            <div>
+              <div class="chat-title">Диалог R + S</div>
+              <div class="chat-subtitle">Два бота в одной сессии · online</div>
+            </div>
+          </div>
           <div id="messages" class="messages" aria-live="polite"></div>
         </section>
 
-        <section class="composer">
-          <div class="composer-head">
-            <div>
-              <div class="label">Сообщение</div>
-              <div class="hint">Опиши задачу, контекст и ожидания — так ответы будут точнее.</div>
-            </div>
-            <div class="chip">Dual AI Mode</div>
+        <section class="composer insta-composer">
+          <div class="insta-tools">
+            <button id="demoBtn" class="btn btn-secondary insta-tool-btn">⚡ Демо</button>
+            <button id="observeBtn" class="btn btn-secondary insta-tool-btn">👀 Диалог</button>
+            <button id="debateBtn" class="btn btn-secondary insta-tool-btn">🔥 Баттл</button>
+            <select id="vibeMode" class="insta-vibe-select" aria-label="Стиль ответа">
+              <option value="standard">Standard</option>
+              <option value="biz">Biz Coach</option>
+              <option value="chill">Chill Friend</option>
+              <option value="creator">Creator TikTok</option>
+              <option value="study">Study Buddy</option>
+            </select>
           </div>
-          <textarea
-            id="input"
-            rows="3"
-            placeholder="Напиши сообщение…"
-          ></textarea>
-          <div class="row">
-            <button id="sendBtn" class="btn btn-primary">Отправить</button>
-            <button id="demoBtn" class="btn btn-secondary">Демо-вопрос</button>
-            <button id="observeBtn" class="btn btn-secondary">Смотреть диалог</button>
+          <div class="insta-input-wrap">
+            <textarea
+              id="input"
+              rows="2"
+              placeholder="Напиши сообщение…"
+            ></textarea>
+            <button id="sendBtn" class="btn btn-primary insta-send-btn">➤</button>
           </div>
         </section>
       </main>
