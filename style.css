@@ -90,6 +90,7 @@ body {
   padding: 28px 22px 48px;
   display: grid;
   gap: 20px;
+  align-content: start;
 }
 
 .h1 {
@@ -1132,6 +1133,7 @@ input:focus, textarea:focus { border-color: rgba(47, 126, 216, 0.9); box-shadow:
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  align-items: center;
 }
 
 .msg-action-btn {
@@ -1157,6 +1159,7 @@ input:focus, textarea:focus { border-color: rgba(47, 126, 216, 0.9); box-shadow:
   padding: 8px 0 0;
   display: grid;
   gap: 6px;
+  align-content: start;
 }
 
 .insta-tools {
@@ -1164,6 +1167,7 @@ input:focus, textarea:focus { border-color: rgba(47, 126, 216, 0.9); box-shadow:
   gap: 8px;
   align-items: center;
   flex-wrap: wrap;
+  align-self: start;
 }
 
 .insta-tool-btn {
@@ -1184,6 +1188,7 @@ input:focus, textarea:focus { border-color: rgba(47, 126, 216, 0.9); box-shadow:
   display: flex;
   align-items: flex-end;
   gap: 8px;
+  align-self: start;
 }
 
 .insta-input-wrap textarea {
