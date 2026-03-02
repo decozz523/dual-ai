@@ -101,26 +101,28 @@
         </section>
 
         <section class="chat">
+          <div class="chat-head">
+            <div class="chat-avatar" aria-hidden="true">◉</div>
+            <div>
+              <div class="chat-title">Dual AI Chat</div>
+              <div class="chat-subtitle">Bot R · Bot S · online</div>
+            </div>
+          </div>
           <div id="messages" class="messages" aria-live="polite"></div>
         </section>
 
-        <section class="composer">
-          <div class="composer-head">
-            <div>
-              <div class="label">Сообщение</div>
-              <div class="hint">Опиши задачу, контекст и ожидания — так ответы будут точнее.</div>
-            </div>
-            <div class="chip">Dual AI Mode</div>
+        <section class="composer insta-composer">
+          <div class="insta-tools">
+            <button id="demoBtn" class="btn btn-secondary insta-tool-btn">⚡ Демо</button>
+            <button id="observeBtn" class="btn btn-secondary insta-tool-btn">👀 Диалог</button>
           </div>
-          <textarea
-            id="input"
-            rows="3"
-            placeholder="Напиши сообщение…"
-          ></textarea>
-          <div class="row">
-            <button id="sendBtn" class="btn btn-primary">Отправить</button>
-            <button id="demoBtn" class="btn btn-secondary">Демо-вопрос</button>
-            <button id="observeBtn" class="btn btn-secondary">Смотреть диалог</button>
+          <div class="insta-input-wrap">
+            <textarea
+              id="input"
+              rows="2"
+              placeholder="Напиши сообщение…"
+            ></textarea>
+            <button id="sendBtn" class="btn btn-primary insta-send-btn">➤</button>
           </div>
         </section>
       </main>
