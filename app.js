@@ -1,6 +1,7 @@
 const STORAGE_KEY = "dual-ai-chat-settings-v1";
 const DIALOGS_KEY = "dual-ai-chat-dialogs-v1";
 const ACTIVE_DIALOG_KEY = "dual-ai-chat-active-dialog-v1";
+const DIALOG_META_KEY = "dual-ai-chat-dialog-meta-v1";
 
 const $ = (id) => document.getElementById(id);
 const modelEl = $("model");
@@ -98,6 +99,8 @@ let currentUsageCount = 0;
 let deepModeEnabled = false;
 let lastProModel = null;
 let currentTheme = "light";
+let openDialogMenuId = null;
+let dialogMeta = {};
 
 const TELEGRAM_BOT_URL = "https://t.me/dual_ai_pay_bot";
 
@@ -855,7 +858,12 @@ function loadDialogs() {
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter((d) => d && d.id && Array.isArray(d.messages));
+    return parsed
+      .filter((d) => d && d.id && Array.isArray(d.messages))
+      .map((d) => ({
+        ...d,
+        manualTitle: Boolean(d.manualTitle),
+      }));
   } catch {
     return [];
   }
@@ -865,14 +873,45 @@ function loadDialogsLocal() {
   return loadDialogs();
 }
 
+function loadDialogMeta() {
+  try {
+    const raw = localStorage.getItem(DIALOG_META_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveDialogMeta() {
+  localStorage.setItem(DIALOG_META_KEY, JSON.stringify(dialogMeta));
+}
+
+function getDialogMeta(id) {
+  return dialogMeta[id] || { pinned: false };
+}
+
 function saveDialogsLocal() {
   localStorage.setItem(DIALOGS_KEY, JSON.stringify(dialogs));
 }
 
 function deriveTitle(messages) {
-  const firstUser = messages.find((m) => m.speaker === "user" && m.content.trim());
-  if (!firstUser) return "Новый диалог";
-  return firstUser.content.trim().slice(0, 48);
+  const userMessages = messages
+    .filter((m) => m.speaker === "user" && m.content.trim())
+    .slice(0, 2)
+    .map((m) => m.content.trim());
+  if (userMessages.length === 0) return "Новый диалог";
+
+  const joined = userMessages
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .replace(/\n|\r/g, " ")
+    .trim();
+
+  const sentence = joined.split(/[.!?]/)[0]?.trim() || joined;
+  const clean = sentence.replace(/["'`«»]/g, "").trim();
+  return clean.slice(0, 56) || "Новый диалог";
 }
 
 function persistActiveDialog() {
@@ -880,7 +919,9 @@ function persistActiveDialog() {
   if (!dialog) return;
   dialog.messages = [...transcript];
   dialog.updatedAt = Date.now();
-  dialog.title = deriveTitle(dialog.messages);
+  if (!dialog.manualTitle) {
+    dialog.title = deriveTitle(dialog.messages);
+  }
   saveDialogsLocal();
   renderDialogList();
   void upsertDialogRemote(dialog);
@@ -904,6 +945,7 @@ function createDialog({ activate = true } = {}) {
     messages: [],
     createdAt: now,
     updatedAt: now,
+    manualTitle: false,
   };
   dialogs.unshift(dialog);
   saveDialogsLocal();
@@ -936,14 +978,26 @@ function renderDialogList() {
     dialogListEl.appendChild(empty);
     return;
   }
-  for (const dialog of dialogs) {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "dialog-item";
-    if (dialog.id === activeDialogId) btn.classList.add("active");
+
+  const orderedDialogs = [...dialogs].sort((a, b) => {
+    const pinA = getDialogMeta(a.id).pinned ? 1 : 0;
+    const pinB = getDialogMeta(b.id).pinned ? 1 : 0;
+    if (pinA !== pinB) return pinB - pinA;
+    return b.updatedAt - a.updatedAt;
+  });
+
+  for (const dialog of orderedDialogs) {
+    const item = document.createElement("div");
+    item.className = "dialog-item";
+    item.setAttribute("role", "button");
+    item.tabIndex = 0;
+    if (dialog.id === activeDialogId) item.classList.add("active");
+
     const title = document.createElement("div");
     title.className = "dialog-title";
-    title.textContent = dialog.title || "Новый диалог";
+    const pinned = getDialogMeta(dialog.id).pinned;
+    title.textContent = `${pinned ? "📌 " : ""}${dialog.title || "Новый диалог"}`;
+
     const meta = document.createElement("div");
     meta.className = "dialog-meta";
     meta.textContent = new Date(dialog.updatedAt).toLocaleString([], {
@@ -952,24 +1006,92 @@ function renderDialogList() {
       day: "2-digit",
       month: "short",
     });
-    const removeBtn = document.createElement("button");
-    removeBtn.type = "button";
-    removeBtn.className = "dialog-remove";
-    removeBtn.setAttribute("aria-label", "Удалить диалог");
-    removeBtn.textContent = "🗑️";
-    removeBtn.addEventListener("click", (event) => {
+
+    const menuWrap = document.createElement("div");
+    menuWrap.className = "dialog-menu";
+
+    const menuBtn = document.createElement("button");
+    menuBtn.type = "button";
+    menuBtn.className = "dialog-menu-btn";
+    menuBtn.setAttribute("aria-label", "Открыть меню диалога");
+    menuBtn.textContent = "☰";
+    menuBtn.addEventListener("click", (event) => {
       event.stopPropagation();
-      deleteDialog(dialog.id);
+      openDialogMenuId = openDialogMenuId === dialog.id ? null : dialog.id;
+      renderDialogList();
     });
-    btn.appendChild(title);
-    btn.appendChild(meta);
-    btn.appendChild(removeBtn);
-    btn.addEventListener("click", () => {
+
+    menuWrap.appendChild(menuBtn);
+
+    if (openDialogMenuId === dialog.id) {
+      const menuPanel = document.createElement("div");
+      menuPanel.className = "dialog-menu-panel";
+
+      const pinBtn = document.createElement("button");
+      pinBtn.type = "button";
+      pinBtn.className = "dialog-menu-action";
+      pinBtn.textContent = pinned ? "Открепить" : "Закрепить";
+      pinBtn.addEventListener("click", (event) => {
+        event.stopPropagation();
+        dialogMeta[dialog.id] = { pinned: !pinned };
+        saveDialogMeta();
+        openDialogMenuId = null;
+        renderDialogList();
+      });
+
+      const renameBtn = document.createElement("button");
+      renameBtn.type = "button";
+      renameBtn.className = "dialog-menu-action";
+      renameBtn.textContent = "Переименовать";
+      renameBtn.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const nextTitle = window.prompt("Новое название чата", dialog.title || "Новый диалог");
+        if (!nextTitle) return;
+        dialog.title = nextTitle.trim().slice(0, 56) || dialog.title;
+        dialog.manualTitle = true;
+        dialog.updatedAt = Date.now();
+        saveDialogsLocal();
+        void upsertDialogRemote(dialog);
+        openDialogMenuId = null;
+        renderDialogList();
+      });
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.type = "button";
+      deleteBtn.className = "dialog-menu-action danger";
+      deleteBtn.textContent = "Удалить чат";
+      deleteBtn.addEventListener("click", (event) => {
+        event.stopPropagation();
+        openDialogMenuId = null;
+        deleteDialog(dialog.id);
+      });
+
+      menuPanel.appendChild(pinBtn);
+      menuPanel.appendChild(renameBtn);
+      menuPanel.appendChild(deleteBtn);
+      menuWrap.appendChild(menuPanel);
+    }
+
+    item.appendChild(title);
+    item.appendChild(meta);
+    item.appendChild(menuWrap);
+
+    item.addEventListener("click", () => {
       setActiveDialog(dialog.id);
       setMode("chat");
       closeDrawer();
     });
-    dialogListEl.appendChild(btn);
+
+    item.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        setActiveDialog(dialog.id);
+        setMode("chat");
+        closeDrawer();
+      }
+    });
+
+    dialogListEl.appendChild(item);
   }
 }
 
@@ -978,6 +1100,8 @@ function deleteDialog(id) {
   if (index === -1) return;
   const wasActive = dialogs[index].id === activeDialogId;
   dialogs.splice(index, 1);
+  delete dialogMeta[id];
+  saveDialogMeta();
   saveDialogsLocal();
   void deleteDialogRemote(id);
   if (wasActive) {
@@ -1087,6 +1211,7 @@ async function syncDialogsFromSupabase() {
     messages: Array.isArray(row.messages) ? row.messages : [],
     createdAt: row.created_at ? Date.parse(row.created_at) : Date.now(),
     updatedAt: row.updated_at ? Date.parse(row.updated_at) : Date.now(),
+    manualTitle: Boolean(row.title && row.title !== "Новый диалог"),
   }));
   if (dialogs.length === 0) {
     createDialog({ activate: true });
@@ -1602,7 +1727,15 @@ document.addEventListener("keydown", (e) => {
 
 applyTheme("light");
 loadSettings();
+document.addEventListener("click", (event) => {
+  if (!openDialogMenuId) return;
+  if (event.target.closest(".dialog-menu")) return;
+  openDialogMenuId = null;
+  renderDialogList();
+});
+
 dialogs = loadDialogs();
+dialogMeta = loadDialogMeta();
 ensureActiveDialog();
 render();
 renderDialogList();
