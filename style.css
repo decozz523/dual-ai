@@ -107,6 +107,21 @@ body {
   color: var(--muted);
 }
 
+
+.brand-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-logo {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  object-fit: cover;
+  box-shadow: 0 6px 16px rgba(47, 126, 216, 0.25);
+}
+
 .brand-mark {
   font-weight: 800;
   letter-spacing: 0.35px;
@@ -1464,6 +1479,7 @@ body.theme-dark .msg-s {
   .topbar-left { order: 2; flex-wrap: wrap; }
   .topbar-title { order: 1; width: 100%; text-align: left; }
   .topbar-title .h1 { font-size: 18px; line-height: 1.15; }
+  .brand-logo { width: 26px; height: 26px; border-radius: 7px; }
   .topbar-title .subtitle { display: none; }
   .topbar .btn,
   .topbar .icon-btn {
