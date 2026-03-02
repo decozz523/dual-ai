@@ -534,6 +534,25 @@ function getPlanSubtitle(plan) {
   return `${limit} сообщений в день`;
 }
 
+function hasPlusAccess() {
+  return currentPlan === "plus" || currentPlan === "pro";
+}
+
+function hasProAccess() {
+  return currentPlan === "pro";
+}
+
+function getAllowedVibe(mode) {
+  const normalized = String(mode || "standard").toLowerCase();
+  if (normalized === "creator" || normalized === "study") {
+    return hasProAccess() ? normalized : "standard";
+  }
+  if (normalized === "biz" || normalized === "chill") {
+    return hasPlusAccess() ? normalized : "standard";
+  }
+  return "standard";
+}
+
 function setPlanState(plan, usageCount = 0) {
   currentPlan = String(plan || "free").toLowerCase();
   currentUsageCount = usageCount;
@@ -637,6 +656,29 @@ function setPlanState(plan, usageCount = 0) {
       currentPlan === "free"
         ? "Доступно с Plus"
         : "Наблюдать диалог ботов";
+  }
+  if (debateBtn) {
+    debateBtn.disabled = currentPlan === "free";
+    debateBtn.title = currentPlan === "free" ? "Доступно с Plus" : "Запустить баттл мнений";
+  }
+  if (vibeModeEl) {
+    const options = Array.from(vibeModeEl.options);
+    for (const option of options) {
+      const value = option.value;
+      option.disabled =
+        (value === "biz" || value === "chill") && !hasPlusAccess() ||
+        (value === "creator" || value === "study") && !hasProAccess();
+    }
+    const allowed = getAllowedVibe(vibeModeEl.value);
+    if (allowed !== vibeModeEl.value) {
+      vibeModeEl.value = allowed;
+    }
+    vibeModeEl.title =
+      currentPlan === "free"
+        ? "Доп. стили доступны с Plus/Pro"
+        : currentPlan === "plus"
+        ? "Creator/Study доступны на Pro"
+        : "Выберите стиль ответа";
   }
 }
 
@@ -1132,7 +1174,7 @@ async function runTurn(speaker) {
       content: "Пожалуйста, дай более глубокий, развернутый ответ с пояснениями.",
     });
   }
-  const vibeMode = vibeModeEl?.value || "standard";
+  const vibeMode = getAllowedVibe(vibeModeEl?.value || "standard");
   const vibeInstruction = VIBE_INSTRUCTIONS[vibeMode];
   if (vibeInstruction) {
     messages.push({ role: "user", content: vibeInstruction });
@@ -1217,9 +1259,26 @@ demoBtn.addEventListener("click", () => {
 });
 debateBtn?.addEventListener("click", () => {
   if (!requireAuth()) return;
+  if (!hasPlusAccess()) {
+    setStatus("Баттл доступен с Plus.", "error");
+    openUpgradeModal();
+    return;
+  }
   inputEl.value =
     "Устройте баттл мнений между Bot R и Bot S по моей теме: дайте 2 позиции, контраргументы и итоговый вердикт.";
   inputEl.focus();
+});
+vibeModeEl?.addEventListener("change", () => {
+  const selected = vibeModeEl.value;
+  const allowed = getAllowedVibe(selected);
+  if (allowed === selected) return;
+  vibeModeEl.value = allowed;
+  const message =
+    selected === "creator" || selected === "study"
+      ? "Режим Creator/Study доступен только на Pro."
+      : "Этот стиль доступен с Plus.";
+  setStatus(message, "error");
+  openUpgradeModal();
 });
 observeBtn?.addEventListener("click", async () => {
   if (!requireAuth()) return;

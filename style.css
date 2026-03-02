@@ -632,6 +632,9 @@ input:focus, textarea:focus { border-color: rgba(47, 126, 216, 0.9); box-shadow:
   border-radius: 0;
   overflow: visible;
   box-shadow: none;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .chat-head {
@@ -667,13 +670,18 @@ input:focus, textarea:focus { border-color: rgba(47, 126, 216, 0.9); box-shadow:
   padding: 2px;
   display: grid;
   gap: 10px;
-  max-height: 60vh;
+  max-height: none;
   overflow: auto;
   background: transparent;
+  flex: 1 1 auto;
+  align-content: start;
 }
 
 .mode-chat .app {
   max-width: 980px;
+  min-height: calc(100vh - 180px);
+  grid-template-rows: minmax(0, 1fr) auto;
+  align-content: stretch;
 }
 
 .mode-chat .hero {
@@ -686,7 +694,7 @@ input:focus, textarea:focus { border-color: rgba(47, 126, 216, 0.9); box-shadow:
 }
 
 .mode-chat .messages {
-  max-height: 68vh;
+  min-height: 220px;
 }
 
 .dialog-list {
