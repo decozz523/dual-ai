@@ -107,6 +107,12 @@ body {
   color: var(--muted);
 }
 
+.brand-mark {
+  font-weight: 800;
+  letter-spacing: 0.35px;
+  font-family: "Segoe UI", "Inter", "Trebuchet MS", var(--sans);
+}
+
 .plan-pill {
   padding: 6px 10px;
   border-radius: 999px;
