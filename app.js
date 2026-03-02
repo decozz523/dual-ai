@@ -443,7 +443,7 @@ function render() {
 
     const badge = document.createElement("span");
     badge.className = "badge " + (m.speaker === "user" ? "user" : m.speaker === "R" ? "r" : "s");
-    badge.textContent = m.speaker === "user" ? "you" : m.speaker;
+    badge.textContent = m.speaker === "user" ? "Вы" : m.speaker;
     left.appendChild(badge);
 
     meta.appendChild(left);
