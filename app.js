@@ -536,6 +536,7 @@ function applyLanguage(lang) {
   if (!statusEl.textContent || [I18N.ru.statusReady, I18N.en.statusReady].includes(statusEl.textContent)) {
     setStatus(t("statusReady"), "ok");
   }
+  setDailyIdeaPrompt();
   setPlanState(currentPlan, currentUsageCount);
 }
 
@@ -568,13 +569,24 @@ const IDEAS_KEY = "dual-ai-ideas-v1";
 const IDEA_DAY_KEY = "dual-ai-idea-day-v1";
 const TEMPLATES_KEY = "dual-ai-prompt-templates-v1";
 
-const IDEA_PROMPTS = [
-  "Какой сценарий использования вы хотите улучшить?",
-  "Что бы вы автоматизировали в своём рабочем процессе?",
-  "Какая функция сделает чат более полезным?",
-  "Какая аналитика или отчёт вам нужнее всего?",
-  "Что мешает пользоваться чатом чаще?",
-];
+const IDEA_PROMPTS = {
+  ru: [
+    "Сформулируйте главный вопрос дня.",
+    "Какой сценарий использования вы хотите улучшить?",
+    "Что бы вы автоматизировали в своём рабочем процессе?",
+    "Какая функция сделает чат более полезным?",
+    "Какая аналитика или отчёт вам нужнее всего?",
+    "Что мешает пользоваться чатом чаще?",
+  ],
+  en: [
+    "Formulate the main question of the day.",
+    "Which usage scenario would you like to improve?",
+    "What would you automate in your workflow?",
+    "Which feature would make this chat more useful?",
+    "Which analytics or report do you need most?",
+    "What prevents you from using the chat more often?",
+  ],
+};
 
 const VIBE_INSTRUCTIONS = {
   standard: "",
@@ -816,14 +828,16 @@ function saveIdeas(ideas) {
 
 function setDailyIdeaPrompt() {
   if (!ideaPromptEl) return;
+  const prompts = IDEA_PROMPTS[currentLanguage] || IDEA_PROMPTS.ru;
   const today = getTodayKey();
   const stored = localStorage.getItem(IDEA_DAY_KEY);
-  if (stored === today) return;
+  const promptKey = `${today}-${currentLanguage}`;
+  if (stored === promptKey) return;
   const index = Math.abs(
     Array.from(today).reduce((acc, c) => acc + c.charCodeAt(0), 0)
-  ) % IDEA_PROMPTS.length;
-  ideaPromptEl.textContent = IDEA_PROMPTS[index];
-  localStorage.setItem(IDEA_DAY_KEY, today);
+  ) % prompts.length;
+  ideaPromptEl.textContent = prompts[index];
+  localStorage.setItem(IDEA_DAY_KEY, promptKey);
 }
 
 function renderIdeas() {
@@ -923,7 +937,16 @@ function render() {
     const speakerClass = m.speaker === "user" ? "user" : m.speaker === "R" ? "r" : "s";
     const speakerAvatar = document.createElement("span");
     speakerAvatar.className = `speaker-avatar ${speakerClass}`;
-    speakerAvatar.textContent = m.speaker === "user" ? "🧑" : m.speaker === "R" ? "😼" : "✨";
+    speakerAvatar.setAttribute("aria-hidden", "true");
+    if (m.speaker === "user") {
+      speakerAvatar.textContent = "🧑";
+    } else {
+      const avatarImg = document.createElement("img");
+      avatarImg.className = "speaker-avatar-img";
+      avatarImg.alt = "";
+      avatarImg.src = m.speaker === "R" ? "./sempo.png" : "./Vivi.jpg";
+      speakerAvatar.appendChild(avatarImg);
+    }
     const badge = document.createElement("span");
     badge.className = `badge ${speakerClass}`;
     badge.textContent = m.speaker === "user" ? "you" : m.speaker === "R" ? "Samii" : "Vivi";

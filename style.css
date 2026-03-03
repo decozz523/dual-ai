@@ -1260,15 +1260,23 @@ input:focus, textarea:focus { border-color: rgba(47, 126, 216, 0.9); box-shadow:
 }
 
 .speaker-avatar {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-size: 12px;
+  overflow: hidden;
   border: 1px solid rgba(140, 164, 197, 0.35);
   background: rgba(244, 248, 254, 0.95);
+}
+
+.speaker-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .badge {
