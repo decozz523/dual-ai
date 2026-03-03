@@ -1505,38 +1505,65 @@ body.theme-dark .msg-s {
   .hero-title { font-size: 22px; }
   .hero-subtitle { font-size: 13px; }
   .topbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "title menu"
+      "actions actions";
     gap: 8px;
     padding: 10px 12px;
   }
-  .topbar-left, .topbar-right {
-    width: 100%;
-    justify-content: flex-start;
-    gap: 6px;
+  .topbar-title {
+    grid-area: title;
+    order: 1;
+    width: auto;
+    text-align: left;
+    min-width: 0;
   }
-  .topbar-right { order: 3; align-items: center; }
-  .topbar-left { order: 2; flex-wrap: wrap; }
-  .topbar-title { order: 1; width: 100%; text-align: left; }
   .topbar-title .h1 { font-size: 18px; line-height: 1.15; }
   .brand-logo { width: 26px; height: 26px; border-radius: 7px; }
   .topbar-title .subtitle { display: none; }
+  .topbar-right {
+    grid-area: menu;
+    order: 2;
+    width: auto;
+    justify-content: flex-end;
+    gap: 6px;
+    align-items: center;
+  }
+  .topbar-left {
+    grid-area: actions;
+    order: 3;
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
   .topbar .btn,
   .topbar .icon-btn {
-    min-height: 32px;
+    min-height: 34px;
     padding: 7px 10px;
     border-radius: 10px;
     font-size: 13px;
   }
-  .topbar-left .btn,
-  .topbar-right .btn,
-  .topbar-right .icon-btn {
-    flex: 1 1 calc(50% - 3px);
+  .topbar-left .btn {
     min-width: 0;
+    width: 100%;
+    justify-content: center;
   }
   .topbar-right .status-pill,
-  .topbar-right .plan-pill {
-    flex: 0 1 auto;
-    padding: 4px 8px;
-    font-size: 11px;
+  .topbar-right .plan-pill,
+  .topbar-right #homeBtn {
+    display: none;
+  }
+  .topbar-right .icon-btn {
+    flex: 0 0 auto;
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    min-height: 36px;
+    padding: 0;
+    border-radius: 10px;
   }
   .messages {
     max-height: 56vh;
