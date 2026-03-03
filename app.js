@@ -43,11 +43,17 @@ const settingsBody = $("settingsBody");
 const settingsScrollHint = $("settingsScrollHint");
 const settingsLogoutBtn = $("settingsLogoutBtn");
 const settingsAccountEmailEl = $("settingsAccountEmail");
+const settingsProfileNameEl = $("settingsProfileName");
+const settingsProfileAgeEl = $("settingsProfileAge");
+const settingsProfileBirthdateEl = $("settingsProfileBirthdate");
+const editProfileBtn = $("editProfileBtn");
 const authOverlay = $("authOverlay");
 const authModal = $("authModal");
 const authCloseBtn = $("authCloseBtn");
 const authEmailEl = $("authEmail");
 const authPasswordEl = $("authPassword");
+const authNameEl = $("authName");
+const authBirthdateEl = $("authBirthdate");
 const authMessageEl = $("authMessage");
 const authSignInBtn = $("authSignInBtn");
 const authSignUpBtn = $("authSignUpBtn");
@@ -103,6 +109,7 @@ const termsTextEl = $("termsText");
 const languageToggleEl = $("languageToggle");
 
 const LANG_KEY = "dual-ai-lang-v1";
+const PROFILE_KEY = "dual-ai-user-profile-v1";
 const SUPPORTED_LANGS = ["ru", "en"];
 let currentLanguage = "ru";
 
@@ -203,6 +210,16 @@ const I18N = {
     hintTheme: "Удобнее для работы ночью. Применяется сразу.",
     labelActivationCode: "Код активации",
     accountGuest: "Гость (не выполнен вход)",
+    editProfile: "Редактировать профиль",
+    profileName: "Имя",
+    profileAgeGroup: "Возрастная группа",
+    profileBirthdate: "Дата рождения",
+    ageGroupMinor: "до 18",
+    ageGroupAdult: "18+",
+    ageGroupUnknown: "не указано",
+    authNameLabel: "Имя (для обращения)",
+    authNamePlaceholder: "Например, Алекс",
+    authBirthdateLabel: "Дата рождения",
   },
   en: {
     pageTitle: "dual-ai (Samii & Vivi)",
@@ -300,6 +317,16 @@ const I18N = {
     hintTheme: "More comfortable at night. Applies instantly.",
     labelActivationCode: "Activation code",
     accountGuest: "Guest (not signed in)",
+    editProfile: "Edit profile",
+    profileName: "Name",
+    profileAgeGroup: "Age group",
+    profileBirthdate: "Date of birth",
+    ageGroupMinor: "under 18",
+    ageGroupAdult: "18+",
+    ageGroupUnknown: "not set",
+    authNameLabel: "Name (for addressing)",
+    authNamePlaceholder: "For example, Alex",
+    authBirthdateLabel: "Date of birth",
   },
 };
 
@@ -412,6 +439,13 @@ function applyLanguage(lang) {
   setText("#authSubtitle", t("authSubtitle"));
   setText("#authHint", t("authHint"));
   setText("#consentText", t("consentText"));
+  setText("#authNameLabel", t("authNameLabel"));
+  setText("#authBirthdateLabel", t("authBirthdateLabel"));
+  setText("#profileNameLabel", t("profileName"));
+  setText("#profileAgeLabel", t("profileAgeGroup"));
+  setText("#profileBirthdateLabel", t("profileBirthdate"));
+  setText("#editProfileBtn", t("editProfile"));
+  if (authNameEl) authNameEl.placeholder = t("authNamePlaceholder");
   setText("#upgradeSubtitle", t("upgradeSubtitle"));
   setText("#upgradeStep1Title", t("upgradeStep1Title"));
   setText("#upgradeStep1Text", t("upgradeStep1Text"));
@@ -454,7 +488,8 @@ function applyLanguage(lang) {
 
   const activationCodeLabel = document.querySelector("#settingsModal #activationCodeInput")?.previousElementSibling;
   if (activationCodeLabel) activationCodeLabel.textContent = t("labelActivationCode");
-  if (settingsAccountEmailEl && !authSession?.user?.email) settingsAccountEmailEl.textContent = t("accountGuest");
+  if (settingsAccountEmailEl && !authSession?.user?.id) settingsAccountEmailEl.textContent = t("accountGuest");
+  renderProfileSummary(getActiveUserProfile());
 
   const staticText = {
     ru: {
@@ -536,6 +571,7 @@ function applyLanguage(lang) {
   if (!statusEl.textContent || [I18N.ru.statusReady, I18N.en.statusReady].includes(statusEl.textContent)) {
     setStatus(t("statusReady"), "ok");
   }
+  setDailyIdeaPrompt();
   setPlanState(currentPlan, currentUsageCount);
 }
 
@@ -568,13 +604,24 @@ const IDEAS_KEY = "dual-ai-ideas-v1";
 const IDEA_DAY_KEY = "dual-ai-idea-day-v1";
 const TEMPLATES_KEY = "dual-ai-prompt-templates-v1";
 
-const IDEA_PROMPTS = [
-  "Какой сценарий использования вы хотите улучшить?",
-  "Что бы вы автоматизировали в своём рабочем процессе?",
-  "Какая функция сделает чат более полезным?",
-  "Какая аналитика или отчёт вам нужнее всего?",
-  "Что мешает пользоваться чатом чаще?",
-];
+const IDEA_PROMPTS = {
+  ru: [
+    "Сформулируйте главный вопрос дня.",
+    "Какой сценарий использования вы хотите улучшить?",
+    "Что бы вы автоматизировали в своём рабочем процессе?",
+    "Какая функция сделает чат более полезным?",
+    "Какая аналитика или отчёт вам нужнее всего?",
+    "Что мешает пользоваться чатом чаще?",
+  ],
+  en: [
+    "Formulate the main question of the day.",
+    "Which usage scenario would you like to improve?",
+    "What would you automate in your workflow?",
+    "Which feature would make this chat more useful?",
+    "Which analytics or report do you need most?",
+    "What prevents you from using the chat more often?",
+  ],
+};
 
 const VIBE_INSTRUCTIONS = {
   standard: "",
@@ -636,6 +683,108 @@ function setAuthMessage(text, kind = "muted") {
   if (kind === "ok") authMessageEl.classList.add("ok");
 }
 
+function normalizeBirthDate(value) {
+  if (!value) return "";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "";
+  return parsed.toISOString().slice(0, 10);
+}
+
+function calculateAge(birthDate) {
+  if (!birthDate) return null;
+  const dob = new Date(birthDate);
+  if (Number.isNaN(dob.getTime())) return null;
+  const today = new Date();
+  let age = today.getUTCFullYear() - dob.getUTCFullYear();
+  const monthDiff = today.getUTCMonth() - dob.getUTCMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getUTCDate() < dob.getUTCDate())) age -= 1;
+  return age;
+}
+
+let cachedActiveProfile = undefined;
+
+function invalidateProfileCache() {
+  cachedActiveProfile = undefined;
+}
+
+function loadLocalProfile() {
+  try {
+    const raw = localStorage.getItem(PROFILE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return null;
+    return {
+      name: String(parsed.name || "").trim(),
+      birthDate: normalizeBirthDate(parsed.birthDate || ""),
+      isAdult: Boolean(parsed.isAdult),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function saveLocalProfile(profile) {
+  invalidateProfileCache();
+  if (!profile) {
+    localStorage.removeItem(PROFILE_KEY);
+    return;
+  }
+  localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+}
+
+function getActiveUserProfile() {
+  if (cachedActiveProfile !== undefined) return cachedActiveProfile;
+
+  const meta = authSession?.user?.user_metadata || {};
+  const name = String(meta.display_name || "").trim();
+  const birthDate = normalizeBirthDate(meta.birth_date || "");
+  const age = calculateAge(birthDate);
+  const isAdult = age !== null ? age >= 18 : undefined;
+  if (name || birthDate) {
+    cachedActiveProfile = { name, birthDate, age, isAdult };
+    return cachedActiveProfile;
+  }
+
+  const localProfile = loadLocalProfile();
+  if (!localProfile) {
+    cachedActiveProfile = null;
+    return cachedActiveProfile;
+  }
+  const localAge = calculateAge(localProfile.birthDate);
+  cachedActiveProfile = {
+    name: localProfile.name,
+    birthDate: localProfile.birthDate,
+    age: localAge,
+    isAdult: localAge !== null ? localAge >= 18 : localProfile.isAdult,
+  };
+  return cachedActiveProfile;
+}
+
+function renderProfileSummary(profile) {
+  if (!settingsProfileNameEl || !settingsProfileAgeEl || !settingsProfileBirthdateEl) return;
+  settingsProfileNameEl.textContent = profile?.name || "—";
+  if (profile?.age === null || profile?.age === undefined) {
+    settingsProfileAgeEl.textContent = t("ageGroupUnknown");
+  } else {
+    settingsProfileAgeEl.textContent = profile.isAdult ? t("ageGroupAdult") : t("ageGroupMinor");
+  }
+  settingsProfileBirthdateEl.textContent = profile?.birthDate || "—";
+}
+
+function getUserProfileInstruction() {
+  const profile = getActiveUserProfile();
+  if (!profile || (!profile.name && profile.age === null)) return "";
+  const chunks = [];
+  if (profile.name) chunks.push(`Имя пользователя: ${profile.name}.`);
+  if (profile.age !== null) {
+    chunks.push(`Возраст пользователя: ${profile.age}.`);
+    chunks.push(profile.isAdult ? "Пользователь взрослый (18+)." : "Пользователь младше 18 лет.");
+  }
+  chunks.push("Обращайся к пользователю по имени, если оно указано.");
+  chunks.push("Тон ответа подбирай этично и безопасно в зависимости от возраста.");
+  return `Контекст профиля пользователя: ${chunks.join(" ")}`;
+}
+
 function openAuthModal() {
   if (!supabase) {
     setStatus("Supabase не настроен или ещё инициализируется.", "error");
@@ -652,14 +801,28 @@ function closeAuthModal() {
 
 function updateAuthUI(session) {
   authSession = session;
+  invalidateProfileCache();
   planReady = null;
-  const email = session?.user?.email;
-  loginBtn.hidden = !!email;
-  settingsAccountEmailEl.textContent = email || "Гость (не выполнен вход)";
-  if (email) {
+  const user = session?.user || null;
+  const isSignedIn = Boolean(user?.id);
+  const profile = getActiveUserProfile();
+  const accountLabel = profile?.name || user?.email || user?.phone || t("accountGuest");
+  loginBtn.hidden = isSignedIn;
+  settingsAccountEmailEl.textContent = accountLabel;
+  renderProfileSummary(profile);
+  if (authNameEl) authNameEl.value = profile?.name || "";
+  if (authBirthdateEl) authBirthdateEl.value = profile?.birthDate || "";
+  if (isSignedIn) {
     setAuthScene(false);
+    if (profile) {
+      saveLocalProfile({
+        name: profile.name,
+        birthDate: profile.birthDate,
+        isAdult: Boolean(profile.isAdult),
+      });
+    }
   }
-  if (email) {
+  if (isSignedIn) {
     void syncDialogsFromSupabase();
     void refreshPlanAndUsage({ force: true });
     if (upgradePending) {
@@ -720,6 +883,7 @@ async function initSupabase() {
         "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"
       );
       supabase = createClient(data.url, data.anonKey);
+      loginBtn.disabled = false;
       const { data: sessionData } = await supabase.auth.getSession();
       updateAuthUI(sessionData?.session || null);
       supabase.auth.onAuthStateChange((_event, session) => {
@@ -816,14 +980,16 @@ function saveIdeas(ideas) {
 
 function setDailyIdeaPrompt() {
   if (!ideaPromptEl) return;
+  const prompts = IDEA_PROMPTS[currentLanguage] || IDEA_PROMPTS.ru;
   const today = getTodayKey();
   const stored = localStorage.getItem(IDEA_DAY_KEY);
-  if (stored === today) return;
+  const promptKey = `${today}-${currentLanguage}`;
+  if (stored === promptKey) return;
   const index = Math.abs(
     Array.from(today).reduce((acc, c) => acc + c.charCodeAt(0), 0)
-  ) % IDEA_PROMPTS.length;
-  ideaPromptEl.textContent = IDEA_PROMPTS[index];
-  localStorage.setItem(IDEA_DAY_KEY, today);
+  ) % prompts.length;
+  ideaPromptEl.textContent = prompts[index];
+  localStorage.setItem(IDEA_DAY_KEY, promptKey);
 }
 
 function renderIdeas() {
@@ -923,7 +1089,16 @@ function render() {
     const speakerClass = m.speaker === "user" ? "user" : m.speaker === "R" ? "r" : "s";
     const speakerAvatar = document.createElement("span");
     speakerAvatar.className = `speaker-avatar ${speakerClass}`;
-    speakerAvatar.textContent = m.speaker === "user" ? "🧑" : m.speaker === "R" ? "😼" : "✨";
+    speakerAvatar.setAttribute("aria-hidden", "true");
+    if (m.speaker === "user") {
+      speakerAvatar.textContent = "🧑";
+    } else {
+      const avatarImg = document.createElement("img");
+      avatarImg.className = "speaker-avatar-img";
+      avatarImg.alt = "";
+      avatarImg.src = m.speaker === "R" ? "./sempo.png" : "./Vivi.jpg";
+      speakerAvatar.appendChild(avatarImg);
+    }
     const badge = document.createElement("span");
     badge.className = `badge ${speakerClass}`;
     badge.textContent = m.speaker === "user" ? "you" : m.speaker === "R" ? "Samii" : "Vivi";
@@ -1907,6 +2082,10 @@ async function runTurn(speaker) {
   }
 
   const messages = toOpenRouterMessages();
+  const profileInstruction = getUserProfileInstruction();
+  if (profileInstruction) {
+    messages.push({ role: "user", content: profileInstruction });
+  }
   if (deepModeEnabled && currentPlan === "pro") {
     messages.push({
       role: "user",
@@ -2186,6 +2365,13 @@ loginBtn.addEventListener("click", () => {
   }
   openAuthModal();
 });
+editProfileBtn?.addEventListener("click", () => {
+  if (!supabase) {
+    initSupabase().then(() => openAuthModal());
+    return;
+  }
+  openAuthModal();
+});
 upgradeBtn.addEventListener("click", () => {
   if (!authSession) {
     upgradePending = true;
@@ -2365,9 +2551,19 @@ authSignInBtn.addEventListener("click", async () => {
   if (!supabase) return;
   const email = authEmailEl.value.trim();
   const password = authPasswordEl.value;
+  const displayName = authNameEl?.value.trim() || "";
+  const birthDate = normalizeBirthDate(authBirthdateEl?.value || "");
+  const age = calculateAge(birthDate);
   if (!email || !password) {
     setAuthMessage("Введите email и пароль.", "error");
     return;
+  }
+  if (displayName || birthDate) {
+    saveLocalProfile({
+      name: displayName,
+      birthDate,
+      isAdult: age !== null ? age >= 18 : false,
+    });
   }
   authSignInBtn.disabled = true;
   authSignUpBtn.disabled = true;
@@ -2387,10 +2583,32 @@ authSignUpBtn.addEventListener("click", async () => {
   if (!supabase) return;
   const email = authEmailEl.value.trim();
   const password = authPasswordEl.value;
+  const displayName = authNameEl?.value.trim() || "";
+  const birthDate = normalizeBirthDate(authBirthdateEl?.value || "");
+  const age = calculateAge(birthDate);
   if (!email || !password) {
     setAuthMessage("Введите email и пароль.", "error");
     return;
   }
+  if (birthDate && (age === null || age < 13)) {
+    setAuthMessage("Регистрация доступна с 13 лет.", "error");
+    return;
+  }
+  if (birthDate && age !== null && age > 120) {
+    setAuthMessage("Проверьте дату рождения.", "error");
+    return;
+  }
+  if (displayName.length > 50) {
+    setAuthMessage("Имя слишком длинное (макс. 50 символов).", "error");
+    return;
+  }
+
+  const profilePayload = {
+    name: displayName,
+    birthDate,
+    isAdult: age !== null ? age >= 18 : false,
+  };
+
   authSignInBtn.disabled = true;
   authSignUpBtn.disabled = true;
   authResendBtn.disabled = true;
@@ -2400,9 +2618,15 @@ authSignUpBtn.addEventListener("click", async () => {
       password,
       options: {
         emailRedirectTo: window.location.origin,
+        data: {
+          display_name: displayName || undefined,
+          birth_date: birthDate || undefined,
+          is_adult: age !== null ? age >= 18 : undefined,
+        },
       },
     });
     if (error) throw error;
+    saveLocalProfile(profilePayload);
     setAuthMessage("Аккаунт создан. Проверьте почту для подтверждения.", "ok");
   } catch (e) {
     setAuthMessage(String(e?.message || e), "error");

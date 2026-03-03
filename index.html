@@ -295,7 +295,13 @@
         <section class="drawer-section">
           <div class="section-title">Аккаунт</div>
           <div class="account-box" id="settingsAccountEmail">Гость (не выполнен вход)</div>
+          <div class="profile-box" id="settingsProfileBox">
+            <div class="profile-row"><span class="profile-label" id="profileNameLabel">Имя</span><span id="settingsProfileName">—</span></div>
+            <div class="profile-row"><span class="profile-label" id="profileAgeLabel">Возрастная группа</span><span id="settingsProfileAge">—</span></div>
+            <div class="profile-row"><span class="profile-label" id="profileBirthdateLabel">Дата рождения</span><span id="settingsProfileBirthdate">—</span></div>
+          </div>
           <div class="row">
+            <button id="editProfileBtn" class="btn btn-secondary">Редактировать профиль</button>
             <button id="settingsLogoutBtn" class="btn btn-secondary">Выйти из аккаунта</button>
           </div>
         </section>
@@ -342,6 +348,14 @@
         <label class="field">
           <div class="label">Пароль</div>
           <input id="authPassword" type="password" placeholder="••••••••" autocomplete="current-password" />
+        </label>
+        <label class="field">
+          <div class="label" id="authNameLabel">Имя (для обращения)</div>
+          <input id="authName" type="text" placeholder="Например, Алекс" autocomplete="name" />
+        </label>
+        <label class="field">
+          <div class="label" id="authBirthdateLabel">Дата рождения</div>
+          <input id="authBirthdate" type="date" autocomplete="bday" />
         </label>
         <div id="authMessage" class="auth-message" role="status"></div>
         <div class="auth-hint" id="authHint">
