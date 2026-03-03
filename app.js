@@ -91,6 +91,11 @@ const termsOverlay = $("termsOverlay");
 const termsModal = $("termsModal");
 const termsCloseBtn = $("termsCloseBtn");
 const vibeModeEl = $("vibeMode");
+const summaryBtn = $("summaryBtn");
+const saveTemplateBtn = $("saveTemplateBtn");
+const templateListEl = $("templateList");
+const dialogSearchInput = $("dialogSearchInput");
+const dialogTagFilter = $("dialogTagFilter");
 
 let supabase = null;
 let authSession = null;
@@ -105,6 +110,7 @@ let currentTheme = "light";
 let openDialogMenuId = null;
 let dialogMeta = {};
 let currentMode = "home";
+let activeAbortController = null;
 
 const TELEGRAM_BOT_URL = "https://t.me/dual_ai_pay_bot";
 
@@ -118,6 +124,7 @@ const DEFAULT_FREE_MODEL = "deepseek/deepseek-r1-0528:free";
 
 const IDEAS_KEY = "dual-ai-ideas-v1";
 const IDEA_DAY_KEY = "dual-ai-idea-day-v1";
+const TEMPLATES_KEY = "dual-ai-prompt-templates-v1";
 
 const IDEA_PROMPTS = [
   "Какой сценарий использования вы хотите улучшить?",
@@ -440,9 +447,16 @@ function findPrevUserMessage(index) {
 
 function submitQuickPrompt(text) {
   const value = String(text || "").trim();
-  if (!value || sendBtn.disabled) return;
+  if (!value || activeAbortController) return;
   inputEl.value = value;
   void onSend();
+}
+
+function setComposerGenerating(isGenerating) {
+  if (!sendBtn) return;
+  sendBtn.dataset.mode = isGenerating ? "stop" : "send";
+  sendBtn.textContent = isGenerating ? "⏹" : "➤";
+  sendBtn.title = isGenerating ? "Остановить генерацию" : "Отправить сообщение";
 }
 
 function render() {
@@ -513,6 +527,38 @@ function render() {
       regenerateBtn.dataset.index = String(index);
       regenerateBtn.textContent = "Перегенерировать";
       actions.appendChild(regenerateBtn);
+
+      const shortenBtn = document.createElement("button");
+      shortenBtn.className = "msg-action-btn";
+      shortenBtn.type = "button";
+      shortenBtn.dataset.action = "shorten";
+      shortenBtn.dataset.index = String(index);
+      shortenBtn.textContent = "Сократить";
+      actions.appendChild(shortenBtn);
+
+      const postBtn = document.createElement("button");
+      postBtn.className = "msg-action-btn";
+      postBtn.type = "button";
+      postBtn.dataset.action = "post";
+      postBtn.dataset.index = String(index);
+      postBtn.textContent = "Сделать пост";
+      actions.appendChild(postBtn);
+
+      const likeBtn = document.createElement("button");
+      likeBtn.className = "msg-action-btn";
+      likeBtn.type = "button";
+      likeBtn.dataset.action = "feedback-like";
+      likeBtn.dataset.index = String(index);
+      likeBtn.textContent = "👍";
+      actions.appendChild(likeBtn);
+
+      const dislikeBtn = document.createElement("button");
+      dislikeBtn.className = "msg-action-btn";
+      dislikeBtn.type = "button";
+      dislikeBtn.dataset.action = "feedback-dislike";
+      dislikeBtn.dataset.index = String(index);
+      dislikeBtn.textContent = "👎";
+      actions.appendChild(dislikeBtn);
     }
 
     wrap.appendChild(meta);
@@ -902,6 +948,60 @@ function saveDialogMeta() {
   localStorage.setItem(DIALOG_META_KEY, JSON.stringify(dialogMeta));
 }
 
+function loadTemplates() {
+  try {
+    const raw = localStorage.getItem(TEMPLATES_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.filter((v) => typeof v === "string" && v.trim()) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveTemplates(list) {
+  localStorage.setItem(TEMPLATES_KEY, JSON.stringify(list.slice(0, 20)));
+}
+
+function renderTemplateList() {
+  if (!templateListEl) return;
+  const templates = loadTemplates();
+  templateListEl.innerHTML = "";
+  if (templates.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "dialog-empty";
+    empty.textContent = "Пока нет шаблонов.";
+    templateListEl.appendChild(empty);
+    return;
+  }
+  for (const template of templates) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "dialog-item";
+    btn.textContent = template.slice(0, 92);
+    btn.addEventListener("click", () => {
+      inputEl.value = template;
+      inputEl.focus();
+      closeSettingsModal();
+      setMode("chat");
+      setStatus("Шаблон подставлен в поле ввода.", "ok");
+    });
+    templateListEl.appendChild(btn);
+  }
+}
+
+function saveCurrentInputAsTemplate() {
+  const value = String(inputEl.value || "").trim();
+  if (!value) {
+    setStatus("Введите текст перед сохранением шаблона.", "error");
+    return;
+  }
+  const templates = loadTemplates();
+  if (!templates.includes(value)) templates.unshift(value);
+  saveTemplates(templates);
+  renderTemplateList();
+  setStatus("Шаблон сохранён.", "ok");
+}
+
 function getDialogMeta(id) {
   return dialogMeta[id] || { pinned: false };
 }
@@ -985,6 +1085,8 @@ function ensureActiveDialog() {
 
 function renderDialogList() {
   dialogListEl.innerHTML = "";
+  const query = String(dialogSearchInput?.value || "").trim().toLowerCase();
+  const tagFilter = String(dialogTagFilter?.value || "all");
   if (dialogs.length === 0) {
     const empty = document.createElement("div");
     empty.className = "dialog-empty";
@@ -993,12 +1095,30 @@ function renderDialogList() {
     return;
   }
 
-  const orderedDialogs = [...dialogs].sort((a, b) => {
-    const pinA = getDialogMeta(a.id).pinned ? 1 : 0;
-    const pinB = getDialogMeta(b.id).pinned ? 1 : 0;
-    if (pinA !== pinB) return pinB - pinA;
-    return b.updatedAt - a.updatedAt;
-  });
+  const orderedDialogs = [...dialogs]
+    .sort((a, b) => {
+      const pinA = getDialogMeta(a.id).pinned ? 1 : 0;
+      const pinB = getDialogMeta(b.id).pinned ? 1 : 0;
+      if (pinA !== pinB) return pinB - pinA;
+      return b.updatedAt - a.updatedAt;
+    })
+    .filter((dialog) => {
+      const meta = getDialogMeta(dialog.id);
+      const dialogTag = meta.tag || "general";
+      if (tagFilter !== "all" && dialogTag !== tagFilter) return false;
+      if (!query) return true;
+      const inTitle = String(dialog.title || "").toLowerCase().includes(query);
+      const inMessages = dialog.messages?.some((m) => String(m.content || "").toLowerCase().includes(query));
+      return inTitle || Boolean(inMessages);
+    });
+
+  if (orderedDialogs.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "dialog-empty";
+    empty.textContent = "Ничего не найдено по фильтру.";
+    dialogListEl.appendChild(empty);
+    return;
+  }
 
   for (const dialog of orderedDialogs) {
     const item = document.createElement("div");
@@ -1009,17 +1129,19 @@ function renderDialogList() {
 
     const title = document.createElement("div");
     title.className = "dialog-title";
-    const pinned = getDialogMeta(dialog.id).pinned;
+    const metaInfo = getDialogMeta(dialog.id);
+    const pinned = metaInfo.pinned;
+    const tagLabel = metaInfo.tag || "general";
     title.textContent = `${pinned ? "📌 " : ""}${dialog.title || "Новый диалог"}`;
 
     const meta = document.createElement("div");
     meta.className = "dialog-meta";
-    meta.textContent = new Date(dialog.updatedAt).toLocaleString([], {
+    meta.textContent = `${tagLabel} · ${new Date(dialog.updatedAt).toLocaleString([], {
       hour: "2-digit",
       minute: "2-digit",
       day: "2-digit",
       month: "short",
-    });
+    })}`;
 
     const menuWrap = document.createElement("div");
     menuWrap.className = "dialog-menu";
@@ -1047,7 +1169,22 @@ function renderDialogList() {
       pinBtn.textContent = pinned ? "Открепить" : "Закрепить";
       pinBtn.addEventListener("click", (event) => {
         event.stopPropagation();
-        dialogMeta[dialog.id] = { pinned: !pinned };
+        dialogMeta[dialog.id] = { ...metaInfo, pinned: !pinned };
+        saveDialogMeta();
+        openDialogMenuId = null;
+        renderDialogList();
+      });
+
+      const tagBtn = document.createElement("button");
+      tagBtn.type = "button";
+      tagBtn.className = "dialog-menu-action";
+      tagBtn.textContent = "Изменить тег";
+      tagBtn.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const nextTag = window.prompt("Тег: general/business/content/study", tagLabel) || "";
+        const normalized = nextTag.trim().toLowerCase();
+        if (!["general", "business", "content", "study"].includes(normalized)) return;
+        dialogMeta[dialog.id] = { ...metaInfo, tag: normalized };
         saveDialogMeta();
         openDialogMenuId = null;
         renderDialogList();
@@ -1081,6 +1218,7 @@ function renderDialogList() {
       });
 
       menuPanel.appendChild(pinBtn);
+      menuPanel.appendChild(tagBtn);
       menuPanel.appendChild(renameBtn);
       menuPanel.appendChild(deleteBtn);
       menuWrap.appendChild(menuPanel);
@@ -1274,7 +1412,7 @@ function toOpenRouterMessages() {
   });
 }
 
-async function callOpenRouter({ model, persona, messages }) {
+async function callOpenRouter({ model, persona, messages, signal }) {
   const payload = {
     model,
     messages: [{ role: "system", content: persona.system }, ...messages],
@@ -1284,6 +1422,7 @@ async function callOpenRouter({ model, persona, messages }) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
+    signal,
   });
 
   if (!resp.ok) {
@@ -1297,6 +1436,22 @@ async function callOpenRouter({ model, persona, messages }) {
     throw new Error("OpenRouter: invalid response");
   }
   return content;
+}
+
+async function revealAssistantMessage(targetMessage, finalText) {
+  const chunks = String(finalText || "").split(/(\s+)/);
+  let built = "";
+  for (let i = 0; i < chunks.length; i++) {
+    if (activeAbortController?.signal.aborted) throw new Error("generation-aborted");
+    built += chunks[i];
+    targetMessage.content = built;
+    if (i % 4 === 0) {
+      render();
+      await new Promise((resolve) => setTimeout(resolve, 12));
+    }
+  }
+  targetMessage.content = finalText;
+  render();
 }
 
 async function runTurn(speaker) {
@@ -1319,15 +1474,28 @@ async function runTurn(speaker) {
     messages.push({ role: "user", content: vibeInstruction });
   }
   setStatus(`${speaker === "R" ? "Bot R" : "Bot S"} думает…`);
-  const text = await callOpenRouter({
-    model,
-    persona: PERSONAS[speaker],
-    messages,
-  });
-  transcript.push({ speaker, content: text, ts: Date.now() });
+  const pendingMessage = { speaker, content: "…", ts: Date.now() };
+  transcript.push(pendingMessage);
   render();
-  persistActiveDialog();
-  setStatus("Готов.", "ok");
+  try {
+    const text = await callOpenRouter({
+      model,
+      persona: PERSONAS[speaker],
+      messages,
+      signal: activeAbortController?.signal,
+    });
+    await revealAssistantMessage(pendingMessage, text);
+    persistActiveDialog();
+    setStatus("Готов.", "ok");
+  } catch (error) {
+    transcript.pop();
+    render();
+    if (activeAbortController?.signal.aborted) {
+      setStatus("Генерация остановлена.", "error");
+      throw new Error("generation-aborted");
+    }
+    throw error;
+  }
 }
 
 async function sendUserMessage(text) {
@@ -1366,6 +1534,10 @@ function getExtraTurns() {
 }
 
 async function onSend() {
+  if (activeAbortController) {
+    activeAbortController.abort();
+    return;
+  }
   const text = inputEl.value.trim();
   if (!text) return;
   if (!requireAuth()) return;
@@ -1376,17 +1548,41 @@ async function onSend() {
     return;
   }
 
-  sendBtn.disabled = true;
   demoBtn.disabled = true;
+  activeAbortController = new AbortController();
+  setComposerGenerating(true);
   inputEl.value = "";
   try {
     await sendUserMessage(text);
   } catch (e) {
-    setStatus(String(e?.message || e), "error");
+    if (String(e?.message || e) !== "generation-aborted") {
+      setStatus(String(e?.message || e), "error");
+    }
   } finally {
-    sendBtn.disabled = false;
+    activeAbortController = null;
+    setComposerGenerating(false);
     demoBtn.disabled = false;
   }
+}
+
+async function createSessionSummary() {
+  if (transcript.length === 0) {
+    setStatus("Нет сообщений для итога.", "error");
+    return;
+  }
+  if (!requireAuth()) return;
+  const baseMessages = transcript.slice(-10).map((m) => ({ role: "user", content: `${m.speaker}: ${m.content}` }));
+  const summaryText = await callOpenRouter({
+    model: modelEl.value.trim(),
+    persona: { system: "Сделай краткий итог: 1) ключевые выводы 2) план действий на 3 шага" },
+    messages: baseMessages,
+    signal: activeAbortController?.signal,
+  });
+  transcript.push({ speaker: "S", content: `Итог сессии:
+${summaryText}`, ts: Date.now() });
+  render();
+  persistActiveDialog();
+  setStatus("Итог добавлен.", "ok");
 }
 
 sendBtn.addEventListener("click", onSend);
@@ -1429,15 +1625,19 @@ observeBtn?.addEventListener("click", async () => {
   }
   const hasUserMessage = transcript.some((m) => m.speaker === "user");
   const text = hasUserMessage ? "Продолжите обсуждение." : "Привет";
-  sendBtn.disabled = true;
   demoBtn.disabled = true;
   observeBtn.disabled = true;
+  activeAbortController = new AbortController();
+  setComposerGenerating(true);
   try {
     await sendUserMessageWithTurns(text, 6);
   } catch (e) {
-    setStatus(String(e?.message || e), "error");
+    if (String(e?.message || e) !== "generation-aborted") {
+      setStatus(String(e?.message || e), "error");
+    }
   } finally {
-    sendBtn.disabled = false;
+    activeAbortController = null;
+    setComposerGenerating(false);
     demoBtn.disabled = false;
     observeBtn.disabled = false;
   }
@@ -1482,6 +1682,16 @@ clearDialogsBtn.addEventListener("click", () => {
   void clearAllDialogs();
 });
 menuBtn.addEventListener("click", openDrawer);
+summaryBtn?.addEventListener("click", async () => {
+  try {
+    await createSessionSummary();
+  } catch (e) {
+    setStatus(String(e?.message || e), "error");
+  }
+});
+saveTemplateBtn?.addEventListener("click", saveCurrentInputAsTemplate);
+dialogSearchInput?.addEventListener("input", renderDialogList);
+dialogTagFilter?.addEventListener("change", renderDialogList);
 openSettingsBtn.addEventListener("click", () => {
   closeDrawer();
   openSettingsModal();
@@ -1635,14 +1845,60 @@ messagesEl?.addEventListener("click", (event) => {
     return;
   }
 
+  if (action === "shorten") {
+    if (!requireAuth()) return;
+    inputEl.value = `Сократи это сообщение до 5 пунктов:
+
+${message.content}`;
+    inputEl.focus();
+    return;
+  }
+
+  if (action === "post") {
+    if (!requireAuth()) return;
+    inputEl.value = `Сделай из этого пост для Instagram с хук + CTA:
+
+${message.content}`;
+    inputEl.focus();
+    return;
+  }
+
+  if (action === "feedback-like" || action === "feedback-dislike") {
+    setStatus(action === "feedback-like" ? "Спасибо за 👍" : "Приняли 👎, улучшим ответ", "ok");
+    return;
+  }
+
   if (action === "regenerate") {
     if (!requireAuth()) return;
-    const prevUser = findPrevUserMessage(index);
-    if (!prevUser) {
-      setStatus("Не найдено исходное сообщение пользователя.", "error");
+    if (message.speaker === "user") return;
+    const hasBaseUser = transcript.slice(0, index).some((m) => m.speaker === "user");
+    if (!hasBaseUser) {
+      setStatus("Не найден контекст для перегенерации.", "error");
       return;
     }
-    submitQuickPrompt(prevUser.content);
+    const baseTranscript = transcript.slice(0, index);
+    transcript = baseTranscript;
+    render();
+    persistActiveDialog();
+
+    demoBtn.disabled = true;
+    activeAbortController = new AbortController();
+    setComposerGenerating(true);
+    runTurn(message.speaker)
+      .then(() => {
+        setStatus("Ответ перегенерирован.", "ok");
+      })
+      .catch((e) => {
+        if (String(e?.message || e) !== "generation-aborted") {
+          setStatus(String(e?.message || e), "error");
+        }
+      })
+      .finally(() => {
+        activeAbortController = null;
+        setComposerGenerating(false);
+        demoBtn.disabled = false;
+      });
+    return;
   }
 });
 authCloseBtn?.addEventListener("click", (event) => {
@@ -1761,6 +2017,8 @@ dialogMeta = loadDialogMeta();
 ensureActiveDialog();
 render();
 renderDialogList();
+renderTemplateList();
+setComposerGenerating(false);
 setMode("home");
 initSupabase();
 setPlanState("free", 0);

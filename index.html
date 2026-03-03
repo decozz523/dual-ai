@@ -136,6 +136,8 @@
             <button id="demoBtn" class="btn btn-secondary insta-tool-btn">⚡ Демо</button>
             <button id="observeBtn" class="btn btn-secondary insta-tool-btn">👀 Диалог</button>
             <button id="debateBtn" class="btn btn-secondary insta-tool-btn">🔥 Баттл</button>
+            <button id="summaryBtn" class="btn btn-secondary insta-tool-btn">🧾 Итог</button>
+            <button id="saveTemplateBtn" class="btn btn-secondary insta-tool-btn">💾 Шаблон</button>
             <select id="vibeMode" class="insta-vibe-select" aria-label="Стиль ответа">
               <option value="standard">Standard</option>
               <option value="biz">Biz Coach</option>
@@ -170,6 +172,18 @@
 
       <section class="drawer-section">
         <div class="section-title">Диалоги</div>
+        <label class="field field-compact">
+          <input id="dialogSearchInput" type="search" placeholder="Поиск по диалогам" />
+        </label>
+        <label class="field field-compact">
+          <select id="dialogTagFilter" aria-label="Фильтр по тегу">
+            <option value="all">Все теги</option>
+            <option value="general">Общее</option>
+            <option value="business">Бизнес</option>
+            <option value="content">Контент</option>
+            <option value="study">Учёба</option>
+          </select>
+        </label>
         <div id="dialogList" class="dialog-list" aria-live="polite"></div>
         <button id="drawerNewChatBtn" class="btn btn-primary">Новый диалог</button>
         <button id="openSettingsBtn" class="btn btn-secondary">Настройки</button>
@@ -283,6 +297,11 @@
             <button id="openPrivacyBtn" class="doc-link" type="button">Политика конфиденциальности</button>
             <button id="openTermsBtn" class="doc-link" type="button">Условия использования</button>
           </div>
+        </section>
+
+        <section class="drawer-section">
+          <div class="section-title">Шаблоны</div>
+          <div id="templateList" class="dialog-list" aria-live="polite"></div>
         </section>
 
         <section class="drawer-section">
