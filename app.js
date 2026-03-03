@@ -97,7 +97,7 @@ const templateListEl = $("templateList");
 const dialogSearchInput = $("dialogSearchInput");
 const dialogTagFilter = $("dialogTagFilter");
 
-const languageSelectEl = $("languageSelect");
+const languageToggleEl = $("languageToggle");
 
 const LANG_KEY = "dual-ai-lang-v1";
 const SUPPORTED_LANGS = ["ru", "en"];
@@ -127,6 +127,18 @@ const I18N = {
     observe: "👀 Диалог",
     debate: "🔥 Баттл",
     demo: "⚡ Демо",
+    subtitle: "Samii (дерзкий аналитик) + Vivi (милая аниме-тян) через наш сервер",
+    heroTitle: "Профессиональный чат для стратегий и идей",
+    heroSubtitle:
+      "Пара ботов ведёт дискуссию с тобой: рациональный бот структурирует, творческий — расширяет варианты. Управляй настройками через меню.",
+    quickTitle: "Быстрый старт",
+    quickBusiness: "Для предпринимателей",
+    quickYouth: "Для молодёжи и TikTok",
+    chatTitle: "Диалог Samii + Vivi",
+    chatSubtitle: "Два бота в одной сессии · online",
+    dialogs: "Диалоги",
+    searchDialogs: "Поиск по диалогам",
+    settingsSubtitle: "Параметры модели, аккаунта и диалогов",
   },
   en: {
     pageTitle: "dual-ai (Samii & Vivi)",
@@ -151,6 +163,18 @@ const I18N = {
     observe: "👀 Observe",
     debate: "🔥 Debate",
     demo: "⚡ Demo",
+    subtitle: "Samii (edgy analyst) + Vivi (sweet anime girl) via our server",
+    heroTitle: "Pro chat for strategy and ideas",
+    heroSubtitle:
+      "Two bots discuss your topic together: the rational one structures, the creative one expands options. Manage everything from settings.",
+    quickTitle: "Quick start",
+    quickBusiness: "For founders",
+    quickYouth: "For youth & TikTok",
+    chatTitle: "Samii + Vivi dialog",
+    chatSubtitle: "Two bots in one session · online",
+    dialogs: "Dialogs",
+    searchDialogs: "Search dialogs",
+    settingsSubtitle: "Model, account and dialog settings",
   },
 };
 
@@ -189,7 +213,7 @@ function applyLanguage(lang) {
   if (metaDescription) metaDescription.setAttribute("content", t("pageDescription"));
   document.title = t("pageTitle");
 
-  if (languageSelectEl) languageSelectEl.value = currentLanguage;
+  if (languageToggleEl) languageToggleEl.checked = currentLanguage === "en";
   if (loginBtn) loginBtn.textContent = t("login");
   if (upgradeBtn) upgradeBtn.textContent = t("upgrade");
   const supportBtn = document.querySelector('.topbar-left a.btn.btn-secondary');
@@ -211,6 +235,91 @@ function applyLanguage(lang) {
   if (observeBtn) observeBtn.textContent = t("observe");
   if (debateBtn) debateBtn.textContent = t("debate");
   if (demoBtn) demoBtn.textContent = t("demo");
+  const setText = (selector, value) => {
+    const el = document.querySelector(selector);
+    if (el) el.textContent = value;
+  };
+  setText(".topbar-title .subtitle", t("subtitle"));
+  setText(".hero-title", t("heroTitle"));
+  setText(".hero-subtitle", t("heroSubtitle"));
+  setText(".quick-title", t("quickTitle"));
+  const quickSectionTitles = document.querySelectorAll(".quick-section-title");
+  if (quickSectionTitles[0]) quickSectionTitles[0].textContent = t("quickBusiness");
+  if (quickSectionTitles[1]) quickSectionTitles[1].textContent = t("quickYouth");
+  setText(".chat-title", t("chatTitle"));
+  setText(".chat-subtitle", t("chatSubtitle"));
+  setText("#drawer .section-title", t("dialogs"));
+  if (dialogSearchInput) dialogSearchInput.placeholder = t("searchDialogs");
+  setText("#settingsModal .modal-subtitle", t("settingsSubtitle"));
+
+  const staticText = {
+    ru: {
+      '#settingsTitle': 'Настройки',
+      '.drawer-title': 'Меню',
+      '.drawer-subtitle': 'История диалогов и настройки',
+      '#settingsScrollHint .scroll-text': 'Прокрутите вниз для остальных настроек',
+      '#settingsModal .drawer-section .section-title': 'Модель и ответы',
+      '#modelHint': 'Выбор соединения доступен на Pro.',
+      '#themeToggle': '',
+      '#activateCodeBtn': 'Активировать код',
+      '#openUpgradeBtn': 'Оплатить / Upgrade',
+      '#settingsLogoutBtn': 'Выйти из аккаунта',
+      '#openPrivacyBtn': 'Политика конфиденциальности',
+      '#openTermsBtn': 'Условия использования',
+      '#authTitle': 'Вход в аккаунт',
+      '#authSignInBtn': 'Войти',
+      '#authSignUpBtn': 'Создать аккаунт',
+      '#authResendBtn': 'Отправить письмо ещё раз',
+      '#upgradeTitle': 'Оплата подписки',
+      '#telegramPayBtn': 'Оплатить через Telegram',
+      '#upgradeActivateBtn': 'Активировать код',
+      '#ideaTitle': 'Идеи и предложения',
+      '#ideaSubmitBtn': 'Отправить идею',
+      '#ideaCancelBtn': 'Закрыть',
+      '#privacyTitle': 'Политика конфиденциальности',
+      '#termsTitle': 'Условия использования',
+    },
+    en: {
+      '#settingsTitle': 'Settings',
+      '.drawer-title': 'Menu',
+      '.drawer-subtitle': 'Dialog history and settings',
+      '#settingsScrollHint .scroll-text': 'Scroll down for more settings',
+      '#settingsModal .drawer-section .section-title': 'Model and responses',
+      '#modelHint': 'Connection choice is available on Pro.',
+      '#themeToggle': '',
+      '#activateCodeBtn': 'Activate code',
+      '#openUpgradeBtn': 'Upgrade',
+      '#settingsLogoutBtn': 'Sign out',
+      '#openPrivacyBtn': 'Privacy policy',
+      '#openTermsBtn': 'Terms of use',
+      '#authTitle': 'Sign in',
+      '#authSignInBtn': 'Sign in',
+      '#authSignUpBtn': 'Create account',
+      '#authResendBtn': 'Resend email',
+      '#upgradeTitle': 'Subscription payment',
+      '#telegramPayBtn': 'Pay via Telegram',
+      '#upgradeActivateBtn': 'Activate code',
+      '#ideaTitle': 'Ideas and suggestions',
+      '#ideaSubmitBtn': 'Send idea',
+      '#ideaCancelBtn': 'Close',
+      '#privacyTitle': 'Privacy policy',
+      '#termsTitle': 'Terms of use',
+    },
+  };
+  Object.entries(staticText[currentLanguage]).forEach(([selector, value]) => {
+    if (!value) return;
+    const el = document.querySelector(selector);
+    if (el) el.textContent = value;
+  });
+
+  if (dialogTagFilter) {
+    const labels = currentLanguage === 'en'
+      ? ['All tags', 'General', 'Business', 'Content', 'Study']
+      : ['Все теги', 'Общее', 'Бизнес', 'Контент', 'Учёба'];
+    [...dialogTagFilter.options].forEach((option, index) => {
+      if (labels[index]) option.textContent = labels[index];
+    });
+  }
 
   const chips = QUICK_CHIPS[currentLanguage] || QUICK_CHIPS.ru;
   document.querySelectorAll('.chip-btn').forEach((button, index) => {
@@ -2135,10 +2244,8 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
-languageSelectEl?.addEventListener("change", (event) => {
-  const target = event.target;
-  if (!(target instanceof HTMLSelectElement)) return;
-  applyLanguage(target.value);
+languageToggleEl?.addEventListener("change", () => {
+  applyLanguage(languageToggleEl.checked ? "en" : "ru");
 });
 
 const preferredLanguage = localStorage.getItem(LANG_KEY) || (navigator.language || "ru").slice(0, 2);

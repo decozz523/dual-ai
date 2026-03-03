@@ -36,10 +36,14 @@
           <div class="subtitle">Samii (дерзкий аналитик) + Vivi (милая аниме-тян) через наш сервер</div>
         </div>
         <div class="topbar-right">
-          <select id="languageSelect" class="insta-vibe-select language-select" aria-label="Выбор языка">
-            <option value="ru">RU</option>
-            <option value="en">EN</option>
-          </select>
+          <label class="theme-toggle-row language-toggle-row" for="languageToggle">
+            <span class="theme-label-light">RU</span>
+            <span class="switch" aria-label="Switch language RU/EN">
+              <input id="languageToggle" type="checkbox" />
+              <span class="switch-slider"></span>
+            </span>
+            <span class="theme-label-dark">EN</span>
+          </label>
           <div class="status-pill" id="status">Готов.</div>
           <div class="plan-pill" id="planPill">Free</div>
           <button id="homeBtn" class="btn btn-secondary">Главное меню</button>
