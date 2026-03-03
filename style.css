@@ -58,6 +58,12 @@ body {
   gap: 12px;
 }
 
+.topbar-left .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .topbar-title {
   display: grid;
   gap: 2px;

@@ -21,6 +21,7 @@
           <button id="loginBtn" class="btn btn-secondary">Войти</button>
           <button id="upgradeBtn" class="btn btn-primary">Оплатить / Upgrade</button>
           <a
+            id="supportBtn"
             class="btn btn-secondary"
             href="https://www.donationalerts.com/r/SHADOWVOID1"
             target="_blank"
@@ -67,9 +68,9 @@
               <button id="ideaBtn" class="btn btn-secondary">Предложить идею</button>
             </div>
             <div class="hero-highlights">
-              <span class="hero-highlight">⚡ Быстрый запуск без лишних шагов</span>
-              <span class="hero-highlight">🧠 Samii + Vivi в одном диалоге</span>
-              <span class="hero-highlight">🎯 Фокус на практическом результате</span>
+              <span class="hero-highlight" id="heroHighlightFast">⚡ Быстрый запуск без лишних шагов</span>
+              <span class="hero-highlight" id="heroHighlightDuo">🧠 Samii + Vivi в одном диалоге</span>
+              <span class="hero-highlight" id="heroHighlightFocus">🎯 Фокус на практическом результате</span>
             </div>
           </div>
           <div class="quick-start">
@@ -91,38 +92,38 @@
           </div>
           <div class="hero-cards hero-cards-primary">
             <div class="info-card info-card-mode">
-              <div class="info-title">Горячая клавиша</div>
+              <div class="info-title" id="cardHotkeyTitle">Горячая клавиша</div>
               <div class="info-value">Enter</div>
-              <div class="info-hint">Отправляй сообщение одним нажатием.</div>
+              <div class="info-hint" id="cardHotkeyHint">Отправляй сообщение одним нажатием.</div>
             </div>
             <div class="info-card info-card-focus">
-              <div class="info-title">Фокус сессии</div>
-              <div class="info-value">3 ключевые цели</div>
-              <div class="info-hint">Запросите у ботов приоритетный план.</div>
+              <div class="info-title" id="cardFocusTitle">Фокус сессии</div>
+              <div class="info-value" id="cardFocusValue">3 ключевые цели</div>
+              <div class="info-hint" id="cardFocusHint">Запросите у ботов приоритетный план.</div>
             </div>
             <div class="info-card info-card-shortcut">
-              <div class="info-title">Режим диалога</div>
+              <div class="info-title" id="cardModeTitle">Режим диалога</div>
               <div class="info-value">dual-ai</div>
-              <div class="info-hint">Samii + Vivi ведут сессию.</div>
+              <div class="info-hint" id="cardModeHint">Samii + Vivi ведут сессию.</div>
             </div>
           </div>
           <details class="more-cards">
-            <summary>Показать ещё возможности</summary>
+            <summary id="moreCardsSummary">Показать ещё возможности</summary>
             <div class="hero-cards hero-cards-extra">
               <div class="info-card">
-                <div class="info-title">Идея дня</div>
+                <div class="info-title" id="cardIdeaTitle">Идея дня</div>
                 <div class="info-value" id="ideaPrompt">Сформулируйте главный вопрос дня.</div>
-                <div class="info-hint">Поделитесь своей идеей с командой.</div>
+                <div class="info-hint" id="cardIdeaHint">Поделитесь своей идеей с командой.</div>
               </div>
               <div class="info-card">
-                <div class="info-title">Безопасность</div>
-                <div class="info-value">Все данные защищены</div>
-                <div class="info-hint">Политикой конфиденциальности и условиями использования.</div>
+                <div class="info-title" id="cardSafetyTitle">Безопасность</div>
+                <div class="info-value" id="cardSafetyValue">Все данные защищены</div>
+                <div class="info-hint" id="cardSafetyHint">Политикой конфиденциальности и условиями использования.</div>
               </div>
               <div class="info-card">
-                <div class="info-title">Шаблоны</div>
-                <div class="info-value">Маркетинг и продукт</div>
-                <div class="info-hint">Готовые сценарии для быстрого старта.</div>
+                <div class="info-title" id="cardTemplatesTitle">Шаблоны</div>
+                <div class="info-value" id="cardTemplatesValue">Маркетинг и продукт</div>
+                <div class="info-hint" id="cardTemplatesHint">Готовые сценарии для быстрого старта.</div>
               </div>
             </div>
           </details>

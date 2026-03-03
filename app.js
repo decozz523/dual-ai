@@ -134,6 +134,25 @@ const I18N = {
     quickTitle: "Быстрый старт",
     quickBusiness: "Для предпринимателей",
     quickYouth: "Для молодёжи и TikTok",
+    heroHighlightFast: "⚡ Быстрый запуск без лишних шагов",
+    heroHighlightDuo: "🧠 Samii + Vivi в одном диалоге",
+    heroHighlightFocus: "🎯 Фокус на практическом результате",
+    cardHotkeyTitle: "Горячая клавиша",
+    cardHotkeyHint: "Отправляй сообщение одним нажатием.",
+    cardFocusTitle: "Фокус сессии",
+    cardFocusValue: "3 ключевые цели",
+    cardFocusHint: "Запросите у ботов приоритетный план.",
+    cardModeTitle: "Режим диалога",
+    cardModeHint: "Samii + Vivi ведут сессию.",
+    moreCardsSummary: "Показать ещё возможности",
+    cardIdeaTitle: "Идея дня",
+    cardIdeaHint: "Поделитесь своей идеей с командой.",
+    cardSafetyTitle: "Безопасность",
+    cardSafetyValue: "Все данные защищены",
+    cardSafetyHint: "Политикой конфиденциальности и условиями использования.",
+    cardTemplatesTitle: "Шаблоны",
+    cardTemplatesValue: "Маркетинг и продукт",
+    cardTemplatesHint: "Готовые сценарии для быстрого старта.",
     chatTitle: "Диалог Samii + Vivi",
     chatSubtitle: "Два бота в одной сессии · online",
     dialogs: "Диалоги",
@@ -170,6 +189,25 @@ const I18N = {
     quickTitle: "Quick start",
     quickBusiness: "For founders",
     quickYouth: "For youth & TikTok",
+    heroHighlightFast: "⚡ Fast start without extra steps",
+    heroHighlightDuo: "🧠 Samii + Vivi in one dialog",
+    heroHighlightFocus: "🎯 Focused on practical outcomes",
+    cardHotkeyTitle: "Hotkey",
+    cardHotkeyHint: "Send a message with one key press.",
+    cardFocusTitle: "Session focus",
+    cardFocusValue: "3 key goals",
+    cardFocusHint: "Ask bots for a prioritized plan.",
+    cardModeTitle: "Dialog mode",
+    cardModeHint: "Samii + Vivi run the session.",
+    moreCardsSummary: "Show more capabilities",
+    cardIdeaTitle: "Idea of the day",
+    cardIdeaHint: "Share your idea with the team.",
+    cardSafetyTitle: "Security",
+    cardSafetyValue: "All data is protected",
+    cardSafetyHint: "By our privacy policy and terms of use.",
+    cardTemplatesTitle: "Templates",
+    cardTemplatesValue: "Marketing and product",
+    cardTemplatesHint: "Ready-to-use scenarios for a quick start.",
     chatTitle: "Samii + Vivi dialog",
     chatSubtitle: "Two bots in one session · online",
     dialogs: "Dialogs",
@@ -216,7 +254,7 @@ function applyLanguage(lang) {
   if (languageToggleEl) languageToggleEl.checked = currentLanguage === "en";
   if (loginBtn) loginBtn.textContent = t("login");
   if (upgradeBtn) upgradeBtn.textContent = t("upgrade");
-  const supportBtn = document.querySelector('.topbar-left a.btn.btn-secondary');
+  const supportBtn = $("supportBtn") || document.querySelector('.topbar-left a.btn.btn-secondary');
   if (supportBtn) supportBtn.textContent = t("support");
   if (homeBtn) homeBtn.textContent = t("home");
   if (mobileHomeBtn) mobileHomeBtn.textContent = t("home");
@@ -246,6 +284,25 @@ function applyLanguage(lang) {
   const quickSectionTitles = document.querySelectorAll(".quick-section-title");
   if (quickSectionTitles[0]) quickSectionTitles[0].textContent = t("quickBusiness");
   if (quickSectionTitles[1]) quickSectionTitles[1].textContent = t("quickYouth");
+  setText("#heroHighlightFast", t("heroHighlightFast"));
+  setText("#heroHighlightDuo", t("heroHighlightDuo"));
+  setText("#heroHighlightFocus", t("heroHighlightFocus"));
+  setText("#cardHotkeyTitle", t("cardHotkeyTitle"));
+  setText("#cardHotkeyHint", t("cardHotkeyHint"));
+  setText("#cardFocusTitle", t("cardFocusTitle"));
+  setText("#cardFocusValue", t("cardFocusValue"));
+  setText("#cardFocusHint", t("cardFocusHint"));
+  setText("#cardModeTitle", t("cardModeTitle"));
+  setText("#cardModeHint", t("cardModeHint"));
+  setText("#moreCardsSummary", t("moreCardsSummary"));
+  setText("#cardIdeaTitle", t("cardIdeaTitle"));
+  setText("#cardIdeaHint", t("cardIdeaHint"));
+  setText("#cardSafetyTitle", t("cardSafetyTitle"));
+  setText("#cardSafetyValue", t("cardSafetyValue"));
+  setText("#cardSafetyHint", t("cardSafetyHint"));
+  setText("#cardTemplatesTitle", t("cardTemplatesTitle"));
+  setText("#cardTemplatesValue", t("cardTemplatesValue"));
+  setText("#cardTemplatesHint", t("cardTemplatesHint"));
   setText(".chat-title", t("chatTitle"));
   setText(".chat-subtitle", t("chatSubtitle"));
   setText("#drawer .section-title", t("dialogs"));
