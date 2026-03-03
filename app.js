@@ -482,7 +482,7 @@ function render() {
 
     const badge = document.createElement("span");
     badge.className = "badge " + (m.speaker === "user" ? "user" : m.speaker === "R" ? "r" : "s");
-    badge.textContent = m.speaker === "user" ? "you" : m.speaker;
+    badge.textContent = m.speaker === "user" ? "you" : m.speaker === "R" ? "Samii" : "Vivi";
     left.appendChild(badge);
 
     meta.appendChild(left);
@@ -1571,7 +1571,10 @@ async function createSessionSummary() {
     return;
   }
   if (!requireAuth()) return;
-  const baseMessages = transcript.slice(-10).map((m) => ({ role: "user", content: `${m.speaker}: ${m.content}` }));
+  const baseMessages = transcript.slice(-10).map((m) => ({
+    role: "user",
+    content: `${m.speaker === "user" ? "Человек" : m.speaker === "R" ? "Samii" : "Vivi"}: ${m.content}`,
+  }));
   const summaryText = await callOpenRouter({
     model: modelEl.value.trim(),
     persona: { system: "Сделай краткий итог: 1) ключевые выводы 2) план действий на 3 шага" },
