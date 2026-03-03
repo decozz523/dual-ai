@@ -48,6 +48,8 @@ const authModal = $("authModal");
 const authCloseBtn = $("authCloseBtn");
 const authEmailEl = $("authEmail");
 const authPasswordEl = $("authPassword");
+const authNameEl = $("authName");
+const authBirthdateEl = $("authBirthdate");
 const authMessageEl = $("authMessage");
 const authSignInBtn = $("authSignInBtn");
 const authSignUpBtn = $("authSignUpBtn");
@@ -103,6 +105,7 @@ const termsTextEl = $("termsText");
 const languageToggleEl = $("languageToggle");
 
 const LANG_KEY = "dual-ai-lang-v1";
+const PROFILE_KEY = "dual-ai-user-profile-v1";
 const SUPPORTED_LANGS = ["ru", "en"];
 let currentLanguage = "ru";
 
@@ -203,6 +206,9 @@ const I18N = {
     hintTheme: "Удобнее для работы ночью. Применяется сразу.",
     labelActivationCode: "Код активации",
     accountGuest: "Гость (не выполнен вход)",
+    authNameLabel: "Имя (для обращения)",
+    authNamePlaceholder: "Например, Алекс",
+    authBirthdateLabel: "Дата рождения",
   },
   en: {
     pageTitle: "dual-ai (Samii & Vivi)",
@@ -300,6 +306,9 @@ const I18N = {
     hintTheme: "More comfortable at night. Applies instantly.",
     labelActivationCode: "Activation code",
     accountGuest: "Guest (not signed in)",
+    authNameLabel: "Name (for addressing)",
+    authNamePlaceholder: "For example, Alex",
+    authBirthdateLabel: "Date of birth",
   },
 };
 
@@ -412,6 +421,9 @@ function applyLanguage(lang) {
   setText("#authSubtitle", t("authSubtitle"));
   setText("#authHint", t("authHint"));
   setText("#consentText", t("consentText"));
+  setText("#authNameLabel", t("authNameLabel"));
+  setText("#authBirthdateLabel", t("authBirthdateLabel"));
+  if (authNameEl) authNameEl.placeholder = t("authNamePlaceholder");
   setText("#upgradeSubtitle", t("upgradeSubtitle"));
   setText("#upgradeStep1Title", t("upgradeStep1Title"));
   setText("#upgradeStep1Text", t("upgradeStep1Text"));
@@ -454,7 +466,7 @@ function applyLanguage(lang) {
 
   const activationCodeLabel = document.querySelector("#settingsModal #activationCodeInput")?.previousElementSibling;
   if (activationCodeLabel) activationCodeLabel.textContent = t("labelActivationCode");
-  if (settingsAccountEmailEl && !authSession?.user?.email) settingsAccountEmailEl.textContent = t("accountGuest");
+  if (settingsAccountEmailEl && !authSession?.user?.id) settingsAccountEmailEl.textContent = t("accountGuest");
 
   const staticText = {
     ru: {
@@ -648,6 +660,81 @@ function setAuthMessage(text, kind = "muted") {
   if (kind === "ok") authMessageEl.classList.add("ok");
 }
 
+function normalizeBirthDate(value) {
+  if (!value) return "";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "";
+  return parsed.toISOString().slice(0, 10);
+}
+
+function calculateAge(birthDate) {
+  if (!birthDate) return null;
+  const dob = new Date(birthDate);
+  if (Number.isNaN(dob.getTime())) return null;
+  const today = new Date();
+  let age = today.getUTCFullYear() - dob.getUTCFullYear();
+  const monthDiff = today.getUTCMonth() - dob.getUTCMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getUTCDate() < dob.getUTCDate())) age -= 1;
+  return age;
+}
+
+function loadLocalProfile() {
+  try {
+    const raw = localStorage.getItem(PROFILE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return null;
+    return {
+      name: String(parsed.name || "").trim(),
+      birthDate: normalizeBirthDate(parsed.birthDate || ""),
+      isAdult: Boolean(parsed.isAdult),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function saveLocalProfile(profile) {
+  if (!profile) {
+    localStorage.removeItem(PROFILE_KEY);
+    return;
+  }
+  localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+}
+
+function getActiveUserProfile() {
+  const meta = authSession?.user?.user_metadata || {};
+  const name = String(meta.display_name || "").trim();
+  const birthDate = normalizeBirthDate(meta.birth_date || "");
+  const age = calculateAge(birthDate);
+  const isAdult = age !== null ? age >= 18 : undefined;
+  if (name || birthDate) return { name, birthDate, age, isAdult };
+
+  const localProfile = loadLocalProfile();
+  if (!localProfile) return null;
+  const localAge = calculateAge(localProfile.birthDate);
+  return {
+    name: localProfile.name,
+    birthDate: localProfile.birthDate,
+    age: localAge,
+    isAdult: localAge !== null ? localAge >= 18 : localProfile.isAdult,
+  };
+}
+
+function getUserProfileInstruction() {
+  const profile = getActiveUserProfile();
+  if (!profile || (!profile.name && profile.age === null)) return "";
+  const chunks = [];
+  if (profile.name) chunks.push(`Имя пользователя: ${profile.name}.`);
+  if (profile.age !== null) {
+    chunks.push(`Возраст пользователя: ${profile.age}.`);
+    chunks.push(profile.isAdult ? "Пользователь взрослый (18+)." : "Пользователь младше 18 лет.");
+  }
+  chunks.push("Обращайся к пользователю по имени, если оно указано.");
+  chunks.push("Тон ответа подбирай этично и безопасно в зависимости от возраста.");
+  return `Контекст профиля пользователя: ${chunks.join(" ")}`;
+}
+
 function openAuthModal() {
   if (!supabase) {
     setStatus("Supabase не настроен или ещё инициализируется.", "error");
@@ -667,11 +754,21 @@ function updateAuthUI(session) {
   planReady = null;
   const user = session?.user || null;
   const isSignedIn = Boolean(user?.id);
-  const accountLabel = user?.email || user?.phone || "Гость (не выполнен вход)";
+  const profile = getActiveUserProfile();
+  const accountLabel = profile?.name || user?.email || user?.phone || t("accountGuest");
   loginBtn.hidden = isSignedIn;
   settingsAccountEmailEl.textContent = accountLabel;
+  if (authNameEl) authNameEl.value = profile?.name || "";
+  if (authBirthdateEl) authBirthdateEl.value = profile?.birthDate || "";
   if (isSignedIn) {
     setAuthScene(false);
+    if (profile) {
+      saveLocalProfile({
+        name: profile.name,
+        birthDate: profile.birthDate,
+        isAdult: Boolean(profile.isAdult),
+      });
+    }
   }
   if (isSignedIn) {
     void syncDialogsFromSupabase();
@@ -1933,6 +2030,10 @@ async function runTurn(speaker) {
   }
 
   const messages = toOpenRouterMessages();
+  const profileInstruction = getUserProfileInstruction();
+  if (profileInstruction) {
+    messages.push({ role: "user", content: profileInstruction });
+  }
   if (deepModeEnabled && currentPlan === "pro") {
     messages.push({
       role: "user",
@@ -2391,9 +2492,19 @@ authSignInBtn.addEventListener("click", async () => {
   if (!supabase) return;
   const email = authEmailEl.value.trim();
   const password = authPasswordEl.value;
+  const displayName = authNameEl?.value.trim() || "";
+  const birthDate = normalizeBirthDate(authBirthdateEl?.value || "");
+  const age = calculateAge(birthDate);
   if (!email || !password) {
     setAuthMessage("Введите email и пароль.", "error");
     return;
+  }
+  if (displayName || birthDate) {
+    saveLocalProfile({
+      name: displayName,
+      birthDate,
+      isAdult: age !== null ? age >= 18 : false,
+    });
   }
   authSignInBtn.disabled = true;
   authSignUpBtn.disabled = true;
@@ -2413,10 +2524,32 @@ authSignUpBtn.addEventListener("click", async () => {
   if (!supabase) return;
   const email = authEmailEl.value.trim();
   const password = authPasswordEl.value;
+  const displayName = authNameEl?.value.trim() || "";
+  const birthDate = normalizeBirthDate(authBirthdateEl?.value || "");
+  const age = calculateAge(birthDate);
   if (!email || !password) {
     setAuthMessage("Введите email и пароль.", "error");
     return;
   }
+  if (birthDate && (age === null || age < 13)) {
+    setAuthMessage("Регистрация доступна с 13 лет.", "error");
+    return;
+  }
+  if (birthDate && age !== null && age > 120) {
+    setAuthMessage("Проверьте дату рождения.", "error");
+    return;
+  }
+  if (displayName.length > 50) {
+    setAuthMessage("Имя слишком длинное (макс. 50 символов).", "error");
+    return;
+  }
+
+  const profilePayload = {
+    name: displayName,
+    birthDate,
+    isAdult: age !== null ? age >= 18 : false,
+  };
+
   authSignInBtn.disabled = true;
   authSignUpBtn.disabled = true;
   authResendBtn.disabled = true;
@@ -2426,9 +2559,15 @@ authSignUpBtn.addEventListener("click", async () => {
       password,
       options: {
         emailRedirectTo: window.location.origin,
+        data: {
+          display_name: displayName || undefined,
+          birth_date: birthDate || undefined,
+          is_adult: age !== null ? age >= 18 : undefined,
+        },
       },
     });
     if (error) throw error;
+    saveLocalProfile(profilePayload);
     setAuthMessage("Аккаунт создан. Проверьте почту для подтверждения.", "ok");
   } catch (e) {
     setAuthMessage(String(e?.message || e), "error");
