@@ -96,6 +96,448 @@ const saveTemplateBtn = $("saveTemplateBtn");
 const templateListEl = $("templateList");
 const dialogSearchInput = $("dialogSearchInput");
 const dialogTagFilter = $("dialogTagFilter");
+const footerLinkEl = $("footerLink");
+const privacyTextEl = $("privacyText");
+const termsTextEl = $("termsText");
+
+const languageToggleEl = $("languageToggle");
+
+const LANG_KEY = "dual-ai-lang-v1";
+const SUPPORTED_LANGS = ["ru", "en"];
+let currentLanguage = "ru";
+
+const I18N = {
+  ru: {
+    pageTitle: "dual-ai (Samii & Vivi)",
+    pageDescription: "dual-ai — dual-чат с Samii и Vivi для стратегий, креатива и быстрых решений.",
+    statusReady: "Готов.",
+    login: "Войти",
+    upgrade: "Оплатить / Upgrade",
+    support: "Поддержать",
+    home: "Главное меню",
+    startChat: "Начать чат",
+    openSettings: "Открыть настройки",
+    idea: "Предложить идею",
+    inputPlaceholder: "Напиши сообщение…",
+    settings: "Настройки",
+    newDialog: "Новый диалог",
+    saveSettings: "Сохранить настройки",
+    exportDialog: "Экспортировать диалог",
+    clearCurrentChat: "Очистить текущий чат",
+    clearAllDialogs: "Удалить все диалоги",
+    summary: "🧾 Итог",
+    template: "💾 Шаблон",
+    observe: "👀 Диалог",
+    debate: "🔥 Баттл",
+    demo: "⚡ Демо",
+    subtitle: "Samii (дерзкий аналитик) + Vivi (милая аниме-тян) через наш сервер",
+    heroTitle: "Профессиональный чат для стратегий и идей",
+    heroSubtitle:
+      "Пара ботов ведёт дискуссию с тобой: рациональный бот структурирует, творческий — расширяет варианты. Управляй настройками через меню.",
+    quickTitle: "Быстрый старт",
+    quickBusiness: "Для предпринимателей",
+    quickYouth: "Для молодёжи и TikTok",
+    heroHighlightFast: "⚡ Быстрый запуск без лишних шагов",
+    heroHighlightDuo: "🧠 Samii + Vivi в одном диалоге",
+    heroHighlightFocus: "🎯 Фокус на практическом результате",
+    cardHotkeyTitle: "Горячая клавиша",
+    cardHotkeyHint: "Отправляй сообщение одним нажатием.",
+    cardFocusTitle: "Фокус сессии",
+    cardFocusValue: "3 ключевые цели",
+    cardFocusHint: "Запросите у ботов приоритетный план.",
+    cardModeTitle: "Режим диалога",
+    cardModeHint: "Samii + Vivi ведут сессию.",
+    moreCardsSummary: "Показать ещё возможности",
+    cardIdeaTitle: "Идея дня",
+    cardIdeaHint: "Поделитесь своей идеей с командой.",
+    cardSafetyTitle: "Безопасность",
+    cardSafetyValue: "Все данные защищены",
+    cardSafetyHint: "Политикой конфиденциальности и условиями использования.",
+    cardTemplatesTitle: "Шаблоны",
+    cardTemplatesValue: "Маркетинг и продукт",
+    cardTemplatesHint: "Готовые сценарии для быстрого старта.",
+    chatTitle: "Диалог Samii + Vivi",
+    chatSubtitle: "Два бота в одной сессии · online",
+    dialogs: "Диалоги",
+    searchDialogs: "Поиск по диалогам",
+    settingsSubtitle: "Параметры модели, аккаунта и диалогов",
+    emptyTitle: "Диалог ещё пуст.",
+    emptyHint: "Напишите сообщение или воспользуйтесь демо-вопросом, чтобы запустить разговор.",
+    copy: "Копировать",
+    resend: "Повторить",
+    continue: "Продолжить",
+    regenerate: "Перегенерировать",
+    shorten: "Сократить",
+    makePost: "Сделать пост",
+    sendTitle: "Отправить сообщение",
+    stopTitle: "Остановить генерацию",
+    footerTelegram: "Наш канал в Telegram — публикуем промокоды, инсайды и обновления",
+    themeLight: "☀️ Светлая",
+    themeDark: "🌙 Тёмная",
+    authSubtitle: "Используем Supabase Email/Password.",
+    authHint: "Если письмо с подтверждением не пришло, проверьте спам или запросите повторную отправку.",
+    consentText: "Я принимаю политику конфиденциальности и условия использования.",
+    upgradeSubtitle: "Оплатите через Telegram Stars и активируйте код.",
+    upgradeStep1Title: "1. Перейдите в Telegram-бота",
+    upgradeStep1Text: "Оплатите тариф Plus или Pro за Telegram Stars (XTR).",
+    telegramOpen: "Открыть Telegram-бота",
+    upgradeStep2Title: "2. Введите код активации",
+    upgradeStep2Text: "Бот пришлёт код формата <strong>dual-xxxxxxx</strong>.",
+    ideaSubtitle: "Собираем предложения для улучшения продукта.",
+    ideaInputLabel: "Новая идея",
+    ideaInputPlaceholder: "Опишите идею или улучшение…",
+    privacySubtitle: "Как мы защищаем ваши данные.",
+    termsSubtitle: "Правила использования сервиса.",
+    sectionModel: "Модель и ответы",
+    sectionPlan: "Подписка и лимиты",
+    sectionAccount: "Аккаунт",
+    sectionDocs: "Документы",
+    sectionTemplates: "Шаблоны",
+    sectionDialogs: "Диалоги",
+    labelConnection: "Соединение (наш сервер)",
+    labelAutoDialog: "Авто-диалог ботов (ходов после твоего сообщения)",
+    labelDeepMode: "Глубокий режим ответа (Pro)",
+    hintDeepMode: "Более развернутые ответы с дополнительными пояснениями.",
+    deepModeOn: "Включить",
+    labelTheme: "Тёмная тема",
+    hintTheme: "Удобнее для работы ночью. Применяется сразу.",
+    labelActivationCode: "Код активации",
+    accountGuest: "Гость (не выполнен вход)",
+  },
+  en: {
+    pageTitle: "dual-ai (Samii & Vivi)",
+    pageDescription: "dual-ai — a duo chat with Samii and Vivi for strategy, creativity, and fast decisions.",
+    statusReady: "Ready.",
+    login: "Sign in",
+    upgrade: "Upgrade",
+    support: "Support",
+    home: "Home",
+    startChat: "Start chat",
+    openSettings: "Open settings",
+    idea: "Suggest an idea",
+    inputPlaceholder: "Type a message…",
+    settings: "Settings",
+    newDialog: "New dialog",
+    saveSettings: "Save settings",
+    exportDialog: "Export dialog",
+    clearCurrentChat: "Clear current chat",
+    clearAllDialogs: "Delete all dialogs",
+    summary: "🧾 Summary",
+    template: "💾 Template",
+    observe: "👀 Observe",
+    debate: "🔥 Debate",
+    demo: "⚡ Demo",
+    subtitle: "Samii (edgy analyst) + Vivi (sweet anime girl) via our server",
+    heroTitle: "Pro chat for strategy and ideas",
+    heroSubtitle:
+      "Two bots discuss your topic together: the rational one structures, the creative one expands options. Manage everything from settings.",
+    quickTitle: "Quick start",
+    quickBusiness: "For founders",
+    quickYouth: "For youth & TikTok",
+    heroHighlightFast: "⚡ Fast start without extra steps",
+    heroHighlightDuo: "🧠 Samii + Vivi in one dialog",
+    heroHighlightFocus: "🎯 Focused on practical outcomes",
+    cardHotkeyTitle: "Hotkey",
+    cardHotkeyHint: "Send a message with one key press.",
+    cardFocusTitle: "Session focus",
+    cardFocusValue: "3 key goals",
+    cardFocusHint: "Ask bots for a prioritized plan.",
+    cardModeTitle: "Dialog mode",
+    cardModeHint: "Samii + Vivi run the session.",
+    moreCardsSummary: "Show more capabilities",
+    cardIdeaTitle: "Idea of the day",
+    cardIdeaHint: "Share your idea with the team.",
+    cardSafetyTitle: "Security",
+    cardSafetyValue: "All data is protected",
+    cardSafetyHint: "By our privacy policy and terms of use.",
+    cardTemplatesTitle: "Templates",
+    cardTemplatesValue: "Marketing and product",
+    cardTemplatesHint: "Ready-to-use scenarios for a quick start.",
+    chatTitle: "Samii + Vivi dialog",
+    chatSubtitle: "Two bots in one session · online",
+    dialogs: "Dialogs",
+    searchDialogs: "Search dialogs",
+    settingsSubtitle: "Model, account and dialog settings",
+    emptyTitle: "The dialog is still empty.",
+    emptyHint: "Send a message or use a demo prompt to start the conversation.",
+    copy: "Copy",
+    resend: "Resend",
+    continue: "Continue",
+    regenerate: "Regenerate",
+    shorten: "Shorten",
+    makePost: "Make a post",
+    sendTitle: "Send message",
+    stopTitle: "Stop generation",
+    footerTelegram: "Our Telegram channel — promo codes, insights, and updates",
+    themeLight: "☀️ Light",
+    themeDark: "🌙 Dark",
+    authSubtitle: "Using Supabase Email/Password.",
+    authHint: "If the confirmation email didn't arrive, check spam or request resend.",
+    consentText: "I accept the privacy policy and terms of use.",
+    upgradeSubtitle: "Pay with Telegram Stars and activate your code.",
+    upgradeStep1Title: "1. Open the Telegram bot",
+    upgradeStep1Text: "Pay for Plus or Pro with Telegram Stars (XTR).",
+    telegramOpen: "Open Telegram bot",
+    upgradeStep2Title: "2. Enter activation code",
+    upgradeStep2Text: "The bot will send a code in <strong>dual-xxxxxxx</strong> format.",
+    ideaSubtitle: "We collect suggestions to improve the product.",
+    ideaInputLabel: "New idea",
+    ideaInputPlaceholder: "Describe an idea or improvement…",
+    privacySubtitle: "How we protect your data.",
+    termsSubtitle: "Service usage rules.",
+    sectionModel: "Model and responses",
+    sectionPlan: "Subscription and limits",
+    sectionAccount: "Account",
+    sectionDocs: "Documents",
+    sectionTemplates: "Templates",
+    sectionDialogs: "Dialogs",
+    labelConnection: "Connection (our server)",
+    labelAutoDialog: "Bot auto-dialog (turns after your message)",
+    labelDeepMode: "Deep response mode (Pro)",
+    hintDeepMode: "More detailed answers with additional explanations.",
+    deepModeOn: "Enable",
+    labelTheme: "Dark theme",
+    hintTheme: "More comfortable at night. Applies instantly.",
+    labelActivationCode: "Activation code",
+    accountGuest: "Guest (not signed in)",
+  },
+};
+
+const LEGAL_TEXT = {
+  ru: {
+    privacy: `<p><strong>Дата обновления:</strong> 2025-02-01</p><p>Мы уважаем вашу конфиденциальность и стремимся защищать персональные данные. Настоящая политика описывает, какие данные могут обрабатываться и как мы их защищаем.</p><h4>Какие данные обрабатываются</h4><ul><li>Данные аккаунта (email, если вы входите через Supabase).</li><li>Технические данные (тип устройства, браузер, ошибки).</li><li>Данные чатов и настроек, если вы сохраняете их в браузере или при использовании сервера.</li></ul><h4>Цели обработки</h4><ul><li>Обеспечение работы сервиса, качества ответов и стабильности.</li><li>Улучшение продукта и поддержки пользователей.</li></ul><h4>Хранение и безопасность</h4><p>Мы применяем организационные и технические меры защиты, включая ограничение доступа и контроль событий. Данные защищены настоящей политикой и условиями использования.</p><h4>Передача третьим лицам</h4><p>Мы не передаем персональные данные третьим лицам, кроме случаев, предусмотренных законом, или для обеспечения работы сервиса (например, инфраструктурные провайдеры).</p><h4>Права пользователя</h4><p>Вы можете запросить удаление данных или уточнение информации, связавшись с поддержкой.</p><h4>Контакты</h4><p>По вопросам конфиденциальности пишите в поддержку, указанную в приложении или на сайте.</p>`,
+    terms: `<p><strong>Дата обновления:</strong> 2025-02-01</p><h4>Принятие условий</h4><p>Используя сервис, вы соглашаетесь с настоящими условиями использования и политикой конфиденциальности.</p><h4>Назначение сервиса</h4><p>Сервис предоставляет доступ к диалогам с ботами Samii и Vivi для поиска идей, стратегий и контента.</p><h4>Ограничения</h4><ul><li>Запрещено использовать сервис для незаконных действий или нарушений прав третьих лиц.</li><li>Запрещено распространение вредоносного контента.</li><li>Запрещены попытки взлома или перегрузки инфраструктуры.</li></ul><h4>Контент</h4><p>Ответы ботов являются рекомендациями и не заменяют профессиональные консультации. Вы несете ответственность за использование результатов.</p><h4>Подписки и оплата</h4><p>Условия тарифов могут обновляться. Актуальные лимиты и функции указаны в интерфейсе.</p><h4>Изменения условий</h4><p>Мы можем обновлять условия использования. Актуальная версия всегда доступна в настройках.</p><h4>Контакты</h4><p>По вопросам использования сервиса обращайтесь в поддержку, указанную в приложении или на сайте.</p>`,
+  },
+  en: {
+    privacy: `<p><strong>Last updated:</strong> 2025-02-01</p><p>We respect your privacy and strive to protect personal data. This policy explains which data may be processed and how we protect it.</p><h4>What data is processed</h4><ul><li>Account data (email, if you sign in via Supabase).</li><li>Technical data (device type, browser, errors).</li><li>Chat and settings data if you store them in your browser or when using the server.</li></ul><h4>Processing purposes</h4><ul><li>Ensuring service operation, response quality, and stability.</li><li>Product improvement and user support.</li></ul><h4>Storage and security</h4><p>We apply organizational and technical safeguards, including access restriction and event monitoring. Data is protected by this policy and the terms of use.</p><h4>Third-party sharing</h4><p>We do not share personal data with third parties, except where required by law or needed to operate the service (for example, infrastructure providers).</p><h4>User rights</h4><p>You can request data deletion or clarification by contacting support.</p><h4>Contacts</h4><p>For privacy questions, contact support listed in the app or on the site.</p>`,
+    terms: `<p><strong>Last updated:</strong> 2025-02-01</p><h4>Acceptance of terms</h4><p>By using the service, you agree to these terms of use and the privacy policy.</p><h4>Service purpose</h4><p>The service provides access to dialogs with Samii and Vivi for ideas, strategy, and content.</p><h4>Restrictions</h4><ul><li>Using the service for illegal activity or rights violations is prohibited.</li><li>Distribution of harmful content is prohibited.</li><li>Attempts to hack or overload infrastructure are prohibited.</li></ul><h4>Content</h4><p>Bot responses are recommendations and do not replace professional advice. You are responsible for how you use results.</p><h4>Subscriptions and payments</h4><p>Plan terms may be updated. Current limits and features are shown in the interface.</p><h4>Changes to terms</h4><p>We may update these terms. The latest version is always available in settings.</p><h4>Contacts</h4><p>For service-related questions, contact support listed in the app or on the site.</p>`,
+  },
+};
+
+const QUICK_CHIPS = {
+  ru: [
+    ["План на 7 дней", "Составь план на 7 дней для моей цели."],
+    ["Идеи контента", "Придумай 10 идей для контента на неделю."],
+    ["Стратегия запуска", "Сделай стратегию запуска продукта в 5 шагах."],
+    ["Гипотезы роста", "Сформулируй 3 гипотезы роста для моего продукта."],
+    ["TikTok идеи", "Придумай 12 идей для TikTok на неделю в моём стиле."],
+    ["Учёба за 5 дней", "Собери учебный план на 5 дней, чтобы быстро подготовиться к зачёту."],
+    ["7-дневный челлендж", "Сделай челлендж на 7 дней для прокачки привычки без выгорания."],
+    ["Сценарий для Reels", "Напиши сценарий для короткого видео: хук, основа, финальный CTA."],
+  ],
+  en: [
+    ["7-day plan", "Build a 7-day plan for my goal."],
+    ["Content ideas", "Give me 10 content ideas for this week."],
+    ["Launch strategy", "Create a 5-step product launch strategy."],
+    ["Growth hypotheses", "Suggest 3 growth hypotheses for my product."],
+    ["TikTok ideas", "Give me 12 TikTok ideas for a week in my style."],
+    ["Study in 5 days", "Build a 5-day study plan to prepare quickly for an exam."],
+    ["7-day challenge", "Create a 7-day challenge to build a habit without burnout."],
+    ["Reels script", "Write a short-video script: hook, body, final CTA."],
+  ],
+};
+
+function t(key) {
+  return I18N[currentLanguage]?.[key] || I18N.ru[key] || key;
+}
+
+function applyLanguage(lang) {
+  currentLanguage = SUPPORTED_LANGS.includes(lang) ? lang : "ru";
+  localStorage.setItem(LANG_KEY, currentLanguage);
+  document.documentElement.lang = currentLanguage;
+  const metaDescription = document.querySelector('meta[name="description"]');
+  if (metaDescription) metaDescription.setAttribute("content", t("pageDescription"));
+  document.title = t("pageTitle");
+
+  if (languageToggleEl) languageToggleEl.checked = currentLanguage === "en";
+  if (loginBtn) loginBtn.textContent = t("login");
+  if (upgradeBtn) upgradeBtn.textContent = t("upgrade");
+  const supportBtn = $("supportBtn") || document.querySelector('.topbar-left a.btn.btn-secondary');
+  if (supportBtn) supportBtn.textContent = t("support");
+  if (homeBtn) homeBtn.textContent = t("home");
+  if (mobileHomeBtn) mobileHomeBtn.textContent = t("home");
+  if (newChatBtn) newChatBtn.textContent = t("startChat");
+  if (openSettingsHeroBtn) openSettingsHeroBtn.textContent = t("openSettings");
+  if (ideaBtn) ideaBtn.textContent = t("idea");
+  if (inputEl) inputEl.placeholder = t("inputPlaceholder");
+  if (footerLinkEl) footerLinkEl.textContent = t("footerTelegram");
+  if (privacyTextEl) privacyTextEl.innerHTML = LEGAL_TEXT[currentLanguage].privacy;
+  if (termsTextEl) termsTextEl.innerHTML = LEGAL_TEXT[currentLanguage].terms;
+  if (openSettingsBtn) openSettingsBtn.textContent = t("settings");
+  if (drawerNewChatBtn) drawerNewChatBtn.textContent = t("newDialog");
+  if (saveBtn) saveBtn.textContent = t("saveSettings");
+  if (exportChatBtn) exportChatBtn.textContent = t("exportDialog");
+  if (clearBtn) clearBtn.textContent = t("clearCurrentChat");
+  if (clearDialogsBtn) clearDialogsBtn.textContent = t("clearAllDialogs");
+  if (summaryBtn) summaryBtn.textContent = t("summary");
+  if (saveTemplateBtn) saveTemplateBtn.textContent = t("template");
+  if (observeBtn) observeBtn.textContent = t("observe");
+  if (debateBtn) debateBtn.textContent = t("debate");
+  if (demoBtn) demoBtn.textContent = t("demo");
+  const setText = (selector, value) => {
+    const el = document.querySelector(selector);
+    if (el) el.textContent = value;
+  };
+  setText(".topbar-title .subtitle", t("subtitle"));
+  setText(".hero-title", t("heroTitle"));
+  setText(".hero-subtitle", t("heroSubtitle"));
+  setText(".quick-title", t("quickTitle"));
+  const quickSectionTitles = document.querySelectorAll(".quick-section-title");
+  if (quickSectionTitles[0]) quickSectionTitles[0].textContent = t("quickBusiness");
+  if (quickSectionTitles[1]) quickSectionTitles[1].textContent = t("quickYouth");
+  setText("#heroHighlightFast", t("heroHighlightFast"));
+  setText("#heroHighlightDuo", t("heroHighlightDuo"));
+  setText("#heroHighlightFocus", t("heroHighlightFocus"));
+  setText("#cardHotkeyTitle", t("cardHotkeyTitle"));
+  setText("#cardHotkeyHint", t("cardHotkeyHint"));
+  setText("#cardFocusTitle", t("cardFocusTitle"));
+  setText("#cardFocusValue", t("cardFocusValue"));
+  setText("#cardFocusHint", t("cardFocusHint"));
+  setText("#cardModeTitle", t("cardModeTitle"));
+  setText("#cardModeHint", t("cardModeHint"));
+  setText("#moreCardsSummary", t("moreCardsSummary"));
+  setText("#cardIdeaTitle", t("cardIdeaTitle"));
+  setText("#cardIdeaHint", t("cardIdeaHint"));
+  setText("#cardSafetyTitle", t("cardSafetyTitle"));
+  setText("#cardSafetyValue", t("cardSafetyValue"));
+  setText("#cardSafetyHint", t("cardSafetyHint"));
+  setText("#cardTemplatesTitle", t("cardTemplatesTitle"));
+  setText("#cardTemplatesValue", t("cardTemplatesValue"));
+  setText("#cardTemplatesHint", t("cardTemplatesHint"));
+  setText(".chat-title", t("chatTitle"));
+  setText(".chat-subtitle", t("chatSubtitle"));
+  setText("#drawer .section-title", t("dialogs"));
+  if (dialogSearchInput) dialogSearchInput.placeholder = t("searchDialogs");
+  setText("#settingsModal .modal-subtitle", t("settingsSubtitle"));
+  setText("#authSubtitle", t("authSubtitle"));
+  setText("#authHint", t("authHint"));
+  setText("#consentText", t("consentText"));
+  setText("#upgradeSubtitle", t("upgradeSubtitle"));
+  setText("#upgradeStep1Title", t("upgradeStep1Title"));
+  setText("#upgradeStep1Text", t("upgradeStep1Text"));
+  setText("#telegramPayBtn", t("telegramOpen"));
+  setText("#upgradeStep2Title", t("upgradeStep2Title"));
+  const upgradeStep2TextEl = $("upgradeStep2Text");
+  if (upgradeStep2TextEl) upgradeStep2TextEl.innerHTML = t("upgradeStep2Text");
+  setText("#ideaSubtitle", t("ideaSubtitle"));
+  setText("#ideaInputLabel", t("ideaInputLabel"));
+  if (ideaInputEl) ideaInputEl.placeholder = t("ideaInputPlaceholder");
+  setText("#privacySubtitle", t("privacySubtitle"));
+  setText("#termsSubtitle", t("termsSubtitle"));
+
+  const themeLabels = document.querySelectorAll("#settingsModal .theme-toggle-row .theme-label-light, #settingsModal .theme-toggle-row .theme-label-dark");
+  if (themeLabels[0]) themeLabels[0].textContent = t("themeLight");
+  if (themeLabels[1]) themeLabels[1].textContent = t("themeDark");
+
+  const sectionTitles = document.querySelectorAll("#settingsModal .drawer-section .section-title");
+  const sectionValues = [
+    t("sectionModel"),
+    t("sectionPlan"),
+    t("sectionAccount"),
+    t("sectionDocs"),
+    t("sectionTemplates"),
+    t("sectionDialogs"),
+  ];
+  sectionTitles.forEach((el, index) => {
+    if (sectionValues[index]) el.textContent = sectionValues[index];
+  });
+
+  const settingsLabels = document.querySelectorAll("#settingsModal .drawer-section:first-of-type .field > .label");
+  const settingsHints = document.querySelectorAll("#settingsModal .drawer-section:first-of-type .field > .hint");
+  if (settingsLabels[0]) settingsLabels[0].textContent = t("labelConnection");
+  if (settingsLabels[1]) settingsLabels[1].textContent = t("labelAutoDialog");
+  if (settingsLabels[2]) settingsLabels[2].textContent = t("labelDeepMode");
+  if (settingsLabels[3]) settingsLabels[3].textContent = t("labelTheme");
+  if (settingsHints[0]) settingsHints[0].textContent = t("hintDeepMode");
+  if (settingsHints[1]) settingsHints[1].textContent = t("hintTheme");
+  if (deepModeToggle && !deepModeEnabled) deepModeToggle.textContent = t("deepModeOn");
+
+  const activationCodeLabel = document.querySelector("#settingsModal #activationCodeInput")?.previousElementSibling;
+  if (activationCodeLabel) activationCodeLabel.textContent = t("labelActivationCode");
+  if (settingsAccountEmailEl && !authSession?.user?.email) settingsAccountEmailEl.textContent = t("accountGuest");
+
+  const staticText = {
+    ru: {
+      '#settingsTitle': 'Настройки',
+      '.drawer-title': 'Меню',
+      '.drawer-subtitle': 'История диалогов и настройки',
+      '#settingsScrollHint .scroll-text': 'Прокрутите вниз для остальных настроек',
+      '#settingsModal .drawer-section .section-title': 'Модель и ответы',
+      '#modelHint': 'Выбор соединения доступен на Pro.',
+      '#themeToggle': '',
+      '#activateCodeBtn': 'Активировать код',
+      '#openUpgradeBtn': 'Оплатить / Upgrade',
+      '#settingsLogoutBtn': 'Выйти из аккаунта',
+      '#openPrivacyBtn': 'Политика конфиденциальности',
+      '#openTermsBtn': 'Условия использования',
+      '#authTitle': 'Вход в аккаунт',
+      '#authSignInBtn': 'Войти',
+      '#authSignUpBtn': 'Создать аккаунт',
+      '#authResendBtn': 'Отправить письмо ещё раз',
+      '#upgradeTitle': 'Оплата подписки',
+      '#telegramPayBtn': 'Оплатить через Telegram',
+      '#upgradeActivateBtn': 'Активировать код',
+      '#ideaTitle': 'Идеи и предложения',
+      '#ideaSubmitBtn': 'Отправить идею',
+      '#ideaCancelBtn': 'Закрыть',
+      '#privacyTitle': 'Политика конфиденциальности',
+      '#termsTitle': 'Условия использования',
+    },
+    en: {
+      '#settingsTitle': 'Settings',
+      '.drawer-title': 'Menu',
+      '.drawer-subtitle': 'Dialog history and settings',
+      '#settingsScrollHint .scroll-text': 'Scroll down for more settings',
+      '#settingsModal .drawer-section .section-title': 'Model and responses',
+      '#modelHint': 'Connection choice is available on Pro.',
+      '#themeToggle': '',
+      '#activateCodeBtn': 'Activate code',
+      '#openUpgradeBtn': 'Upgrade',
+      '#settingsLogoutBtn': 'Sign out',
+      '#openPrivacyBtn': 'Privacy policy',
+      '#openTermsBtn': 'Terms of use',
+      '#authTitle': 'Sign in',
+      '#authSignInBtn': 'Sign in',
+      '#authSignUpBtn': 'Create account',
+      '#authResendBtn': 'Resend email',
+      '#upgradeTitle': 'Subscription payment',
+      '#telegramPayBtn': 'Pay via Telegram',
+      '#upgradeActivateBtn': 'Activate code',
+      '#ideaTitle': 'Ideas and suggestions',
+      '#ideaSubmitBtn': 'Send idea',
+      '#ideaCancelBtn': 'Close',
+      '#privacyTitle': 'Privacy policy',
+      '#termsTitle': 'Terms of use',
+    },
+  };
+  Object.entries(staticText[currentLanguage]).forEach(([selector, value]) => {
+    if (!value) return;
+    const el = document.querySelector(selector);
+    if (el) el.textContent = value;
+  });
+
+  if (dialogTagFilter) {
+    const labels = currentLanguage === 'en'
+      ? ['All tags', 'General', 'Business', 'Content', 'Study']
+      : ['Все теги', 'Общее', 'Бизнес', 'Контент', 'Учёба'];
+    [...dialogTagFilter.options].forEach((option, index) => {
+      if (labels[index]) option.textContent = labels[index];
+    });
+  }
+
+  const chips = QUICK_CHIPS[currentLanguage] || QUICK_CHIPS.ru;
+  document.querySelectorAll('.chip-btn').forEach((button, index) => {
+    const [label, prompt] = chips[index] || QUICK_CHIPS.ru[index] || [];
+    if (!label || !prompt) return;
+    button.textContent = label;
+    button.dataset.template = prompt;
+  });
+
+  if (!statusEl.textContent || [I18N.ru.statusReady, I18N.en.statusReady].includes(statusEl.textContent)) {
+    setStatus(t("statusReady"), "ok");
+  }
+  setPlanState(currentPlan, currentUsageCount);
+}
 
 let supabase = null;
 let authSession = null;
@@ -153,24 +595,24 @@ const DEMO_BY_VIBE = {
 
 const PERSONAS = {
   R: {
-    label: "Bot R",
+    label: "Samii",
     system:
-      "Ты — Bot R, рациональный и аналитический ИИ-собеседник. " +
-      "В этом чате есть только три участника: Человек, Bot R и Bot S. " +
-      "Ты — Bot R и остаёшься им; не выдумывай других ролей или участников. " +
-      "Говори структурированно и логично, уточняй вводные и допущения. " +
-      "Без лишней эмоциональности. " +
-      "Ты общаешься с человеком и Bot S как равноправный участник.",
+      "Ты — Samii (Сэмии), ИИ-собеседник с характером: немного дерзкий, но иногда дружелюбный. " +
+      "В этом чате только три участника: Человек, Samii и Vivi. " +
+      "Ты — именно Samii; не выдумывай других ролей или участников. " +
+      "Не всегда соглашайся с Vivi: если видишь слабые места, спорь аргументированно. " +
+      "Говори структурированно и логично, но допускай лёгкую дерзость в тоне без грубости. " +
+      "Ты общаешься с человеком и Vivi как равноправный участник.",
   },
   S: {
-    label: "Bot S",
+    label: "Vivi",
     system:
-      "Ты — Bot S, эмоциональный и творческий ИИ-собеседник. " +
-      "В этом чате есть только три участника: Человек, Bot R и Bot S. " +
-      "Ты — Bot S и остаёшься им; не выдумывай других ролей или участников. " +
-      "Говори живо, образно и поддерживающе. " +
-      "Можно немного метафор. " +
-      "Ты общаешься с человеком и Bot R как равноправный участник.",
+      "Ты — Vivi, милая девушка-ИИ, которая считает себя аниме-тян. " +
+      "В этом чате только три участника: Человек, Samii и Vivi. " +
+      "Ты — именно Vivi; не выдумывай других ролей или участников. " +
+      "Всегда старайся помочь пользователю, отвечай тепло, живо и поддерживающе. " +
+      "Иногда можно мягко и с юмором подкалывать Samii. " +
+      "Ты общаешься с человеком и Samii как равноправный участник.",
   },
 };
 
@@ -456,7 +898,7 @@ function setComposerGenerating(isGenerating) {
   if (!sendBtn) return;
   sendBtn.dataset.mode = isGenerating ? "stop" : "send";
   sendBtn.textContent = isGenerating ? "⏹" : "➤";
-  sendBtn.title = isGenerating ? "Остановить генерацию" : "Отправить сообщение";
+  sendBtn.title = isGenerating ? t("stopTitle") : t("sendTitle");
 }
 
 function render() {
@@ -465,9 +907,7 @@ function render() {
   if (transcript.length === 0) {
     const empty = document.createElement("div");
     empty.className = "empty-state";
-    empty.innerHTML =
-      "<strong>Диалог ещё пуст.</strong><br />" +
-      "Напишите сообщение или воспользуйтесь демо-вопросом, чтобы запустить разговор.";
+    empty.innerHTML = `<strong>${t("emptyTitle")}</strong><br />${t("emptyHint")}`;
     messagesEl.appendChild(empty);
     return;
   }
@@ -480,9 +920,14 @@ function render() {
     const right = document.createElement("div");
     right.textContent = new Date(m.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
+    const speakerClass = m.speaker === "user" ? "user" : m.speaker === "R" ? "r" : "s";
+    const speakerAvatar = document.createElement("span");
+    speakerAvatar.className = `speaker-avatar ${speakerClass}`;
+    speakerAvatar.textContent = m.speaker === "user" ? "🧑" : m.speaker === "R" ? "😼" : "✨";
     const badge = document.createElement("span");
-    badge.className = "badge " + (m.speaker === "user" ? "user" : m.speaker === "R" ? "r" : "s");
-    badge.textContent = m.speaker === "user" ? "you" : m.speaker;
+    badge.className = `badge ${speakerClass}`;
+    badge.textContent = m.speaker === "user" ? "you" : m.speaker === "R" ? "Samii" : "Vivi";
+    left.appendChild(speakerAvatar);
     left.appendChild(badge);
 
     meta.appendChild(left);
@@ -500,7 +945,7 @@ function render() {
     copyBtn.type = "button";
     copyBtn.dataset.action = "copy";
     copyBtn.dataset.index = String(index);
-    copyBtn.textContent = "Копировать";
+    copyBtn.textContent = t("copy");
     actions.appendChild(copyBtn);
 
     if (m.speaker === "user") {
@@ -509,7 +954,7 @@ function render() {
       resendBtn.type = "button";
       resendBtn.dataset.action = "resend";
       resendBtn.dataset.index = String(index);
-      resendBtn.textContent = "Повторить";
+      resendBtn.textContent = t("resend");
       actions.appendChild(resendBtn);
     } else {
       const continueBtn = document.createElement("button");
@@ -517,7 +962,7 @@ function render() {
       continueBtn.type = "button";
       continueBtn.dataset.action = "continue";
       continueBtn.dataset.index = String(index);
-      continueBtn.textContent = "Продолжить";
+      continueBtn.textContent = t("continue");
       actions.appendChild(continueBtn);
 
       const regenerateBtn = document.createElement("button");
@@ -525,7 +970,7 @@ function render() {
       regenerateBtn.type = "button";
       regenerateBtn.dataset.action = "regenerate";
       regenerateBtn.dataset.index = String(index);
-      regenerateBtn.textContent = "Перегенерировать";
+      regenerateBtn.textContent = t("regenerate");
       actions.appendChild(regenerateBtn);
 
       const shortenBtn = document.createElement("button");
@@ -533,7 +978,7 @@ function render() {
       shortenBtn.type = "button";
       shortenBtn.dataset.action = "shorten";
       shortenBtn.dataset.index = String(index);
-      shortenBtn.textContent = "Сократить";
+      shortenBtn.textContent = t("shorten");
       actions.appendChild(shortenBtn);
 
       const postBtn = document.createElement("button");
@@ -541,7 +986,7 @@ function render() {
       postBtn.type = "button";
       postBtn.dataset.action = "post";
       postBtn.dataset.index = String(index);
-      postBtn.textContent = "Сделать пост";
+      postBtn.textContent = t("makePost");
       actions.appendChild(postBtn);
 
       const likeBtn = document.createElement("button");
@@ -583,8 +1028,8 @@ function getPlanLimit(plan) {
 
 function getPlanSubtitle(plan) {
   const limit = getPlanLimit(plan);
-  if (!Number.isFinite(limit)) return "Без ограничений";
-  return `${limit} сообщений в день`;
+  if (!Number.isFinite(limit)) return currentLanguage === "en" ? "Unlimited" : "Без ограничений";
+  return currentLanguage === "en" ? `${limit} messages/day` : `${limit} сообщений в день`;
 }
 
 function hasPlusAccess() {
@@ -627,43 +1072,43 @@ function setPlanState(plan, usageCount = 0) {
   const limit = getPlanLimit(currentPlan);
   if (planUsageEl) {
     planUsageEl.textContent = Number.isFinite(limit)
-      ? `Сегодня: ${usageCount} / ${limit}`
-      : `Сегодня: ${usageCount} / без ограничений`;
+      ? (currentLanguage === "en" ? `Today: ${usageCount} / ${limit}` : `Сегодня: ${usageCount} / ${limit}`)
+      : (currentLanguage === "en" ? `Today: ${usageCount} / unlimited` : `Сегодня: ${usageCount} / без ограничений`);
   }
   if (planNoticeTitleEl) {
     planNoticeTitleEl.textContent =
       currentPlan === "pro"
-        ? "Pro активирован"
+        ? (currentLanguage === "en" ? "Pro activated" : "Pro активирован")
         : currentPlan === "plus"
-        ? "Plus активирован"
-        : "Free активен";
+        ? (currentLanguage === "en" ? "Plus activated" : "Plus активирован")
+        : (currentLanguage === "en" ? "Free active" : "Free активен");
   }
   if (planNoticeTextEl) {
     planNoticeTextEl.textContent =
       currentPlan === "pro"
-        ? "Безлимитные сообщения. Спасибо за поддержку!"
+        ? (currentLanguage === "en" ? "Unlimited messages. Thanks for your support!" : "Безлимитные сообщения. Спасибо за поддержку!")
         : currentPlan === "plus"
-        ? "Лимит увеличен до 100 сообщений в день."
-        : "Доступно 30 сообщений в день. Можно перейти на Plus или Pro.";
+        ? (currentLanguage === "en" ? "Limit increased to 100 messages/day." : "Лимит увеличен до 100 сообщений в день.")
+        : (currentLanguage === "en" ? "30 messages/day are available. Upgrade to Plus or Pro." : "Доступно 30 сообщений в день. Можно перейти на Plus или Pro.");
   }
   if (planPerksListEl) {
     const perks =
       currentPlan === "pro"
         ? [
-            "Безлимитные сообщения",
-            "Приоритетный доступ к новым функциям",
-            "Глубокий режим ответа",
+            currentLanguage === "en" ? "Unlimited messages" : "Безлимитные сообщения",
+            currentLanguage === "en" ? "Priority access to new features" : "Приоритетный доступ к новым функциям",
+            currentLanguage === "en" ? "Deep response mode" : "Глубокий режим ответа",
           ]
         : currentPlan === "plus"
         ? [
-            "100 сообщений в день",
-            "Больше ходов в авто-диалоге",
-            "История диалогов сохраняется",
+            currentLanguage === "en" ? "100 messages/day" : "100 сообщений в день",
+            currentLanguage === "en" ? "More auto-dialog turns" : "Больше ходов в авто-диалоге",
+            currentLanguage === "en" ? "Dialog history is saved" : "История диалогов сохраняется",
           ]
         : [
-            "30 сообщений в день",
-            "Доступ к Bot R + Bot S",
-            "История диалогов сохраняется",
+            currentLanguage === "en" ? "30 messages/day" : "30 сообщений в день",
+            currentLanguage === "en" ? "Access to Samii + Vivi" : "Доступ к Samii + Vivi",
+            currentLanguage === "en" ? "Dialog history is saved" : "История диалогов сохраняется",
           ];
     planPerksListEl.innerHTML = "";
     for (const perk of perks) {
@@ -678,7 +1123,7 @@ function setPlanState(plan, usageCount = 0) {
   if (openUpgradeBtn) openUpgradeBtn.hidden = hideUpgrade;
   if (deepModeToggle) {
     deepModeToggle.disabled = currentPlan !== "pro";
-    deepModeToggle.textContent = deepModeEnabled ? "Выключить" : "Включить";
+    deepModeToggle.textContent = deepModeEnabled ? (currentLanguage === "en" ? "Disable" : "Выключить") : (currentLanguage === "en" ? "Enable" : "Включить");
     deepModeToggle.title =
       currentPlan === "pro"
         ? "Включить или выключить глубокий режим"
@@ -707,12 +1152,12 @@ function setPlanState(plan, usageCount = 0) {
     observeBtn.disabled = currentPlan === "free";
     observeBtn.title =
       currentPlan === "free"
-        ? "Доступно с Plus"
-        : "Наблюдать диалог ботов";
+        ? (currentLanguage === "en" ? "Available on Plus" : "Доступно с Plus")
+        : (currentLanguage === "en" ? "Observe bot dialog" : "Наблюдать диалог ботов");
   }
   if (debateBtn) {
     debateBtn.disabled = currentPlan === "free";
-    debateBtn.title = currentPlan === "free" ? "Доступно с Plus" : "Запустить баттл мнений";
+    debateBtn.title = currentPlan === "free" ? (currentLanguage === "en" ? "Available on Plus" : "Доступно с Plus") : (currentLanguage === "en" ? "Start debate" : "Запустить баттл мнений");
   }
   if (vibeModeEl) {
     const options = Array.from(vibeModeEl.options);
@@ -728,10 +1173,10 @@ function setPlanState(plan, usageCount = 0) {
     }
     vibeModeEl.title =
       currentPlan === "free"
-        ? "Доп. стили доступны с Plus/Pro"
+        ? (currentLanguage === "en" ? "Extra styles available on Plus/Pro" : "Доп. стили доступны с Plus/Pro")
         : currentPlan === "plus"
-        ? "Creator/Study доступны на Pro"
-        : "Выберите стиль ответа";
+        ? (currentLanguage === "en" ? "Creator/Study available on Pro" : "Creator/Study доступны на Pro")
+        : (currentLanguage === "en" ? "Choose response style" : "Выберите стиль ответа");
   }
 }
 
@@ -1407,7 +1852,7 @@ function toOpenRouterMessages() {
   // чтобы модель понимала контекст, т.к. реальных ролей несколько.
   return transcript.map((m) => {
     const prefix =
-      m.speaker === "user" ? "Человек" : m.speaker === "R" ? "Bot R" : "Bot S";
+      m.speaker === "user" ? "Человек" : m.speaker === "R" ? "Samii" : "Vivi";
     return { role: "user", content: `${prefix}: ${m.content}` };
   });
 }
@@ -1473,7 +1918,7 @@ async function runTurn(speaker) {
   if (vibeInstruction) {
     messages.push({ role: "user", content: vibeInstruction });
   }
-  setStatus(`${speaker === "R" ? "Bot R" : "Bot S"} думает…`);
+  setStatus(`${speaker === "R" ? "Samii" : "Vivi"} думает…`);
   const pendingMessage = { speaker, content: "…", ts: Date.now() };
   transcript.push(pendingMessage);
   render();
@@ -1571,7 +2016,10 @@ async function createSessionSummary() {
     return;
   }
   if (!requireAuth()) return;
-  const baseMessages = transcript.slice(-10).map((m) => ({ role: "user", content: `${m.speaker}: ${m.content}` }));
+  const baseMessages = transcript.slice(-10).map((m) => ({
+    role: "user",
+    content: `${m.speaker === "user" ? "Человек" : m.speaker === "R" ? "Samii" : "Vivi"}: ${m.content}`,
+  }));
   const summaryText = await callOpenRouter({
     model: modelEl.value.trim(),
     persona: { system: "Сделай краткий итог: 1) ключевые выводы 2) план действий на 3 шага" },
@@ -1600,7 +2048,7 @@ debateBtn?.addEventListener("click", () => {
     return;
   }
   inputEl.value =
-    "Устройте баттл мнений между Bot R и Bot S по моей теме: дайте 2 позиции, контраргументы и итоговый вердикт.";
+    "Устройте баттл мнений между Samii и Vivi по моей теме: дайте 2 позиции, контраргументы и итоговый вердикт.";
   inputEl.focus();
 });
 vibeModeEl?.addEventListener("change", () => {
@@ -2003,6 +2451,12 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
+languageToggleEl?.addEventListener("change", () => {
+  applyLanguage(languageToggleEl.checked ? "en" : "ru");
+});
+
+const preferredLanguage = localStorage.getItem(LANG_KEY) || (navigator.language || "ru").slice(0, 2);
+applyLanguage(preferredLanguage);
 applyTheme("light");
 loadSettings();
 document.addEventListener("click", (event) => {
