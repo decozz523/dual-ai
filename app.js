@@ -665,13 +665,15 @@ function closeAuthModal() {
 function updateAuthUI(session) {
   authSession = session;
   planReady = null;
-  const email = session?.user?.email;
-  loginBtn.hidden = !!email;
-  settingsAccountEmailEl.textContent = email || "Гость (не выполнен вход)";
-  if (email) {
+  const user = session?.user || null;
+  const isSignedIn = Boolean(user?.id);
+  const accountLabel = user?.email || user?.phone || "Гость (не выполнен вход)";
+  loginBtn.hidden = isSignedIn;
+  settingsAccountEmailEl.textContent = accountLabel;
+  if (isSignedIn) {
     setAuthScene(false);
   }
-  if (email) {
+  if (isSignedIn) {
     void syncDialogsFromSupabase();
     void refreshPlanAndUsage({ force: true });
     if (upgradePending) {
