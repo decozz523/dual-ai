@@ -97,6 +97,301 @@ const templateListEl = $("templateList");
 const dialogSearchInput = $("dialogSearchInput");
 const dialogTagFilter = $("dialogTagFilter");
 
+const languageToggleEl = $("languageToggle");
+
+const LANG_KEY = "dual-ai-lang-v1";
+const SUPPORTED_LANGS = ["ru", "en"];
+let currentLanguage = "ru";
+
+const I18N = {
+  ru: {
+    pageTitle: "dual-ai (Samii & Vivi)",
+    pageDescription: "dual-ai — dual-чат с Samii и Vivi для стратегий, креатива и быстрых решений.",
+    statusReady: "Готов.",
+    login: "Войти",
+    upgrade: "Оплатить / Upgrade",
+    support: "Поддержать",
+    home: "Главное меню",
+    startChat: "Начать чат",
+    openSettings: "Открыть настройки",
+    idea: "Предложить идею",
+    inputPlaceholder: "Напиши сообщение…",
+    settings: "Настройки",
+    newDialog: "Новый диалог",
+    saveSettings: "Сохранить настройки",
+    exportDialog: "Экспортировать диалог",
+    clearCurrentChat: "Очистить текущий чат",
+    clearAllDialogs: "Удалить все диалоги",
+    summary: "🧾 Итог",
+    template: "💾 Шаблон",
+    observe: "👀 Диалог",
+    debate: "🔥 Баттл",
+    demo: "⚡ Демо",
+    subtitle: "Samii (дерзкий аналитик) + Vivi (милая аниме-тян) через наш сервер",
+    heroTitle: "Профессиональный чат для стратегий и идей",
+    heroSubtitle:
+      "Пара ботов ведёт дискуссию с тобой: рациональный бот структурирует, творческий — расширяет варианты. Управляй настройками через меню.",
+    quickTitle: "Быстрый старт",
+    quickBusiness: "Для предпринимателей",
+    quickYouth: "Для молодёжи и TikTok",
+    heroHighlightFast: "⚡ Быстрый запуск без лишних шагов",
+    heroHighlightDuo: "🧠 Samii + Vivi в одном диалоге",
+    heroHighlightFocus: "🎯 Фокус на практическом результате",
+    cardHotkeyTitle: "Горячая клавиша",
+    cardHotkeyHint: "Отправляй сообщение одним нажатием.",
+    cardFocusTitle: "Фокус сессии",
+    cardFocusValue: "3 ключевые цели",
+    cardFocusHint: "Запросите у ботов приоритетный план.",
+    cardModeTitle: "Режим диалога",
+    cardModeHint: "Samii + Vivi ведут сессию.",
+    moreCardsSummary: "Показать ещё возможности",
+    cardIdeaTitle: "Идея дня",
+    cardIdeaHint: "Поделитесь своей идеей с командой.",
+    cardSafetyTitle: "Безопасность",
+    cardSafetyValue: "Все данные защищены",
+    cardSafetyHint: "Политикой конфиденциальности и условиями использования.",
+    cardTemplatesTitle: "Шаблоны",
+    cardTemplatesValue: "Маркетинг и продукт",
+    cardTemplatesHint: "Готовые сценарии для быстрого старта.",
+    chatTitle: "Диалог Samii + Vivi",
+    chatSubtitle: "Два бота в одной сессии · online",
+    dialogs: "Диалоги",
+    searchDialogs: "Поиск по диалогам",
+    settingsSubtitle: "Параметры модели, аккаунта и диалогов",
+  },
+  en: {
+    pageTitle: "dual-ai (Samii & Vivi)",
+    pageDescription: "dual-ai — a duo chat with Samii and Vivi for strategy, creativity, and fast decisions.",
+    statusReady: "Ready.",
+    login: "Sign in",
+    upgrade: "Upgrade",
+    support: "Support",
+    home: "Home",
+    startChat: "Start chat",
+    openSettings: "Open settings",
+    idea: "Suggest an idea",
+    inputPlaceholder: "Type a message…",
+    settings: "Settings",
+    newDialog: "New dialog",
+    saveSettings: "Save settings",
+    exportDialog: "Export dialog",
+    clearCurrentChat: "Clear current chat",
+    clearAllDialogs: "Delete all dialogs",
+    summary: "🧾 Summary",
+    template: "💾 Template",
+    observe: "👀 Observe",
+    debate: "🔥 Debate",
+    demo: "⚡ Demo",
+    subtitle: "Samii (edgy analyst) + Vivi (sweet anime girl) via our server",
+    heroTitle: "Pro chat for strategy and ideas",
+    heroSubtitle:
+      "Two bots discuss your topic together: the rational one structures, the creative one expands options. Manage everything from settings.",
+    quickTitle: "Quick start",
+    quickBusiness: "For founders",
+    quickYouth: "For youth & TikTok",
+    heroHighlightFast: "⚡ Fast start without extra steps",
+    heroHighlightDuo: "🧠 Samii + Vivi in one dialog",
+    heroHighlightFocus: "🎯 Focused on practical outcomes",
+    cardHotkeyTitle: "Hotkey",
+    cardHotkeyHint: "Send a message with one key press.",
+    cardFocusTitle: "Session focus",
+    cardFocusValue: "3 key goals",
+    cardFocusHint: "Ask bots for a prioritized plan.",
+    cardModeTitle: "Dialog mode",
+    cardModeHint: "Samii + Vivi run the session.",
+    moreCardsSummary: "Show more capabilities",
+    cardIdeaTitle: "Idea of the day",
+    cardIdeaHint: "Share your idea with the team.",
+    cardSafetyTitle: "Security",
+    cardSafetyValue: "All data is protected",
+    cardSafetyHint: "By our privacy policy and terms of use.",
+    cardTemplatesTitle: "Templates",
+    cardTemplatesValue: "Marketing and product",
+    cardTemplatesHint: "Ready-to-use scenarios for a quick start.",
+    chatTitle: "Samii + Vivi dialog",
+    chatSubtitle: "Two bots in one session · online",
+    dialogs: "Dialogs",
+    searchDialogs: "Search dialogs",
+    settingsSubtitle: "Model, account and dialog settings",
+  },
+};
+
+const QUICK_CHIPS = {
+  ru: [
+    ["План на 7 дней", "Составь план на 7 дней для моей цели."],
+    ["Идеи контента", "Придумай 10 идей для контента на неделю."],
+    ["Стратегия запуска", "Сделай стратегию запуска продукта в 5 шагах."],
+    ["Гипотезы роста", "Сформулируй 3 гипотезы роста для моего продукта."],
+    ["TikTok идеи", "Придумай 12 идей для TikTok на неделю в моём стиле."],
+    ["Учёба за 5 дней", "Собери учебный план на 5 дней, чтобы быстро подготовиться к зачёту."],
+    ["7-дневный челлендж", "Сделай челлендж на 7 дней для прокачки привычки без выгорания."],
+    ["Сценарий для Reels", "Напиши сценарий для короткого видео: хук, основа, финальный CTA."],
+  ],
+  en: [
+    ["7-day plan", "Build a 7-day plan for my goal."],
+    ["Content ideas", "Give me 10 content ideas for this week."],
+    ["Launch strategy", "Create a 5-step product launch strategy."],
+    ["Growth hypotheses", "Suggest 3 growth hypotheses for my product."],
+    ["TikTok ideas", "Give me 12 TikTok ideas for a week in my style."],
+    ["Study in 5 days", "Build a 5-day study plan to prepare quickly for an exam."],
+    ["7-day challenge", "Create a 7-day challenge to build a habit without burnout."],
+    ["Reels script", "Write a short-video script: hook, body, final CTA."],
+  ],
+};
+
+function t(key) {
+  return I18N[currentLanguage]?.[key] || I18N.ru[key] || key;
+}
+
+function applyLanguage(lang) {
+  currentLanguage = SUPPORTED_LANGS.includes(lang) ? lang : "ru";
+  localStorage.setItem(LANG_KEY, currentLanguage);
+  document.documentElement.lang = currentLanguage;
+  const metaDescription = document.querySelector('meta[name="description"]');
+  if (metaDescription) metaDescription.setAttribute("content", t("pageDescription"));
+  document.title = t("pageTitle");
+
+  if (languageToggleEl) languageToggleEl.checked = currentLanguage === "en";
+  if (loginBtn) loginBtn.textContent = t("login");
+  if (upgradeBtn) upgradeBtn.textContent = t("upgrade");
+  const supportBtn = $("supportBtn") || document.querySelector('.topbar-left a.btn.btn-secondary');
+  if (supportBtn) supportBtn.textContent = t("support");
+  if (homeBtn) homeBtn.textContent = t("home");
+  if (mobileHomeBtn) mobileHomeBtn.textContent = t("home");
+  if (newChatBtn) newChatBtn.textContent = t("startChat");
+  if (openSettingsHeroBtn) openSettingsHeroBtn.textContent = t("openSettings");
+  if (ideaBtn) ideaBtn.textContent = t("idea");
+  if (inputEl) inputEl.placeholder = t("inputPlaceholder");
+  if (openSettingsBtn) openSettingsBtn.textContent = t("settings");
+  if (drawerNewChatBtn) drawerNewChatBtn.textContent = t("newDialog");
+  if (saveBtn) saveBtn.textContent = t("saveSettings");
+  if (exportChatBtn) exportChatBtn.textContent = t("exportDialog");
+  if (clearBtn) clearBtn.textContent = t("clearCurrentChat");
+  if (clearDialogsBtn) clearDialogsBtn.textContent = t("clearAllDialogs");
+  if (summaryBtn) summaryBtn.textContent = t("summary");
+  if (saveTemplateBtn) saveTemplateBtn.textContent = t("template");
+  if (observeBtn) observeBtn.textContent = t("observe");
+  if (debateBtn) debateBtn.textContent = t("debate");
+  if (demoBtn) demoBtn.textContent = t("demo");
+  const setText = (selector, value) => {
+    const el = document.querySelector(selector);
+    if (el) el.textContent = value;
+  };
+  setText(".topbar-title .subtitle", t("subtitle"));
+  setText(".hero-title", t("heroTitle"));
+  setText(".hero-subtitle", t("heroSubtitle"));
+  setText(".quick-title", t("quickTitle"));
+  const quickSectionTitles = document.querySelectorAll(".quick-section-title");
+  if (quickSectionTitles[0]) quickSectionTitles[0].textContent = t("quickBusiness");
+  if (quickSectionTitles[1]) quickSectionTitles[1].textContent = t("quickYouth");
+  setText("#heroHighlightFast", t("heroHighlightFast"));
+  setText("#heroHighlightDuo", t("heroHighlightDuo"));
+  setText("#heroHighlightFocus", t("heroHighlightFocus"));
+  setText("#cardHotkeyTitle", t("cardHotkeyTitle"));
+  setText("#cardHotkeyHint", t("cardHotkeyHint"));
+  setText("#cardFocusTitle", t("cardFocusTitle"));
+  setText("#cardFocusValue", t("cardFocusValue"));
+  setText("#cardFocusHint", t("cardFocusHint"));
+  setText("#cardModeTitle", t("cardModeTitle"));
+  setText("#cardModeHint", t("cardModeHint"));
+  setText("#moreCardsSummary", t("moreCardsSummary"));
+  setText("#cardIdeaTitle", t("cardIdeaTitle"));
+  setText("#cardIdeaHint", t("cardIdeaHint"));
+  setText("#cardSafetyTitle", t("cardSafetyTitle"));
+  setText("#cardSafetyValue", t("cardSafetyValue"));
+  setText("#cardSafetyHint", t("cardSafetyHint"));
+  setText("#cardTemplatesTitle", t("cardTemplatesTitle"));
+  setText("#cardTemplatesValue", t("cardTemplatesValue"));
+  setText("#cardTemplatesHint", t("cardTemplatesHint"));
+  setText(".chat-title", t("chatTitle"));
+  setText(".chat-subtitle", t("chatSubtitle"));
+  setText("#drawer .section-title", t("dialogs"));
+  if (dialogSearchInput) dialogSearchInput.placeholder = t("searchDialogs");
+  setText("#settingsModal .modal-subtitle", t("settingsSubtitle"));
+
+  const staticText = {
+    ru: {
+      '#settingsTitle': 'Настройки',
+      '.drawer-title': 'Меню',
+      '.drawer-subtitle': 'История диалогов и настройки',
+      '#settingsScrollHint .scroll-text': 'Прокрутите вниз для остальных настроек',
+      '#settingsModal .drawer-section .section-title': 'Модель и ответы',
+      '#modelHint': 'Выбор соединения доступен на Pro.',
+      '#themeToggle': '',
+      '#activateCodeBtn': 'Активировать код',
+      '#openUpgradeBtn': 'Оплатить / Upgrade',
+      '#settingsLogoutBtn': 'Выйти из аккаунта',
+      '#openPrivacyBtn': 'Политика конфиденциальности',
+      '#openTermsBtn': 'Условия использования',
+      '#authTitle': 'Вход в аккаунт',
+      '#authSignInBtn': 'Войти',
+      '#authSignUpBtn': 'Создать аккаунт',
+      '#authResendBtn': 'Отправить письмо ещё раз',
+      '#upgradeTitle': 'Оплата подписки',
+      '#telegramPayBtn': 'Оплатить через Telegram',
+      '#upgradeActivateBtn': 'Активировать код',
+      '#ideaTitle': 'Идеи и предложения',
+      '#ideaSubmitBtn': 'Отправить идею',
+      '#ideaCancelBtn': 'Закрыть',
+      '#privacyTitle': 'Политика конфиденциальности',
+      '#termsTitle': 'Условия использования',
+    },
+    en: {
+      '#settingsTitle': 'Settings',
+      '.drawer-title': 'Menu',
+      '.drawer-subtitle': 'Dialog history and settings',
+      '#settingsScrollHint .scroll-text': 'Scroll down for more settings',
+      '#settingsModal .drawer-section .section-title': 'Model and responses',
+      '#modelHint': 'Connection choice is available on Pro.',
+      '#themeToggle': '',
+      '#activateCodeBtn': 'Activate code',
+      '#openUpgradeBtn': 'Upgrade',
+      '#settingsLogoutBtn': 'Sign out',
+      '#openPrivacyBtn': 'Privacy policy',
+      '#openTermsBtn': 'Terms of use',
+      '#authTitle': 'Sign in',
+      '#authSignInBtn': 'Sign in',
+      '#authSignUpBtn': 'Create account',
+      '#authResendBtn': 'Resend email',
+      '#upgradeTitle': 'Subscription payment',
+      '#telegramPayBtn': 'Pay via Telegram',
+      '#upgradeActivateBtn': 'Activate code',
+      '#ideaTitle': 'Ideas and suggestions',
+      '#ideaSubmitBtn': 'Send idea',
+      '#ideaCancelBtn': 'Close',
+      '#privacyTitle': 'Privacy policy',
+      '#termsTitle': 'Terms of use',
+    },
+  };
+  Object.entries(staticText[currentLanguage]).forEach(([selector, value]) => {
+    if (!value) return;
+    const el = document.querySelector(selector);
+    if (el) el.textContent = value;
+  });
+
+  if (dialogTagFilter) {
+    const labels = currentLanguage === 'en'
+      ? ['All tags', 'General', 'Business', 'Content', 'Study']
+      : ['Все теги', 'Общее', 'Бизнес', 'Контент', 'Учёба'];
+    [...dialogTagFilter.options].forEach((option, index) => {
+      if (labels[index]) option.textContent = labels[index];
+    });
+  }
+
+  const chips = QUICK_CHIPS[currentLanguage] || QUICK_CHIPS.ru;
+  document.querySelectorAll('.chip-btn').forEach((button, index) => {
+    const [label, prompt] = chips[index] || QUICK_CHIPS.ru[index] || [];
+    if (!label || !prompt) return;
+    button.textContent = label;
+    button.dataset.template = prompt;
+  });
+
+  if (!statusEl.textContent || [I18N.ru.statusReady, I18N.en.statusReady].includes(statusEl.textContent)) {
+    setStatus(t("statusReady"), "ok");
+  }
+  setPlanState(currentPlan, currentUsageCount);
+}
+
 let supabase = null;
 let authSession = null;
 let supabaseReady = null;
@@ -583,8 +878,8 @@ function getPlanLimit(plan) {
 
 function getPlanSubtitle(plan) {
   const limit = getPlanLimit(plan);
-  if (!Number.isFinite(limit)) return "Без ограничений";
-  return `${limit} сообщений в день`;
+  if (!Number.isFinite(limit)) return currentLanguage === "en" ? "Unlimited" : "Без ограничений";
+  return currentLanguage === "en" ? `${limit} messages/day` : `${limit} сообщений в день`;
 }
 
 function hasPlusAccess() {
@@ -627,43 +922,43 @@ function setPlanState(plan, usageCount = 0) {
   const limit = getPlanLimit(currentPlan);
   if (planUsageEl) {
     planUsageEl.textContent = Number.isFinite(limit)
-      ? `Сегодня: ${usageCount} / ${limit}`
-      : `Сегодня: ${usageCount} / без ограничений`;
+      ? (currentLanguage === "en" ? `Today: ${usageCount} / ${limit}` : `Сегодня: ${usageCount} / ${limit}`)
+      : (currentLanguage === "en" ? `Today: ${usageCount} / unlimited` : `Сегодня: ${usageCount} / без ограничений`);
   }
   if (planNoticeTitleEl) {
     planNoticeTitleEl.textContent =
       currentPlan === "pro"
-        ? "Pro активирован"
+        ? (currentLanguage === "en" ? "Pro activated" : "Pro активирован")
         : currentPlan === "plus"
-        ? "Plus активирован"
-        : "Free активен";
+        ? (currentLanguage === "en" ? "Plus activated" : "Plus активирован")
+        : (currentLanguage === "en" ? "Free active" : "Free активен");
   }
   if (planNoticeTextEl) {
     planNoticeTextEl.textContent =
       currentPlan === "pro"
-        ? "Безлимитные сообщения. Спасибо за поддержку!"
+        ? (currentLanguage === "en" ? "Unlimited messages. Thanks for your support!" : "Безлимитные сообщения. Спасибо за поддержку!")
         : currentPlan === "plus"
-        ? "Лимит увеличен до 100 сообщений в день."
-        : "Доступно 30 сообщений в день. Можно перейти на Plus или Pro.";
+        ? (currentLanguage === "en" ? "Limit increased to 100 messages/day." : "Лимит увеличен до 100 сообщений в день.")
+        : (currentLanguage === "en" ? "30 messages/day are available. Upgrade to Plus or Pro." : "Доступно 30 сообщений в день. Можно перейти на Plus или Pro.");
   }
   if (planPerksListEl) {
     const perks =
       currentPlan === "pro"
         ? [
-            "Безлимитные сообщения",
-            "Приоритетный доступ к новым функциям",
-            "Глубокий режим ответа",
+            currentLanguage === "en" ? "Unlimited messages" : "Безлимитные сообщения",
+            currentLanguage === "en" ? "Priority access to new features" : "Приоритетный доступ к новым функциям",
+            currentLanguage === "en" ? "Deep response mode" : "Глубокий режим ответа",
           ]
         : currentPlan === "plus"
         ? [
-            "100 сообщений в день",
-            "Больше ходов в авто-диалоге",
-            "История диалогов сохраняется",
+            currentLanguage === "en" ? "100 messages/day" : "100 сообщений в день",
+            currentLanguage === "en" ? "More auto-dialog turns" : "Больше ходов в авто-диалоге",
+            currentLanguage === "en" ? "Dialog history is saved" : "История диалогов сохраняется",
           ]
         : [
-            "30 сообщений в день",
-            "Доступ к Samii + Vivi",
-            "История диалогов сохраняется",
+            currentLanguage === "en" ? "30 messages/day" : "30 сообщений в день",
+            currentLanguage === "en" ? "Access to Samii + Vivi" : "Доступ к Samii + Vivi",
+            currentLanguage === "en" ? "Dialog history is saved" : "История диалогов сохраняется",
           ];
     planPerksListEl.innerHTML = "";
     for (const perk of perks) {
@@ -678,7 +973,7 @@ function setPlanState(plan, usageCount = 0) {
   if (openUpgradeBtn) openUpgradeBtn.hidden = hideUpgrade;
   if (deepModeToggle) {
     deepModeToggle.disabled = currentPlan !== "pro";
-    deepModeToggle.textContent = deepModeEnabled ? "Выключить" : "Включить";
+    deepModeToggle.textContent = deepModeEnabled ? (currentLanguage === "en" ? "Disable" : "Выключить") : (currentLanguage === "en" ? "Enable" : "Включить");
     deepModeToggle.title =
       currentPlan === "pro"
         ? "Включить или выключить глубокий режим"
@@ -707,12 +1002,12 @@ function setPlanState(plan, usageCount = 0) {
     observeBtn.disabled = currentPlan === "free";
     observeBtn.title =
       currentPlan === "free"
-        ? "Доступно с Plus"
-        : "Наблюдать диалог ботов";
+        ? (currentLanguage === "en" ? "Available on Plus" : "Доступно с Plus")
+        : (currentLanguage === "en" ? "Observe bot dialog" : "Наблюдать диалог ботов");
   }
   if (debateBtn) {
     debateBtn.disabled = currentPlan === "free";
-    debateBtn.title = currentPlan === "free" ? "Доступно с Plus" : "Запустить баттл мнений";
+    debateBtn.title = currentPlan === "free" ? (currentLanguage === "en" ? "Available on Plus" : "Доступно с Plus") : (currentLanguage === "en" ? "Start debate" : "Запустить баттл мнений");
   }
   if (vibeModeEl) {
     const options = Array.from(vibeModeEl.options);
@@ -728,10 +1023,10 @@ function setPlanState(plan, usageCount = 0) {
     }
     vibeModeEl.title =
       currentPlan === "free"
-        ? "Доп. стили доступны с Plus/Pro"
+        ? (currentLanguage === "en" ? "Extra styles available on Plus/Pro" : "Доп. стили доступны с Plus/Pro")
         : currentPlan === "plus"
-        ? "Creator/Study доступны на Pro"
-        : "Выберите стиль ответа";
+        ? (currentLanguage === "en" ? "Creator/Study available on Pro" : "Creator/Study доступны на Pro")
+        : (currentLanguage === "en" ? "Choose response style" : "Выберите стиль ответа");
   }
 }
 
@@ -2006,6 +2301,12 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
+languageToggleEl?.addEventListener("change", () => {
+  applyLanguage(languageToggleEl.checked ? "en" : "ru");
+});
+
+const preferredLanguage = localStorage.getItem(LANG_KEY) || (navigator.language || "ru").slice(0, 2);
+applyLanguage(preferredLanguage);
 applyTheme("light");
 loadSettings();
 document.addEventListener("click", (event) => {

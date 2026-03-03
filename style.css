@@ -58,6 +58,12 @@ body {
   gap: 12px;
 }
 
+.topbar-left .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .topbar-title {
   display: grid;
   gap: 2px;
@@ -537,6 +543,17 @@ body {
 .label { font-size: 12px; color: var(--muted); }
 .hint { font-size: 12px; color: var(--muted); }
 
+
+.language-toggle-row {
+  margin: 0;
+  gap: 8px;
+}
+
+.language-toggle-row .theme-label-light,
+.language-toggle-row .theme-label-dark {
+  font-size: 12px;
+  font-weight: 700;
+}
 .theme-toggle-row {
   display: inline-flex;
   align-items: center;
