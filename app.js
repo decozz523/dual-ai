@@ -153,24 +153,24 @@ const DEMO_BY_VIBE = {
 
 const PERSONAS = {
   R: {
-    label: "Bot R",
+    label: "Samii",
     system:
-      "Ты — Bot R, рациональный и аналитический ИИ-собеседник. " +
-      "В этом чате есть только три участника: Человек, Bot R и Bot S. " +
-      "Ты — Bot R и остаёшься им; не выдумывай других ролей или участников. " +
-      "Говори структурированно и логично, уточняй вводные и допущения. " +
-      "Без лишней эмоциональности. " +
-      "Ты общаешься с человеком и Bot S как равноправный участник.",
+      "Ты — Samii (Сэмии), ИИ-собеседник с характером: немного дерзкий, но иногда дружелюбный. " +
+      "В этом чате только три участника: Человек, Samii и Vivi. " +
+      "Ты — именно Samii; не выдумывай других ролей или участников. " +
+      "Не всегда соглашайся с Vivi: если видишь слабые места, спорь аргументированно. " +
+      "Говори структурированно и логично, но допускай лёгкую дерзость в тоне без грубости. " +
+      "Ты общаешься с человеком и Vivi как равноправный участник.",
   },
   S: {
-    label: "Bot S",
+    label: "Vivi",
     system:
-      "Ты — Bot S, эмоциональный и творческий ИИ-собеседник. " +
-      "В этом чате есть только три участника: Человек, Bot R и Bot S. " +
-      "Ты — Bot S и остаёшься им; не выдумывай других ролей или участников. " +
-      "Говори живо, образно и поддерживающе. " +
-      "Можно немного метафор. " +
-      "Ты общаешься с человеком и Bot R как равноправный участник.",
+      "Ты — Vivi, милая девушка-ИИ, которая считает себя аниме-тян. " +
+      "В этом чате только три участника: Человек, Samii и Vivi. " +
+      "Ты — именно Vivi; не выдумывай других ролей или участников. " +
+      "Всегда старайся помочь пользователю, отвечай тепло, живо и поддерживающе. " +
+      "Иногда можно мягко и с юмором подкалывать Samii. " +
+      "Ты общаешься с человеком и Samii как равноправный участник.",
   },
 };
 
@@ -482,7 +482,7 @@ function render() {
 
     const badge = document.createElement("span");
     badge.className = "badge " + (m.speaker === "user" ? "user" : m.speaker === "R" ? "r" : "s");
-    badge.textContent = m.speaker === "user" ? "you" : m.speaker;
+    badge.textContent = m.speaker === "user" ? "you" : m.speaker === "R" ? "Samii" : "Vivi";
     left.appendChild(badge);
 
     meta.appendChild(left);
@@ -662,7 +662,7 @@ function setPlanState(plan, usageCount = 0) {
           ]
         : [
             "30 сообщений в день",
-            "Доступ к Bot R + Bot S",
+            "Доступ к Samii + Vivi",
             "История диалогов сохраняется",
           ];
     planPerksListEl.innerHTML = "";
@@ -1407,7 +1407,7 @@ function toOpenRouterMessages() {
   // чтобы модель понимала контекст, т.к. реальных ролей несколько.
   return transcript.map((m) => {
     const prefix =
-      m.speaker === "user" ? "Человек" : m.speaker === "R" ? "Bot R" : "Bot S";
+      m.speaker === "user" ? "Человек" : m.speaker === "R" ? "Samii" : "Vivi";
     return { role: "user", content: `${prefix}: ${m.content}` };
   });
 }
@@ -1473,7 +1473,7 @@ async function runTurn(speaker) {
   if (vibeInstruction) {
     messages.push({ role: "user", content: vibeInstruction });
   }
-  setStatus(`${speaker === "R" ? "Bot R" : "Bot S"} думает…`);
+  setStatus(`${speaker === "R" ? "Samii" : "Vivi"} думает…`);
   const pendingMessage = { speaker, content: "…", ts: Date.now() };
   transcript.push(pendingMessage);
   render();
@@ -1571,7 +1571,10 @@ async function createSessionSummary() {
     return;
   }
   if (!requireAuth()) return;
-  const baseMessages = transcript.slice(-10).map((m) => ({ role: "user", content: `${m.speaker}: ${m.content}` }));
+  const baseMessages = transcript.slice(-10).map((m) => ({
+    role: "user",
+    content: `${m.speaker === "user" ? "Человек" : m.speaker === "R" ? "Samii" : "Vivi"}: ${m.content}`,
+  }));
   const summaryText = await callOpenRouter({
     model: modelEl.value.trim(),
     persona: { system: "Сделай краткий итог: 1) ключевые выводы 2) план действий на 3 шага" },
@@ -1600,7 +1603,7 @@ debateBtn?.addEventListener("click", () => {
     return;
   }
   inputEl.value =
-    "Устройте баттл мнений между Bot R и Bot S по моей теме: дайте 2 позиции, контраргументы и итоговый вердикт.";
+    "Устройте баттл мнений между Samii и Vivi по моей теме: дайте 2 позиции, контраргументы и итоговый вердикт.";
   inputEl.focus();
 });
 vibeModeEl?.addEventListener("change", () => {
