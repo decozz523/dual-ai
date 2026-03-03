@@ -24,6 +24,7 @@ const quickStartButtons = document.querySelectorAll("[data-template]");
 const ideaBtn = $("ideaBtn");
 const layoutEl = document.querySelector(".layout");
 const homeBtn = $("homeBtn");
+const siteFooter = document.querySelector(".site-footer");
 const menuBtn = $("menuBtn");
 const openSettingsBtn = $("openSettingsBtn");
 const openSettingsHeroBtn = $("openSettingsHeroBtn");
@@ -845,6 +846,7 @@ function setMode(mode) {
   layoutEl.classList.toggle("mode-home", mode === "home");
   layoutEl.classList.toggle("mode-chat", mode === "chat");
   homeBtn.hidden = mode === "home";
+  if (siteFooter) siteFooter.hidden = mode === "chat";
 }
 
 function makeDialogId() {
