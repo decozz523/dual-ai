@@ -43,6 +43,10 @@ const settingsBody = $("settingsBody");
 const settingsScrollHint = $("settingsScrollHint");
 const settingsLogoutBtn = $("settingsLogoutBtn");
 const settingsAccountEmailEl = $("settingsAccountEmail");
+const settingsProfileNameEl = $("settingsProfileName");
+const settingsProfileAgeEl = $("settingsProfileAge");
+const settingsProfileBirthdateEl = $("settingsProfileBirthdate");
+const editProfileBtn = $("editProfileBtn");
 const authOverlay = $("authOverlay");
 const authModal = $("authModal");
 const authCloseBtn = $("authCloseBtn");
@@ -206,6 +210,13 @@ const I18N = {
     hintTheme: "Удобнее для работы ночью. Применяется сразу.",
     labelActivationCode: "Код активации",
     accountGuest: "Гость (не выполнен вход)",
+    editProfile: "Редактировать профиль",
+    profileName: "Имя",
+    profileAgeGroup: "Возрастная группа",
+    profileBirthdate: "Дата рождения",
+    ageGroupMinor: "до 18",
+    ageGroupAdult: "18+",
+    ageGroupUnknown: "не указано",
     authNameLabel: "Имя (для обращения)",
     authNamePlaceholder: "Например, Алекс",
     authBirthdateLabel: "Дата рождения",
@@ -306,6 +317,13 @@ const I18N = {
     hintTheme: "More comfortable at night. Applies instantly.",
     labelActivationCode: "Activation code",
     accountGuest: "Guest (not signed in)",
+    editProfile: "Edit profile",
+    profileName: "Name",
+    profileAgeGroup: "Age group",
+    profileBirthdate: "Date of birth",
+    ageGroupMinor: "under 18",
+    ageGroupAdult: "18+",
+    ageGroupUnknown: "not set",
     authNameLabel: "Name (for addressing)",
     authNamePlaceholder: "For example, Alex",
     authBirthdateLabel: "Date of birth",
@@ -423,6 +441,10 @@ function applyLanguage(lang) {
   setText("#consentText", t("consentText"));
   setText("#authNameLabel", t("authNameLabel"));
   setText("#authBirthdateLabel", t("authBirthdateLabel"));
+  setText("#profileNameLabel", t("profileName"));
+  setText("#profileAgeLabel", t("profileAgeGroup"));
+  setText("#profileBirthdateLabel", t("profileBirthdate"));
+  setText("#editProfileBtn", t("editProfile"));
   if (authNameEl) authNameEl.placeholder = t("authNamePlaceholder");
   setText("#upgradeSubtitle", t("upgradeSubtitle"));
   setText("#upgradeStep1Title", t("upgradeStep1Title"));
@@ -467,6 +489,7 @@ function applyLanguage(lang) {
   const activationCodeLabel = document.querySelector("#settingsModal #activationCodeInput")?.previousElementSibling;
   if (activationCodeLabel) activationCodeLabel.textContent = t("labelActivationCode");
   if (settingsAccountEmailEl && !authSession?.user?.id) settingsAccountEmailEl.textContent = t("accountGuest");
+  renderProfileSummary(getActiveUserProfile());
 
   const staticText = {
     ru: {
@@ -678,6 +701,12 @@ function calculateAge(birthDate) {
   return age;
 }
 
+let cachedActiveProfile = undefined;
+
+function invalidateProfileCache() {
+  cachedActiveProfile = undefined;
+}
+
 function loadLocalProfile() {
   try {
     const raw = localStorage.getItem(PROFILE_KEY);
@@ -695,6 +724,7 @@ function loadLocalProfile() {
 }
 
 function saveLocalProfile(profile) {
+  invalidateProfileCache();
   if (!profile) {
     localStorage.removeItem(PROFILE_KEY);
     return;
@@ -703,22 +733,42 @@ function saveLocalProfile(profile) {
 }
 
 function getActiveUserProfile() {
+  if (cachedActiveProfile !== undefined) return cachedActiveProfile;
+
   const meta = authSession?.user?.user_metadata || {};
   const name = String(meta.display_name || "").trim();
   const birthDate = normalizeBirthDate(meta.birth_date || "");
   const age = calculateAge(birthDate);
   const isAdult = age !== null ? age >= 18 : undefined;
-  if (name || birthDate) return { name, birthDate, age, isAdult };
+  if (name || birthDate) {
+    cachedActiveProfile = { name, birthDate, age, isAdult };
+    return cachedActiveProfile;
+  }
 
   const localProfile = loadLocalProfile();
-  if (!localProfile) return null;
+  if (!localProfile) {
+    cachedActiveProfile = null;
+    return cachedActiveProfile;
+  }
   const localAge = calculateAge(localProfile.birthDate);
-  return {
+  cachedActiveProfile = {
     name: localProfile.name,
     birthDate: localProfile.birthDate,
     age: localAge,
     isAdult: localAge !== null ? localAge >= 18 : localProfile.isAdult,
   };
+  return cachedActiveProfile;
+}
+
+function renderProfileSummary(profile) {
+  if (!settingsProfileNameEl || !settingsProfileAgeEl || !settingsProfileBirthdateEl) return;
+  settingsProfileNameEl.textContent = profile?.name || "—";
+  if (profile?.age === null || profile?.age === undefined) {
+    settingsProfileAgeEl.textContent = t("ageGroupUnknown");
+  } else {
+    settingsProfileAgeEl.textContent = profile.isAdult ? t("ageGroupAdult") : t("ageGroupMinor");
+  }
+  settingsProfileBirthdateEl.textContent = profile?.birthDate || "—";
 }
 
 function getUserProfileInstruction() {
@@ -751,6 +801,7 @@ function closeAuthModal() {
 
 function updateAuthUI(session) {
   authSession = session;
+  invalidateProfileCache();
   planReady = null;
   const user = session?.user || null;
   const isSignedIn = Boolean(user?.id);
@@ -758,6 +809,7 @@ function updateAuthUI(session) {
   const accountLabel = profile?.name || user?.email || user?.phone || t("accountGuest");
   loginBtn.hidden = isSignedIn;
   settingsAccountEmailEl.textContent = accountLabel;
+  renderProfileSummary(profile);
   if (authNameEl) authNameEl.value = profile?.name || "";
   if (authBirthdateEl) authBirthdateEl.value = profile?.birthDate || "";
   if (isSignedIn) {
@@ -2309,6 +2361,13 @@ loginBtn.addEventListener("click", () => {
   }
   if (authSession) {
     setAuthScene(false);
+    return;
+  }
+  openAuthModal();
+});
+editProfileBtn?.addEventListener("click", () => {
+  if (!supabase) {
+    initSupabase().then(() => openAuthModal());
     return;
   }
   openAuthModal();

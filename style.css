@@ -1708,6 +1708,32 @@ body.theme-dark .msg-s {
   font-size: 13px;
 }
 
+.profile-box {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(79, 149, 228, 0.25);
+  background: rgba(231, 244, 255, 0.55);
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.profile-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.profile-label {
+  color: var(--muted);
+}
+
+body.theme-dark .profile-box {
+  background: rgba(31, 49, 72, 0.7);
+  border-color: rgba(102, 142, 190, 0.45);
+}
+
 body.theme-dark .dialog-menu-panel {
   background: rgba(20, 34, 52, 0.98);
   border-color: rgba(102, 142, 190, 0.5);
