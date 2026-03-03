@@ -97,6 +97,135 @@ const templateListEl = $("templateList");
 const dialogSearchInput = $("dialogSearchInput");
 const dialogTagFilter = $("dialogTagFilter");
 
+const languageSelectEl = $("languageSelect");
+
+const LANG_KEY = "dual-ai-lang-v1";
+const SUPPORTED_LANGS = ["ru", "en"];
+let currentLanguage = "ru";
+
+const I18N = {
+  ru: {
+    pageTitle: "dual-ai (Samii & Vivi)",
+    pageDescription: "dual-ai — dual-чат с Samii и Vivi для стратегий, креатива и быстрых решений.",
+    statusReady: "Готов.",
+    login: "Войти",
+    upgrade: "Оплатить / Upgrade",
+    support: "Поддержать",
+    home: "Главное меню",
+    startChat: "Начать чат",
+    openSettings: "Открыть настройки",
+    idea: "Предложить идею",
+    inputPlaceholder: "Напиши сообщение…",
+    settings: "Настройки",
+    newDialog: "Новый диалог",
+    saveSettings: "Сохранить настройки",
+    exportDialog: "Экспортировать диалог",
+    clearCurrentChat: "Очистить текущий чат",
+    clearAllDialogs: "Удалить все диалоги",
+    summary: "🧾 Итог",
+    template: "💾 Шаблон",
+    observe: "👀 Диалог",
+    debate: "🔥 Баттл",
+    demo: "⚡ Демо",
+  },
+  en: {
+    pageTitle: "dual-ai (Samii & Vivi)",
+    pageDescription: "dual-ai — a duo chat with Samii and Vivi for strategy, creativity, and fast decisions.",
+    statusReady: "Ready.",
+    login: "Sign in",
+    upgrade: "Upgrade",
+    support: "Support",
+    home: "Home",
+    startChat: "Start chat",
+    openSettings: "Open settings",
+    idea: "Suggest an idea",
+    inputPlaceholder: "Type a message…",
+    settings: "Settings",
+    newDialog: "New dialog",
+    saveSettings: "Save settings",
+    exportDialog: "Export dialog",
+    clearCurrentChat: "Clear current chat",
+    clearAllDialogs: "Delete all dialogs",
+    summary: "🧾 Summary",
+    template: "💾 Template",
+    observe: "👀 Observe",
+    debate: "🔥 Debate",
+    demo: "⚡ Demo",
+  },
+};
+
+const QUICK_CHIPS = {
+  ru: [
+    ["План на 7 дней", "Составь план на 7 дней для моей цели."],
+    ["Идеи контента", "Придумай 10 идей для контента на неделю."],
+    ["Стратегия запуска", "Сделай стратегию запуска продукта в 5 шагах."],
+    ["Гипотезы роста", "Сформулируй 3 гипотезы роста для моего продукта."],
+    ["TikTok идеи", "Придумай 12 идей для TikTok на неделю в моём стиле."],
+    ["Учёба за 5 дней", "Собери учебный план на 5 дней, чтобы быстро подготовиться к зачёту."],
+    ["7-дневный челлендж", "Сделай челлендж на 7 дней для прокачки привычки без выгорания."],
+    ["Сценарий для Reels", "Напиши сценарий для короткого видео: хук, основа, финальный CTA."],
+  ],
+  en: [
+    ["7-day plan", "Build a 7-day plan for my goal."],
+    ["Content ideas", "Give me 10 content ideas for this week."],
+    ["Launch strategy", "Create a 5-step product launch strategy."],
+    ["Growth hypotheses", "Suggest 3 growth hypotheses for my product."],
+    ["TikTok ideas", "Give me 12 TikTok ideas for a week in my style."],
+    ["Study in 5 days", "Build a 5-day study plan to prepare quickly for an exam."],
+    ["7-day challenge", "Create a 7-day challenge to build a habit without burnout."],
+    ["Reels script", "Write a short-video script: hook, body, final CTA."],
+  ],
+};
+
+function t(key) {
+  return I18N[currentLanguage]?.[key] || I18N.ru[key] || key;
+}
+
+function applyLanguage(lang) {
+  currentLanguage = SUPPORTED_LANGS.includes(lang) ? lang : "ru";
+  localStorage.setItem(LANG_KEY, currentLanguage);
+  document.documentElement.lang = currentLanguage;
+  const metaDescription = document.querySelector('meta[name="description"]');
+  if (metaDescription) metaDescription.setAttribute("content", t("pageDescription"));
+  document.title = t("pageTitle");
+
+  if (languageSelectEl) languageSelectEl.value = currentLanguage;
+  if (loginBtn) loginBtn.textContent = t("login");
+  if (upgradeBtn) upgradeBtn.textContent = t("upgrade");
+  const supportBtn = document.querySelector('.topbar-left a.btn.btn-secondary');
+  if (supportBtn) supportBtn.textContent = t("support");
+  if (homeBtn) homeBtn.textContent = t("home");
+  if (mobileHomeBtn) mobileHomeBtn.textContent = t("home");
+  if (newChatBtn) newChatBtn.textContent = t("startChat");
+  if (openSettingsHeroBtn) openSettingsHeroBtn.textContent = t("openSettings");
+  if (ideaBtn) ideaBtn.textContent = t("idea");
+  if (inputEl) inputEl.placeholder = t("inputPlaceholder");
+  if (openSettingsBtn) openSettingsBtn.textContent = t("settings");
+  if (drawerNewChatBtn) drawerNewChatBtn.textContent = t("newDialog");
+  if (saveBtn) saveBtn.textContent = t("saveSettings");
+  if (exportChatBtn) exportChatBtn.textContent = t("exportDialog");
+  if (clearBtn) clearBtn.textContent = t("clearCurrentChat");
+  if (clearDialogsBtn) clearDialogsBtn.textContent = t("clearAllDialogs");
+  if (summaryBtn) summaryBtn.textContent = t("summary");
+  if (saveTemplateBtn) saveTemplateBtn.textContent = t("template");
+  if (observeBtn) observeBtn.textContent = t("observe");
+  if (debateBtn) debateBtn.textContent = t("debate");
+  if (demoBtn) demoBtn.textContent = t("demo");
+
+  const chips = QUICK_CHIPS[currentLanguage] || QUICK_CHIPS.ru;
+  document.querySelectorAll('.chip-btn').forEach((button, index) => {
+    const [label, prompt] = chips[index] || QUICK_CHIPS.ru[index] || [];
+    if (!label || !prompt) return;
+    button.textContent = label;
+    button.dataset.template = prompt;
+  });
+
+  if (!statusEl.textContent || [I18N.ru.statusReady, I18N.en.statusReady].includes(statusEl.textContent)) {
+    setStatus(t("statusReady"), "ok");
+  }
+  setPlanState(currentPlan, currentUsageCount);
+}
+
 let supabase = null;
 let authSession = null;
 let supabaseReady = null;
@@ -153,24 +282,24 @@ const DEMO_BY_VIBE = {
 
 const PERSONAS = {
   R: {
-    label: "Bot R",
+    label: "Samii",
     system:
-      "Ты — Bot R, рациональный и аналитический ИИ-собеседник. " +
-      "В этом чате есть только три участника: Человек, Bot R и Bot S. " +
-      "Ты — Bot R и остаёшься им; не выдумывай других ролей или участников. " +
-      "Говори структурированно и логично, уточняй вводные и допущения. " +
-      "Без лишней эмоциональности. " +
-      "Ты общаешься с человеком и Bot S как равноправный участник.",
+      "Ты — Samii (Сэмии), ИИ-собеседник с характером: немного дерзкий, но иногда дружелюбный. " +
+      "В этом чате только три участника: Человек, Samii и Vivi. " +
+      "Ты — именно Samii; не выдумывай других ролей или участников. " +
+      "Не всегда соглашайся с Vivi: если видишь слабые места, спорь аргументированно. " +
+      "Говори структурированно и логично, но допускай лёгкую дерзость в тоне без грубости. " +
+      "Ты общаешься с человеком и Vivi как равноправный участник.",
   },
   S: {
-    label: "Bot S",
+    label: "Vivi",
     system:
-      "Ты — Bot S, эмоциональный и творческий ИИ-собеседник. " +
-      "В этом чате есть только три участника: Человек, Bot R и Bot S. " +
-      "Ты — Bot S и остаёшься им; не выдумывай других ролей или участников. " +
-      "Говори живо, образно и поддерживающе. " +
-      "Можно немного метафор. " +
-      "Ты общаешься с человеком и Bot R как равноправный участник.",
+      "Ты — Vivi, милая девушка-ИИ, которая считает себя аниме-тян. " +
+      "В этом чате только три участника: Человек, Samii и Vivi. " +
+      "Ты — именно Vivi; не выдумывай других ролей или участников. " +
+      "Всегда старайся помочь пользователю, отвечай тепло, живо и поддерживающе. " +
+      "Иногда можно мягко и с юмором подкалывать Samii. " +
+      "Ты общаешься с человеком и Samii как равноправный участник.",
   },
 };
 
@@ -482,7 +611,7 @@ function render() {
 
     const badge = document.createElement("span");
     badge.className = "badge " + (m.speaker === "user" ? "user" : m.speaker === "R" ? "r" : "s");
-    badge.textContent = m.speaker === "user" ? "you" : m.speaker;
+    badge.textContent = m.speaker === "user" ? "you" : m.speaker === "R" ? "Samii" : "Vivi";
     left.appendChild(badge);
 
     meta.appendChild(left);
@@ -583,8 +712,8 @@ function getPlanLimit(plan) {
 
 function getPlanSubtitle(plan) {
   const limit = getPlanLimit(plan);
-  if (!Number.isFinite(limit)) return "Без ограничений";
-  return `${limit} сообщений в день`;
+  if (!Number.isFinite(limit)) return currentLanguage === "en" ? "Unlimited" : "Без ограничений";
+  return currentLanguage === "en" ? `${limit} messages/day` : `${limit} сообщений в день`;
 }
 
 function hasPlusAccess() {
@@ -627,43 +756,43 @@ function setPlanState(plan, usageCount = 0) {
   const limit = getPlanLimit(currentPlan);
   if (planUsageEl) {
     planUsageEl.textContent = Number.isFinite(limit)
-      ? `Сегодня: ${usageCount} / ${limit}`
-      : `Сегодня: ${usageCount} / без ограничений`;
+      ? (currentLanguage === "en" ? `Today: ${usageCount} / ${limit}` : `Сегодня: ${usageCount} / ${limit}`)
+      : (currentLanguage === "en" ? `Today: ${usageCount} / unlimited` : `Сегодня: ${usageCount} / без ограничений`);
   }
   if (planNoticeTitleEl) {
     planNoticeTitleEl.textContent =
       currentPlan === "pro"
-        ? "Pro активирован"
+        ? (currentLanguage === "en" ? "Pro activated" : "Pro активирован")
         : currentPlan === "plus"
-        ? "Plus активирован"
-        : "Free активен";
+        ? (currentLanguage === "en" ? "Plus activated" : "Plus активирован")
+        : (currentLanguage === "en" ? "Free active" : "Free активен");
   }
   if (planNoticeTextEl) {
     planNoticeTextEl.textContent =
       currentPlan === "pro"
-        ? "Безлимитные сообщения. Спасибо за поддержку!"
+        ? (currentLanguage === "en" ? "Unlimited messages. Thanks for your support!" : "Безлимитные сообщения. Спасибо за поддержку!")
         : currentPlan === "plus"
-        ? "Лимит увеличен до 100 сообщений в день."
-        : "Доступно 30 сообщений в день. Можно перейти на Plus или Pro.";
+        ? (currentLanguage === "en" ? "Limit increased to 100 messages/day." : "Лимит увеличен до 100 сообщений в день.")
+        : (currentLanguage === "en" ? "30 messages/day are available. Upgrade to Plus or Pro." : "Доступно 30 сообщений в день. Можно перейти на Plus или Pro.");
   }
   if (planPerksListEl) {
     const perks =
       currentPlan === "pro"
         ? [
-            "Безлимитные сообщения",
-            "Приоритетный доступ к новым функциям",
-            "Глубокий режим ответа",
+            currentLanguage === "en" ? "Unlimited messages" : "Безлимитные сообщения",
+            currentLanguage === "en" ? "Priority access to new features" : "Приоритетный доступ к новым функциям",
+            currentLanguage === "en" ? "Deep response mode" : "Глубокий режим ответа",
           ]
         : currentPlan === "plus"
         ? [
-            "100 сообщений в день",
-            "Больше ходов в авто-диалоге",
-            "История диалогов сохраняется",
+            currentLanguage === "en" ? "100 messages/day" : "100 сообщений в день",
+            currentLanguage === "en" ? "More auto-dialog turns" : "Больше ходов в авто-диалоге",
+            currentLanguage === "en" ? "Dialog history is saved" : "История диалогов сохраняется",
           ]
         : [
-            "30 сообщений в день",
-            "Доступ к Bot R + Bot S",
-            "История диалогов сохраняется",
+            currentLanguage === "en" ? "30 messages/day" : "30 сообщений в день",
+            currentLanguage === "en" ? "Access to Samii + Vivi" : "Доступ к Samii + Vivi",
+            currentLanguage === "en" ? "Dialog history is saved" : "История диалогов сохраняется",
           ];
     planPerksListEl.innerHTML = "";
     for (const perk of perks) {
@@ -678,7 +807,7 @@ function setPlanState(plan, usageCount = 0) {
   if (openUpgradeBtn) openUpgradeBtn.hidden = hideUpgrade;
   if (deepModeToggle) {
     deepModeToggle.disabled = currentPlan !== "pro";
-    deepModeToggle.textContent = deepModeEnabled ? "Выключить" : "Включить";
+    deepModeToggle.textContent = deepModeEnabled ? (currentLanguage === "en" ? "Disable" : "Выключить") : (currentLanguage === "en" ? "Enable" : "Включить");
     deepModeToggle.title =
       currentPlan === "pro"
         ? "Включить или выключить глубокий режим"
@@ -707,12 +836,12 @@ function setPlanState(plan, usageCount = 0) {
     observeBtn.disabled = currentPlan === "free";
     observeBtn.title =
       currentPlan === "free"
-        ? "Доступно с Plus"
-        : "Наблюдать диалог ботов";
+        ? (currentLanguage === "en" ? "Available on Plus" : "Доступно с Plus")
+        : (currentLanguage === "en" ? "Observe bot dialog" : "Наблюдать диалог ботов");
   }
   if (debateBtn) {
     debateBtn.disabled = currentPlan === "free";
-    debateBtn.title = currentPlan === "free" ? "Доступно с Plus" : "Запустить баттл мнений";
+    debateBtn.title = currentPlan === "free" ? (currentLanguage === "en" ? "Available on Plus" : "Доступно с Plus") : (currentLanguage === "en" ? "Start debate" : "Запустить баттл мнений");
   }
   if (vibeModeEl) {
     const options = Array.from(vibeModeEl.options);
@@ -728,10 +857,10 @@ function setPlanState(plan, usageCount = 0) {
     }
     vibeModeEl.title =
       currentPlan === "free"
-        ? "Доп. стили доступны с Plus/Pro"
+        ? (currentLanguage === "en" ? "Extra styles available on Plus/Pro" : "Доп. стили доступны с Plus/Pro")
         : currentPlan === "plus"
-        ? "Creator/Study доступны на Pro"
-        : "Выберите стиль ответа";
+        ? (currentLanguage === "en" ? "Creator/Study available on Pro" : "Creator/Study доступны на Pro")
+        : (currentLanguage === "en" ? "Choose response style" : "Выберите стиль ответа");
   }
 }
 
@@ -1407,7 +1536,7 @@ function toOpenRouterMessages() {
   // чтобы модель понимала контекст, т.к. реальных ролей несколько.
   return transcript.map((m) => {
     const prefix =
-      m.speaker === "user" ? "Человек" : m.speaker === "R" ? "Bot R" : "Bot S";
+      m.speaker === "user" ? "Человек" : m.speaker === "R" ? "Samii" : "Vivi";
     return { role: "user", content: `${prefix}: ${m.content}` };
   });
 }
@@ -1473,7 +1602,7 @@ async function runTurn(speaker) {
   if (vibeInstruction) {
     messages.push({ role: "user", content: vibeInstruction });
   }
-  setStatus(`${speaker === "R" ? "Bot R" : "Bot S"} думает…`);
+  setStatus(`${speaker === "R" ? "Samii" : "Vivi"} думает…`);
   const pendingMessage = { speaker, content: "…", ts: Date.now() };
   transcript.push(pendingMessage);
   render();
@@ -1571,7 +1700,10 @@ async function createSessionSummary() {
     return;
   }
   if (!requireAuth()) return;
-  const baseMessages = transcript.slice(-10).map((m) => ({ role: "user", content: `${m.speaker}: ${m.content}` }));
+  const baseMessages = transcript.slice(-10).map((m) => ({
+    role: "user",
+    content: `${m.speaker === "user" ? "Человек" : m.speaker === "R" ? "Samii" : "Vivi"}: ${m.content}`,
+  }));
   const summaryText = await callOpenRouter({
     model: modelEl.value.trim(),
     persona: { system: "Сделай краткий итог: 1) ключевые выводы 2) план действий на 3 шага" },
@@ -1600,7 +1732,7 @@ debateBtn?.addEventListener("click", () => {
     return;
   }
   inputEl.value =
-    "Устройте баттл мнений между Bot R и Bot S по моей теме: дайте 2 позиции, контраргументы и итоговый вердикт.";
+    "Устройте баттл мнений между Samii и Vivi по моей теме: дайте 2 позиции, контраргументы и итоговый вердикт.";
   inputEl.focus();
 });
 vibeModeEl?.addEventListener("change", () => {
@@ -2003,6 +2135,14 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
+languageSelectEl?.addEventListener("change", (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLSelectElement)) return;
+  applyLanguage(target.value);
+});
+
+const preferredLanguage = localStorage.getItem(LANG_KEY) || (navigator.language || "ru").slice(0, 2);
+applyLanguage(preferredLanguage);
 applyTheme("light");
 loadSettings();
 document.addEventListener("click", (event) => {
