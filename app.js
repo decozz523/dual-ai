@@ -24,6 +24,8 @@ const quickStartButtons = document.querySelectorAll("[data-template]");
 const ideaBtn = $("ideaBtn");
 const layoutEl = document.querySelector(".layout");
 const homeBtn = $("homeBtn");
+const mobileHomeBtn = $("mobileHomeBtn");
+const brandHomeLink = $("brandHomeLink");
 const siteFooter = document.querySelector(".site-footer");
 const menuBtn = $("menuBtn");
 const openSettingsBtn = $("openSettingsBtn");
@@ -1493,6 +1495,17 @@ drawerNewChatBtn.addEventListener("click", () => {
   closeDrawer();
 });
 homeBtn.addEventListener("click", () => {
+  setMode("home");
+  closeDrawer();
+  closeSettingsModal();
+});
+mobileHomeBtn?.addEventListener("click", () => {
+  setMode("home");
+  closeDrawer();
+  closeSettingsModal();
+});
+brandHomeLink?.addEventListener("click", (event) => {
+  event.preventDefault();
   setMode("home");
   closeDrawer();
   closeSettingsModal();

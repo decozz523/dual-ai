@@ -128,6 +128,19 @@ body {
   font-family: "Segoe UI", "Inter", "Trebuchet MS", var(--sans);
 }
 
+.brand-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.brand-link:hover {
+  text-decoration: underline;
+}
+
+.mobile-home-btn {
+  display: none;
+}
+
 .plan-pill {
   padding: 6px 10px;
   border-radius: 999px;
@@ -1531,6 +1544,7 @@ body.theme-dark .msg-s {
     gap: 6px;
     align-items: center;
   }
+  .mobile-home-btn { display: inline-flex; }
   .topbar-left {
     grid-area: actions;
     order: 3;
@@ -1552,7 +1566,9 @@ body.theme-dark .msg-s {
     justify-content: center;
   }
   .topbar-right .status-pill,
-  .topbar-right .plan-pill,
+  .topbar-right .plan-pill {
+    display: none;
+  }
   .topbar-right #homeBtn {
     display: none;
   }
