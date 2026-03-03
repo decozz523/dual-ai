@@ -128,6 +128,19 @@ body {
   font-family: "Segoe UI", "Inter", "Trebuchet MS", var(--sans);
 }
 
+.brand-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.brand-link:hover {
+  text-decoration: underline;
+}
+
+.mobile-home-btn {
+  display: none;
+}
+
 .plan-pill {
   padding: 6px 10px;
   border-radius: 999px;
@@ -711,9 +724,11 @@ input:focus, textarea:focus { border-color: rgba(47, 126, 216, 0.9); box-shadow:
 
 .mode-chat .app {
   max-width: 980px;
-  min-height: calc(100vh - 180px);
+  min-height: calc(100dvh - 92px);
+  height: calc(100dvh - 92px);
   grid-template-rows: minmax(0, 1fr) auto;
   align-content: stretch;
+  padding-bottom: 140px;
 }
 
 .mode-chat .hero {
@@ -727,6 +742,36 @@ input:focus, textarea:focus { border-color: rgba(47, 126, 216, 0.9); box-shadow:
 
 .mode-chat .messages {
   min-height: 220px;
+  height: 100%;
+  overflow-y: auto;
+  padding: 6px 4px 24px;
+}
+
+.mode-chat .chat {
+  min-height: 0;
+}
+
+.mode-chat .composer {
+  position: fixed;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  width: min(940px, calc(100% - 24px));
+  z-index: 6;
+  padding: 10px;
+  border-radius: 24px;
+  border: 1px solid rgba(79, 149, 228, 0.32);
+  background: rgba(252, 254, 255, 0.95);
+  box-shadow: 0 14px 28px rgba(30, 72, 128, 0.16);
+  backdrop-filter: blur(12px);
+}
+
+.mode-chat .insta-input-wrap textarea {
+  border-radius: 22px;
+}
+
+.mode-chat .insta-send-btn {
+  box-shadow: 0 4px 12px rgba(47, 126, 216, 0.3);
 }
 
 .dialog-list {
@@ -1414,6 +1459,12 @@ body.theme-dark .composer {
   box-shadow: 0 8px 20px rgba(0, 8, 18, 0.35);
 }
 
+body.theme-dark .mode-chat .composer {
+  background: rgba(15, 27, 43, 0.92);
+  border-color: rgba(102, 142, 190, 0.46);
+  box-shadow: 0 16px 28px rgba(0, 8, 18, 0.45);
+}
+
 body.theme-dark .messages {
   background: transparent;
 }
@@ -1467,43 +1518,92 @@ body.theme-dark .msg-s {
   .hero-title { font-size: 22px; }
   .hero-subtitle { font-size: 13px; }
   .topbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "title menu"
+      "actions actions";
     gap: 8px;
     padding: 10px 12px;
   }
-  .topbar-left, .topbar-right {
-    width: 100%;
-    justify-content: flex-start;
-    gap: 6px;
+  .topbar-title {
+    grid-area: title;
+    order: 1;
+    width: auto;
+    text-align: left;
+    min-width: 0;
   }
-  .topbar-right { order: 3; align-items: center; }
-  .topbar-left { order: 2; flex-wrap: wrap; }
-  .topbar-title { order: 1; width: 100%; text-align: left; }
   .topbar-title .h1 { font-size: 18px; line-height: 1.15; }
   .brand-logo { width: 26px; height: 26px; border-radius: 7px; }
   .topbar-title .subtitle { display: none; }
+  .topbar-right {
+    grid-area: menu;
+    order: 2;
+    width: auto;
+    justify-content: flex-end;
+    gap: 6px;
+    align-items: center;
+  }
+  .topbar-left {
+    grid-area: actions;
+    order: 3;
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .mobile-home-btn {
+    display: inline-flex;
+    width: 100%;
+    justify-content: center;
+  }
   .topbar .btn,
   .topbar .icon-btn {
-    min-height: 32px;
+    min-height: 34px;
     padding: 7px 10px;
     border-radius: 10px;
     font-size: 13px;
   }
-  .topbar-left .btn,
-  .topbar-right .btn,
-  .topbar-right .icon-btn {
-    flex: 1 1 calc(50% - 3px);
+  .topbar-left .btn {
     min-width: 0;
+    width: 100%;
+    justify-content: center;
   }
   .topbar-right .status-pill,
   .topbar-right .plan-pill {
-    flex: 0 1 auto;
-    padding: 4px 8px;
-    font-size: 11px;
+    display: none;
+  }
+  .topbar-right #homeBtn {
+    display: none;
+  }
+  .topbar-right .icon-btn {
+    flex: 0 0 auto;
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    min-height: 36px;
+    padding: 0;
+    border-radius: 10px;
   }
   .messages {
     max-height: 56vh;
     padding: 2px;
     gap: 8px;
+  }
+  .mode-chat .app {
+    min-height: calc(100dvh - 130px);
+    height: calc(100dvh - 130px);
+    padding-bottom: 152px;
+  }
+  .mode-chat .composer {
+    width: calc(100% - 16px);
+    bottom: 8px;
+    padding: 8px;
+    border-radius: 20px;
+  }
+  .mode-chat .messages {
+    max-height: none;
+    padding-bottom: 16px;
   }
   .msg {
     max-width: 88%;

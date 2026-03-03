@@ -24,6 +24,9 @@ const quickStartButtons = document.querySelectorAll("[data-template]");
 const ideaBtn = $("ideaBtn");
 const layoutEl = document.querySelector(".layout");
 const homeBtn = $("homeBtn");
+const mobileHomeBtn = $("mobileHomeBtn");
+const brandHomeLink = $("brandHomeLink");
+const siteFooter = document.querySelector(".site-footer");
 const menuBtn = $("menuBtn");
 const openSettingsBtn = $("openSettingsBtn");
 const openSettingsHeroBtn = $("openSettingsHeroBtn");
@@ -101,6 +104,7 @@ let lastProModel = null;
 let currentTheme = "light";
 let openDialogMenuId = null;
 let dialogMeta = {};
+let currentMode = "home";
 
 const TELEGRAM_BOT_URL = "https://t.me/dual_ai_pay_bot";
 
@@ -842,9 +846,19 @@ async function applyActivationCode(rawCode) {
 }
 
 function setMode(mode) {
+  if (mode !== "home" && mode !== "chat") return;
+  if (currentMode === mode) {
+    homeBtn.hidden = mode === "home";
+    if (mobileHomeBtn) mobileHomeBtn.hidden = mode === "home";
+    if (siteFooter) siteFooter.hidden = mode === "chat";
+    return;
+  }
+  currentMode = mode;
   layoutEl.classList.toggle("mode-home", mode === "home");
   layoutEl.classList.toggle("mode-chat", mode === "chat");
   homeBtn.hidden = mode === "home";
+  if (mobileHomeBtn) mobileHomeBtn.hidden = mode === "home";
+  if (siteFooter) siteFooter.hidden = mode === "chat";
 }
 
 function makeDialogId() {
@@ -1490,10 +1504,18 @@ drawerNewChatBtn.addEventListener("click", () => {
   setMode("chat");
   closeDrawer();
 });
-homeBtn.addEventListener("click", () => {
+function goHome() {
+  if (currentMode === "home") return;
   setMode("home");
   closeDrawer();
   closeSettingsModal();
+}
+
+homeBtn.addEventListener("click", goHome);
+mobileHomeBtn?.addEventListener("click", goHome);
+brandHomeLink?.addEventListener("click", (event) => {
+  event.preventDefault();
+  goHome();
 });
 loginBtn.addEventListener("click", () => {
   if (!supabase) {
