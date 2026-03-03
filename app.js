@@ -734,6 +734,7 @@ async function initSupabase() {
         "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm"
       );
       supabase = createClient(data.url, data.anonKey);
+      loginBtn.disabled = false;
       const { data: sessionData } = await supabase.auth.getSession();
       updateAuthUI(sessionData?.session || null);
       supabase.auth.onAuthStateChange((_event, session) => {
