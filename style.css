@@ -1544,14 +1544,18 @@ body.theme-dark .msg-s {
     gap: 6px;
     align-items: center;
   }
-  .mobile-home-btn { display: inline-flex; }
   .topbar-left {
     grid-area: actions;
     order: 3;
     width: 100%;
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
+  }
+  .mobile-home-btn {
+    display: inline-flex;
+    width: 100%;
+    justify-content: center;
   }
   .topbar .btn,
   .topbar .icon-btn {
