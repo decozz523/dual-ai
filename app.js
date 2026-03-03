@@ -91,7 +91,6 @@ const termsOverlay = $("termsOverlay");
 const termsModal = $("termsModal");
 const termsCloseBtn = $("termsCloseBtn");
 const vibeModeEl = $("vibeMode");
-const stopBtn = $("stopBtn");
 const summaryBtn = $("summaryBtn");
 const saveTemplateBtn = $("saveTemplateBtn");
 const templateListEl = $("templateList");
@@ -448,9 +447,16 @@ function findPrevUserMessage(index) {
 
 function submitQuickPrompt(text) {
   const value = String(text || "").trim();
-  if (!value || sendBtn.disabled) return;
+  if (!value || activeAbortController) return;
   inputEl.value = value;
   void onSend();
+}
+
+function setComposerGenerating(isGenerating) {
+  if (!sendBtn) return;
+  sendBtn.dataset.mode = isGenerating ? "stop" : "send";
+  sendBtn.textContent = isGenerating ? "⏹" : "➤";
+  sendBtn.title = isGenerating ? "Остановить генерацию" : "Отправить сообщение";
 }
 
 function render() {
@@ -1528,6 +1534,10 @@ function getExtraTurns() {
 }
 
 async function onSend() {
+  if (activeAbortController) {
+    activeAbortController.abort();
+    return;
+  }
   const text = inputEl.value.trim();
   if (!text) return;
   if (!requireAuth()) return;
@@ -1538,10 +1548,9 @@ async function onSend() {
     return;
   }
 
-  sendBtn.disabled = true;
   demoBtn.disabled = true;
-  if (stopBtn) stopBtn.hidden = false;
   activeAbortController = new AbortController();
+  setComposerGenerating(true);
   inputEl.value = "";
   try {
     await sendUserMessage(text);
@@ -1551,8 +1560,7 @@ async function onSend() {
     }
   } finally {
     activeAbortController = null;
-    if (stopBtn) stopBtn.hidden = true;
-    sendBtn.disabled = false;
+    setComposerGenerating(false);
     demoBtn.disabled = false;
   }
 }
@@ -1617,11 +1625,10 @@ observeBtn?.addEventListener("click", async () => {
   }
   const hasUserMessage = transcript.some((m) => m.speaker === "user");
   const text = hasUserMessage ? "Продолжите обсуждение." : "Привет";
-  sendBtn.disabled = true;
   demoBtn.disabled = true;
   observeBtn.disabled = true;
-  if (stopBtn) stopBtn.hidden = false;
   activeAbortController = new AbortController();
+  setComposerGenerating(true);
   try {
     await sendUserMessageWithTurns(text, 6);
   } catch (e) {
@@ -1630,8 +1637,7 @@ observeBtn?.addEventListener("click", async () => {
     }
   } finally {
     activeAbortController = null;
-    if (stopBtn) stopBtn.hidden = true;
-    sendBtn.disabled = false;
+    setComposerGenerating(false);
     demoBtn.disabled = false;
     observeBtn.disabled = false;
   }
@@ -1676,9 +1682,6 @@ clearDialogsBtn.addEventListener("click", () => {
   void clearAllDialogs();
 });
 menuBtn.addEventListener("click", openDrawer);
-stopBtn?.addEventListener("click", () => {
-  if (activeAbortController) activeAbortController.abort();
-});
 summaryBtn?.addEventListener("click", async () => {
   try {
     await createSessionSummary();
@@ -1867,12 +1870,35 @@ ${message.content}`;
 
   if (action === "regenerate") {
     if (!requireAuth()) return;
-    const prevUser = findPrevUserMessage(index);
-    if (!prevUser) {
-      setStatus("Не найдено исходное сообщение пользователя.", "error");
+    if (message.speaker === "user") return;
+    const hasBaseUser = transcript.slice(0, index).some((m) => m.speaker === "user");
+    if (!hasBaseUser) {
+      setStatus("Не найден контекст для перегенерации.", "error");
       return;
     }
-    submitQuickPrompt(prevUser.content);
+    const baseTranscript = transcript.slice(0, index);
+    transcript = baseTranscript;
+    render();
+    persistActiveDialog();
+
+    demoBtn.disabled = true;
+    activeAbortController = new AbortController();
+    setComposerGenerating(true);
+    runTurn(message.speaker)
+      .then(() => {
+        setStatus("Ответ перегенерирован.", "ok");
+      })
+      .catch((e) => {
+        if (String(e?.message || e) !== "generation-aborted") {
+          setStatus(String(e?.message || e), "error");
+        }
+      })
+      .finally(() => {
+        activeAbortController = null;
+        setComposerGenerating(false);
+        demoBtn.disabled = false;
+      });
+    return;
   }
 });
 authCloseBtn?.addEventListener("click", (event) => {
@@ -1992,6 +2018,7 @@ ensureActiveDialog();
 render();
 renderDialogList();
 renderTemplateList();
+setComposerGenerating(false);
 setMode("home");
 initSupabase();
 setPlanState("free", 0);
