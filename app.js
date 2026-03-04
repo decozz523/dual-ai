@@ -147,6 +147,9 @@ const I18N = {
     heroHighlightFast: "⚡ Быстрый запуск без лишних шагов",
     heroHighlightDuo: "🧠 Samii + Vivi в одном диалоге",
     heroHighlightFocus: "🎯 Фокус на практическом результате",
+    botProfilesTitle: "Кто с тобой в диалоге",
+    samiiBio: "Рациональный аналитик: быстро выделяет главное, спорит по делу и собирает практичный план.",
+    viviBio: "Тёплая креативная напарница: расширяет идеи, добавляет эмоцию и помогает выбрать лучший вариант.",
     cardHotkeyTitle: "Горячая клавиша",
     cardHotkeyHint: "Отправляй сообщение одним нажатием.",
     cardFocusTitle: "Фокус сессии",
@@ -254,6 +257,9 @@ const I18N = {
     heroHighlightFast: "⚡ Fast start without extra steps",
     heroHighlightDuo: "🧠 Samii + Vivi in one dialog",
     heroHighlightFocus: "🎯 Focused on practical outcomes",
+    botProfilesTitle: "Who joins your dialog",
+    samiiBio: "A rational analyst: quickly isolates what matters, challenges weak points, and builds a practical plan.",
+    viviBio: "A warm creative partner: expands ideas, adds emotion, and helps choose the best direction.",
     cardHotkeyTitle: "Hotkey",
     cardHotkeyHint: "Send a message with one key press.",
     cardFocusTitle: "Session focus",
@@ -415,6 +421,9 @@ function applyLanguage(lang) {
   setText("#heroHighlightFast", t("heroHighlightFast"));
   setText("#heroHighlightDuo", t("heroHighlightDuo"));
   setText("#heroHighlightFocus", t("heroHighlightFocus"));
+  setText("#botProfilesTitle", t("botProfilesTitle"));
+  setText("#samiiBio", t("samiiBio"));
+  setText("#viviBio", t("viviBio"));
   setText("#cardHotkeyTitle", t("cardHotkeyTitle"));
   setText("#cardHotkeyHint", t("cardHotkeyHint"));
   setText("#cardFocusTitle", t("cardFocusTitle"));
