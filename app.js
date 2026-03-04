@@ -147,6 +147,9 @@ const I18N = {
     heroHighlightFast: "⚡ Быстрый запуск без лишних шагов",
     heroHighlightDuo: "🧠 Samii + Vivi в одном диалоге",
     heroHighlightFocus: "🎯 Фокус на практическом результате",
+    botProfilesTitle: "Кто с тобой в диалоге",
+    samiiBio: "Рациональный аналитик: быстро выделяет главное, спорит по делу и собирает практичный план.",
+    viviBio: "Тёплая креативная напарница: расширяет идеи, добавляет эмоцию и помогает выбрать лучший вариант.",
     cardHotkeyTitle: "Горячая клавиша",
     cardHotkeyHint: "Отправляй сообщение одним нажатием.",
     cardFocusTitle: "Фокус сессии",
@@ -178,6 +181,7 @@ const I18N = {
     makePost: "Сделать пост",
     sendTitle: "Отправить сообщение",
     stopTitle: "Остановить генерацию",
+    comebackLine: "Samii: Ты куда пропал? Мы уже готовы продолжать 🚀",
     footerTelegram: "Наш канал в Telegram — публикуем промокоды, инсайды и обновления",
     themeLight: "☀️ Светлая",
     themeDark: "🌙 Тёмная",
@@ -254,6 +258,9 @@ const I18N = {
     heroHighlightFast: "⚡ Fast start without extra steps",
     heroHighlightDuo: "🧠 Samii + Vivi in one dialog",
     heroHighlightFocus: "🎯 Focused on practical outcomes",
+    botProfilesTitle: "Who joins your dialog",
+    samiiBio: "A rational analyst: quickly isolates what matters, challenges weak points, and builds a practical plan.",
+    viviBio: "A warm creative partner: expands ideas, adds emotion, and helps choose the best direction.",
     cardHotkeyTitle: "Hotkey",
     cardHotkeyHint: "Send a message with one key press.",
     cardFocusTitle: "Session focus",
@@ -285,6 +292,7 @@ const I18N = {
     makePost: "Make a post",
     sendTitle: "Send message",
     stopTitle: "Stop generation",
+    comebackLine: "Samii: Where did you disappear? We're ready to continue 🚀",
     footerTelegram: "Our Telegram channel — promo codes, insights, and updates",
     themeLight: "☀️ Light",
     themeDark: "🌙 Dark",
@@ -415,6 +423,9 @@ function applyLanguage(lang) {
   setText("#heroHighlightFast", t("heroHighlightFast"));
   setText("#heroHighlightDuo", t("heroHighlightDuo"));
   setText("#heroHighlightFocus", t("heroHighlightFocus"));
+  setText("#botProfilesTitle", t("botProfilesTitle"));
+  setText("#samiiBio", t("samiiBio"));
+  setText("#viviBio", t("viviBio"));
   setText("#cardHotkeyTitle", t("cardHotkeyTitle"));
   setText("#cardHotkeyHint", t("cardHotkeyHint"));
   setText("#cardFocusTitle", t("cardFocusTitle"));
@@ -603,6 +614,8 @@ const DEFAULT_FREE_MODEL = "deepseek/deepseek-r1-0528:free";
 const IDEAS_KEY = "dual-ai-ideas-v1";
 const IDEA_DAY_KEY = "dual-ai-idea-day-v1";
 const TEMPLATES_KEY = "dual-ai-prompt-templates-v1";
+const LAST_SEEN_KEY = "dual-ai-last-seen-v1";
+const COMEBACK_AFTER_MS = 1000 * 60 * 60 * 12;
 
 const IDEA_PROMPTS = {
   ru: [
@@ -626,7 +639,7 @@ const IDEA_PROMPTS = {
 const VIBE_INSTRUCTIONS = {
   standard: "",
   biz: "Стиль ответа: как опытный product/marketing coach, структурно, с KPI и рисками.",
-  chill: "Стиль ответа: дружелюбно, просто, короткими блоками, без сложного жаргона.",
+  chill: "Стиль ответа: дружелюбно, просто, короткими блоками, без сложного жаргона. В дружеской беседе можно мягко подкалывать второго бота 1 короткой фразой без токсичности и без ухода от пользы.",
   creator: "Стиль ответа: как creator-стратег для TikTok/Reels, с хуками и вовлекающими форматами.",
   study: "Стиль ответа: как учебный наставник, пошагово, с акцентом на запоминание и практику.",
 };
@@ -649,6 +662,7 @@ const PERSONAS = {
       "Ты — именно Samii; не выдумывай других ролей или участников. " +
       "Не всегда соглашайся с Vivi: если видишь слабые места, спорь аргументированно. " +
       "Говори структурированно и логично, но допускай лёгкую дерзость в тоне без грубости. " +
+      "В дружеском режиме можешь иногда с юмором мягко подкалывать Vivi, но без токсичности. " +
       "Ты общаешься с человеком и Vivi как равноправный участник.",
   },
   S: {
@@ -668,6 +682,33 @@ let transcript = [];
 /** @type {{id: string, title: string, messages: typeof transcript, createdAt: number, updatedAt: number}[]} */
 let dialogs = [];
 let activeDialogId = null;
+
+function touchLastSeen() {
+  localStorage.setItem(LAST_SEEN_KEY, String(Date.now()));
+}
+
+function showComebackNotification() {
+  const previousSeen = Number(localStorage.getItem(LAST_SEEN_KEY) || 0);
+  touchLastSeen();
+  if (!previousSeen) return;
+  const awayMs = Date.now() - previousSeen;
+  if (awayMs < COMEBACK_AFTER_MS) return;
+
+  const line = t("comebackLine");
+  setStatus(line, "ok");
+  if (!("Notification" in window)) return;
+  if (Notification.permission !== "granted") return;
+
+  try {
+    new Notification("Samii", {
+      body: line,
+      icon: "./favikon.png",
+    });
+  } catch {
+    // ignore notification errors
+  }
+}
+
 
 function setStatus(text, kind = "muted") {
   statusEl.textContent = text;
@@ -2679,6 +2720,13 @@ languageToggleEl?.addEventListener("change", () => {
   applyLanguage(languageToggleEl.checked ? "en" : "ru");
 });
 
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") {
+    touchLastSeen();
+  }
+});
+window.addEventListener("pagehide", touchLastSeen);
+
 const preferredLanguage = localStorage.getItem(LANG_KEY) || (navigator.language || "ru").slice(0, 2);
 applyLanguage(preferredLanguage);
 applyTheme("light");
@@ -2704,3 +2752,4 @@ if (telegramPayBtn) {
   telegramPayBtn.href = TELEGRAM_BOT_URL;
 }
 setDailyIdeaPrompt();
+showComebackNotification();
