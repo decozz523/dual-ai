@@ -181,6 +181,7 @@ const I18N = {
     makePost: "Сделать пост",
     sendTitle: "Отправить сообщение",
     stopTitle: "Остановить генерацию",
+    comebackLine: "Samii: Ты куда пропал? Мы уже готовы продолжать 🚀",
     footerTelegram: "Наш канал в Telegram — публикуем промокоды, инсайды и обновления",
     themeLight: "☀️ Светлая",
     themeDark: "🌙 Тёмная",
@@ -291,6 +292,7 @@ const I18N = {
     makePost: "Make a post",
     sendTitle: "Send message",
     stopTitle: "Stop generation",
+    comebackLine: "Samii: Where did you disappear? We're ready to continue 🚀",
     footerTelegram: "Our Telegram channel — promo codes, insights, and updates",
     themeLight: "☀️ Light",
     themeDark: "🌙 Dark",
@@ -612,6 +614,8 @@ const DEFAULT_FREE_MODEL = "deepseek/deepseek-r1-0528:free";
 const IDEAS_KEY = "dual-ai-ideas-v1";
 const IDEA_DAY_KEY = "dual-ai-idea-day-v1";
 const TEMPLATES_KEY = "dual-ai-prompt-templates-v1";
+const LAST_SEEN_KEY = "dual-ai-last-seen-v1";
+const COMEBACK_AFTER_MS = 1000 * 60 * 60 * 12;
 
 const IDEA_PROMPTS = {
   ru: [
@@ -678,6 +682,33 @@ let transcript = [];
 /** @type {{id: string, title: string, messages: typeof transcript, createdAt: number, updatedAt: number}[]} */
 let dialogs = [];
 let activeDialogId = null;
+
+function touchLastSeen() {
+  localStorage.setItem(LAST_SEEN_KEY, String(Date.now()));
+}
+
+function showComebackNotification() {
+  const previousSeen = Number(localStorage.getItem(LAST_SEEN_KEY) || 0);
+  touchLastSeen();
+  if (!previousSeen) return;
+  const awayMs = Date.now() - previousSeen;
+  if (awayMs < COMEBACK_AFTER_MS) return;
+
+  const line = t("comebackLine");
+  setStatus(line, "ok");
+  if (!("Notification" in window)) return;
+  if (Notification.permission !== "granted") return;
+
+  try {
+    new Notification("Samii", {
+      body: line,
+      icon: "./favikon.png",
+    });
+  } catch {
+    // ignore notification errors
+  }
+}
+
 
 function setStatus(text, kind = "muted") {
   statusEl.textContent = text;
@@ -2689,6 +2720,13 @@ languageToggleEl?.addEventListener("change", () => {
   applyLanguage(languageToggleEl.checked ? "en" : "ru");
 });
 
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") {
+    touchLastSeen();
+  }
+});
+window.addEventListener("pagehide", touchLastSeen);
+
 const preferredLanguage = localStorage.getItem(LANG_KEY) || (navigator.language || "ru").slice(0, 2);
 applyLanguage(preferredLanguage);
 applyTheme("light");
@@ -2714,3 +2752,4 @@ if (telegramPayBtn) {
   telegramPayBtn.href = TELEGRAM_BOT_URL;
 }
 setDailyIdeaPrompt();
+showComebackNotification();
