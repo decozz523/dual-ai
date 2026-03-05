@@ -2,10 +2,13 @@ const STORAGE_KEY = "dual-ai-chat-settings-v1";
 const DIALOGS_KEY = "dual-ai-chat-dialogs-v1";
 const ACTIVE_DIALOG_KEY = "dual-ai-chat-active-dialog-v1";
 const DIALOG_META_KEY = "dual-ai-chat-dialog-meta-v1";
+const MENTION_COUNTER_KEY = "dual-ai-chat-mention-counter-v1";
 
 const $ = (id) => document.getElementById(id);
 const modelEl = $("model");
 const turnsEl = $("turns");
+const liveChatModeEl = $("liveChatMode");
+const liveChatModeDetailsEl = $("liveChatModeDetails");
 const messagesEl = $("messages");
 const inputEl = $("input");
 const sendBtn = $("sendBtn");
@@ -50,10 +53,15 @@ const editProfileBtn = $("editProfileBtn");
 const authOverlay = $("authOverlay");
 const authModal = $("authModal");
 const authCloseBtn = $("authCloseBtn");
+const authTitleEl = $("authTitle");
 const authEmailEl = $("authEmail");
 const authPasswordEl = $("authPassword");
 const authNameEl = $("authName");
 const authBirthdateEl = $("authBirthdate");
+const authNameFieldEl = $("authNameField");
+const authBirthdateFieldEl = $("authBirthdateField");
+const authModeLinkEl = $("authModeLink");
+const authSwitchLabelEl = $("authSwitchLabel");
 const authMessageEl = $("authMessage");
 const authSignInBtn = $("authSignInBtn");
 const authSignUpBtn = $("authSignUpBtn");
@@ -110,13 +118,14 @@ const languageToggleEl = $("languageToggle");
 
 const LANG_KEY = "dual-ai-lang-v1";
 const PROFILE_KEY = "dual-ai-user-profile-v1";
+const PROFILE_BY_EMAIL_KEY = "dual-ai-user-profiles-by-email-v1";
 const SUPPORTED_LANGS = ["ru", "en"];
 let currentLanguage = "ru";
 
 const I18N = {
   ru: {
     pageTitle: "dual-ai (Samii & Vivi)",
-    pageDescription: "dual-ai — dual-чат с Samii и Vivi для стратегий, креатива и быстрых решений.",
+    pageDescription: "dual-ai — персонажный чат с Samii и Vivi: эмоции, баттлы и моменты, которыми хочется делиться.",
     statusReady: "Готов.",
     login: "Войти",
     upgrade: "Оплатить / Upgrade",
@@ -137,37 +146,37 @@ const I18N = {
     observe: "👀 Диалог",
     debate: "🔥 Баттл",
     demo: "⚡ Демо",
-    subtitle: "Samii (дерзкий аналитик) + Vivi (милая аниме-тян) через наш сервер",
-    heroTitle: "Профессиональный чат для стратегий и идей",
+    subtitle: "Samii и Vivi — персонажи, с которыми хочется болтать каждый день",
+    heroTitle: "Не просто чат, а история с Samii и Vivi",
     heroSubtitle:
-      "Пара ботов ведёт дискуссию с тобой: рациональный бот структурирует, творческий — расширяет варианты. Управляй настройками через меню.",
+      "Здесь важны эмоции, стиль и вайб: Samii спорит, Vivi поддерживает, а ты выбираешь, чей ответ зашёл сильнее. Сохраняй смешные моменты и делись ими в соцсетях.",
     quickTitle: "Быстрый старт",
-    quickBusiness: "Для предпринимателей",
-    quickYouth: "Для молодёжи и TikTok",
-    heroHighlightFast: "⚡ Быстрый запуск без лишних шагов",
+    quickBusiness: "Сцены с персонажами",
+    quickYouth: "Контент для TikTok и сторис",
+    heroHighlightFast: "⚡ Моментальный вход в диалог",
     heroHighlightDuo: "🧠 Samii + Vivi в одном диалоге",
-    heroHighlightFocus: "🎯 Фокус на практическом результате",
-    botProfilesTitle: "Кто с тобой в диалоге",
-    samiiBio: "Рациональный аналитик: быстро выделяет главное, спорит по делу и собирает практичный план.",
-    viviBio: "Тёплая креативная напарница: расширяет идеи, добавляет эмоцию и помогает выбрать лучший вариант.",
+    heroHighlightFocus: "🎬 Репостные моменты для TikTok и Reels",
+    botProfilesTitle: "Твои главные персонажи",
+    samiiBio: "Острый и смешной. Может подколоть, но всегда объяснит логику и скажет честно.",
+    viviBio: "Тёплая, вайбовая и очень поддерживающая. Умеет поднять настроение и вдохновить.",
     cardHotkeyTitle: "Горячая клавиша",
     cardHotkeyHint: "Отправляй сообщение одним нажатием.",
     cardFocusTitle: "Фокус сессии",
-    cardFocusValue: "3 ключевые цели",
-    cardFocusHint: "Запросите у ботов приоритетный план.",
+    cardFocusValue: "Кто сегодня ближе тебе?",
+    cardFocusHint: "Сравни ответы Samii и Vivi и выбери фаворита.",
     cardModeTitle: "Режим диалога",
-    cardModeHint: "Samii + Vivi ведут сессию.",
+    cardModeHint: "Персонажи ведут беседу как мини-шоу с тобой в центре.",
     moreCardsSummary: "Показать ещё возможности",
     cardIdeaTitle: "Идея дня",
-    cardIdeaHint: "Поделитесь своей идеей с командой.",
+    cardIdeaHint: "Попроси Samii и Vivi устроить диалог под твой вайб.",
     cardSafetyTitle: "Безопасность",
     cardSafetyValue: "Все данные защищены",
     cardSafetyHint: "Политикой конфиденциальности и условиями использования.",
     cardTemplatesTitle: "Шаблоны",
-    cardTemplatesValue: "Маркетинг и продукт",
-    cardTemplatesHint: "Готовые сценарии для быстрого старта.",
+    cardTemplatesValue: "Сцены, баттлы и цитаты",
+    cardTemplatesHint: "Запускай сюжет одним кликом и возвращайся за продолжением.",
     chatTitle: "Диалог Samii + Vivi",
-    chatSubtitle: "Два бота в одной сессии · online",
+    chatSubtitle: "Персонажи online · спорят, шутят и отвечают тебе",
     dialogs: "Диалоги",
     searchDialogs: "Поиск по диалогам",
     settingsSubtitle: "Параметры модели, аккаунта и диалогов",
@@ -207,6 +216,12 @@ const I18N = {
     sectionDialogs: "Диалоги",
     labelConnection: "Соединение (наш сервер)",
     labelAutoDialog: "Авто-диалог ботов (ходов после твоего сообщения)",
+    labelLiveChatMode: "Live chat режим",
+    hintLiveChatMode: "Паузы и немного более живые реакции: иногда несогласие и статус \"был(а) в сети\".",
+    liveChatModeInstant: "AI (быстрый ответ)",
+    liveChatModeRealistic: "Realistik (как человек)",
+    liveChatModeDetailsInstant: "AI: Samii/Vivi отвечают сразу, без паузы.",
+    liveChatModeDetailsRealistic: "Realistik: небольшая пауза, иногда статус «был(а) в сети» и вежливое несогласие.",
     labelDeepMode: "Глубокий режим ответа (Pro)",
     hintDeepMode: "Более развернутые ответы с дополнительными пояснениями.",
     deepModeOn: "Включить",
@@ -224,10 +239,16 @@ const I18N = {
     authNameLabel: "Имя (для обращения)",
     authNamePlaceholder: "Например, Алекс",
     authBirthdateLabel: "Дата рождения",
+    authTitleSignIn: "Вход в аккаунт",
+    authTitleSignUp: "Регистрация",
+    authSwitchFirstTime: "Вы впервые?",
+    authSwitchHaveAccount: "Уже есть аккаунт?",
+    authSwitchToSignUp: "Регистрация",
+    authSwitchToSignIn: "Вход",
   },
   en: {
     pageTitle: "dual-ai (Samii & Vivi)",
-    pageDescription: "dual-ai — a duo chat with Samii and Vivi for strategy, creativity, and fast decisions.",
+    pageDescription: "dual-ai — a character-first chat with Samii and Vivi: emotions, banter, and shareable moments.",
     statusReady: "Ready.",
     login: "Sign in",
     upgrade: "Upgrade",
@@ -248,37 +269,37 @@ const I18N = {
     observe: "👀 Observe",
     debate: "🔥 Debate",
     demo: "⚡ Demo",
-    subtitle: "Samii (edgy analyst) + Vivi (sweet anime girl) via our server",
-    heroTitle: "Pro chat for strategy and ideas",
+    subtitle: "Samii and Vivi — characters you want to chat with every day",
+    heroTitle: "Not just a chat — a story with Samii and Vivi",
     heroSubtitle:
-      "Two bots discuss your topic together: the rational one structures, the creative one expands options. Manage everything from settings.",
+      "This is about emotion, style, and vibe: Samii challenges, Vivi supports, and you pick whose reply hits harder. Save funny moments and share them.",
     quickTitle: "Quick start",
-    quickBusiness: "For founders",
-    quickYouth: "For youth & TikTok",
-    heroHighlightFast: "⚡ Fast start without extra steps",
+    quickBusiness: "Character scenes",
+    quickYouth: "TikTok and stories content",
+    heroHighlightFast: "⚡ Instant entry into the dialog",
     heroHighlightDuo: "🧠 Samii + Vivi in one dialog",
-    heroHighlightFocus: "🎯 Focused on practical outcomes",
-    botProfilesTitle: "Who joins your dialog",
-    samiiBio: "A rational analyst: quickly isolates what matters, challenges weak points, and builds a practical plan.",
-    viviBio: "A warm creative partner: expands ideas, adds emotion, and helps choose the best direction.",
+    heroHighlightFocus: "🎬 Share-worthy moments for TikTok and Reels",
+    botProfilesTitle: "Your main characters",
+    samiiBio: "Sharp and funny. He may tease, but always explains the logic and stays honest.",
+    viviBio: "Warm, vibey, and deeply supportive. She can boost your mood and inspire you.",
     cardHotkeyTitle: "Hotkey",
     cardHotkeyHint: "Send a message with one key press.",
     cardFocusTitle: "Session focus",
-    cardFocusValue: "3 key goals",
-    cardFocusHint: "Ask bots for a prioritized plan.",
+    cardFocusValue: "Who feels closer today?",
+    cardFocusHint: "Compare Samii and Vivi replies and pick your favorite.",
     cardModeTitle: "Dialog mode",
-    cardModeHint: "Samii + Vivi run the session.",
+    cardModeHint: "Characters run the chat like a mini-show with you at the center.",
     moreCardsSummary: "Show more capabilities",
     cardIdeaTitle: "Idea of the day",
-    cardIdeaHint: "Share your idea with the team.",
+    cardIdeaHint: "Ask Samii and Vivi to run a dialog in your vibe.",
     cardSafetyTitle: "Security",
     cardSafetyValue: "All data is protected",
     cardSafetyHint: "By our privacy policy and terms of use.",
     cardTemplatesTitle: "Templates",
-    cardTemplatesValue: "Marketing and product",
-    cardTemplatesHint: "Ready-to-use scenarios for a quick start.",
+    cardTemplatesValue: "Scenes, battles, and quotes",
+    cardTemplatesHint: "Launch a storyline in one tap and come back for the next part.",
     chatTitle: "Samii + Vivi dialog",
-    chatSubtitle: "Two bots in one session · online",
+    chatSubtitle: "Characters online · banter, jokes, and replies for you",
     dialogs: "Dialogs",
     searchDialogs: "Search dialogs",
     settingsSubtitle: "Model, account and dialog settings",
@@ -318,6 +339,12 @@ const I18N = {
     sectionDialogs: "Dialogs",
     labelConnection: "Connection (our server)",
     labelAutoDialog: "Bot auto-dialog (turns after your message)",
+    labelLiveChatMode: "Live chat mode",
+    hintLiveChatMode: "Adds human-like pacing: delays, occasional disagreement, and 'last seen' vibe.",
+    liveChatModeInstant: "AI (fast reply)",
+    liveChatModeRealistic: "Realistik (human-like)",
+    liveChatModeDetailsInstant: "AI: Samii/Vivi reply immediately with no wait.",
+    liveChatModeDetailsRealistic: "Realistik: short delay, occasional 'last seen' status, and polite disagreement.",
     labelDeepMode: "Deep response mode (Pro)",
     hintDeepMode: "More detailed answers with additional explanations.",
     deepModeOn: "Enable",
@@ -335,6 +362,12 @@ const I18N = {
     authNameLabel: "Name (for addressing)",
     authNamePlaceholder: "For example, Alex",
     authBirthdateLabel: "Date of birth",
+    authTitleSignIn: "Sign in",
+    authTitleSignUp: "Registration",
+    authSwitchFirstTime: "First time here?",
+    authSwitchHaveAccount: "Already have an account?",
+    authSwitchToSignUp: "Register",
+    authSwitchToSignIn: "Sign in",
   },
 };
 
@@ -452,11 +485,14 @@ function applyLanguage(lang) {
   setText("#consentText", t("consentText"));
   setText("#authNameLabel", t("authNameLabel"));
   setText("#authBirthdateLabel", t("authBirthdateLabel"));
+  setText("#liveChatModeLabel", t("labelLiveChatMode"));
+  setText("#liveChatModeHint", t("hintLiveChatMode"));
   setText("#profileNameLabel", t("profileName"));
   setText("#profileAgeLabel", t("profileAgeGroup"));
   setText("#profileBirthdateLabel", t("profileBirthdate"));
   setText("#editProfileBtn", t("editProfile"));
   if (authNameEl) authNameEl.placeholder = t("authNamePlaceholder");
+  renderAuthMode();
   setText("#upgradeSubtitle", t("upgradeSubtitle"));
   setText("#upgradeStep1Title", t("upgradeStep1Title"));
   setText("#upgradeStep1Text", t("upgradeStep1Text"));
@@ -491,10 +527,16 @@ function applyLanguage(lang) {
   const settingsHints = document.querySelectorAll("#settingsModal .drawer-section:first-of-type .field > .hint");
   if (settingsLabels[0]) settingsLabels[0].textContent = t("labelConnection");
   if (settingsLabels[1]) settingsLabels[1].textContent = t("labelAutoDialog");
-  if (settingsLabels[2]) settingsLabels[2].textContent = t("labelDeepMode");
-  if (settingsLabels[3]) settingsLabels[3].textContent = t("labelTheme");
-  if (settingsHints[0]) settingsHints[0].textContent = t("hintDeepMode");
-  if (settingsHints[1]) settingsHints[1].textContent = t("hintTheme");
+  if (settingsLabels[2]) settingsLabels[2].textContent = t("labelLiveChatMode");
+  if (settingsLabels[3]) settingsLabels[3].textContent = t("labelDeepMode");
+  if (settingsLabels[4]) settingsLabels[4].textContent = t("labelTheme");
+  if (settingsHints[1]) settingsHints[1].textContent = t("hintLiveChatMode");
+  if (settingsHints[2]) settingsHints[2].textContent = t("hintDeepMode");
+  if (settingsHints[3]) settingsHints[3].textContent = t("hintTheme");
+  const liveChatOptions = liveChatModeEl?.options || [];
+  if (liveChatOptions[0]) liveChatOptions[0].textContent = t("liveChatModeInstant");
+  if (liveChatOptions[1]) liveChatOptions[1].textContent = t("liveChatModeRealistic");
+  updateLiveChatModeDetails();
   if (deepModeToggle && !deepModeEnabled) deepModeToggle.textContent = t("deepModeOn");
 
   const activationCodeLabel = document.querySelector("#settingsModal #activationCodeInput")?.previousElementSibling;
@@ -516,7 +558,6 @@ function applyLanguage(lang) {
       '#settingsLogoutBtn': 'Выйти из аккаунта',
       '#openPrivacyBtn': 'Политика конфиденциальности',
       '#openTermsBtn': 'Условия использования',
-      '#authTitle': 'Вход в аккаунт',
       '#authSignInBtn': 'Войти',
       '#authSignUpBtn': 'Создать аккаунт',
       '#authResendBtn': 'Отправить письмо ещё раз',
@@ -542,7 +583,6 @@ function applyLanguage(lang) {
       '#settingsLogoutBtn': 'Sign out',
       '#openPrivacyBtn': 'Privacy policy',
       '#openTermsBtn': 'Terms of use',
-      '#authTitle': 'Sign in',
       '#authSignInBtn': 'Sign in',
       '#authSignUpBtn': 'Create account',
       '#authResendBtn': 'Resend email',
@@ -619,37 +659,53 @@ const COMEBACK_AFTER_MS = 1000 * 60 * 60 * 12;
 
 const IDEA_PROMPTS = {
   ru: [
-    "Сформулируйте главный вопрос дня.",
-    "Какой сценарий использования вы хотите улучшить?",
-    "Что бы вы автоматизировали в своём рабочем процессе?",
-    "Какая функция сделает чат более полезным?",
-    "Какая аналитика или отчёт вам нужнее всего?",
-    "Что мешает пользоваться чатом чаще?",
+    "Какой момент с Samii и Vivi ты бы сегодня заскринил?",
+    "Какой вайб диалога хочешь: милый, дерзкий или хаотичный?",
+    "Что Vivi могла бы сказать, чтобы поддержать тебя прямо сейчас?",
+    "Какой честный разнос от Samii ты готов выдержать сегодня?",
+    "Какой сюжет сделать, чтобы захотелось вернуться завтра?",
+    "Какой диалог можно сразу превратить в TikTok/сторис?",
   ],
   en: [
-    "Formulate the main question of the day.",
-    "Which usage scenario would you like to improve?",
-    "What would you automate in your workflow?",
-    "Which feature would make this chat more useful?",
-    "Which analytics or report do you need most?",
-    "What prevents you from using the chat more often?",
+    "Which Samii/Vivi moment would you screenshot today?",
+    "What vibe do you want now: cozy, spicy, or chaotic?",
+    "What should Vivi say to support you right now?",
+    "What honest Samii roast are you ready for today?",
+    "What storyline should continue tomorrow?",
+    "Which dialog can be turned into a TikTok/story post instantly?",
   ],
 };
 
 const VIBE_INSTRUCTIONS = {
   standard: "",
-  biz: "Стиль ответа: как опытный product/marketing coach, структурно, с KPI и рисками.",
-  chill: "Стиль ответа: дружелюбно, просто, короткими блоками, без сложного жаргона. В дружеской беседе можно мягко подкалывать второго бота 1 короткой фразой без токсичности и без ухода от пользы.",
-  creator: "Стиль ответа: как creator-стратег для TikTok/Reels, с хуками и вовлекающими форматами.",
-  study: "Стиль ответа: как учебный наставник, пошагово, с акцентом на запоминание и практику.",
+  biz: "Стиль ответа: как острый персонажный баттл о выборе пользователя, с понятной логикой и без грубости.",
+  chill: "Стиль ответа: дружелюбно, просто и коротко, как разговор в чате друзей. Допустимы лёгкие шутки и подколы между Samii и Vivi без токсичности.",
+  creator: "Стиль ответа: как creator для TikTok/Reels — ярко, мемно, с цитатами и моментами, которые хочется скринить.",
+  study: "Стиль ответа: как поддерживающий учебный дуэт: Vivi мягко объясняет, Samii проверяет и задаёт челлендж-вопросы.",
+};
+
+const LIVE_CHAT_MODELS = {
+  instant: {
+    minDelayMs: 0,
+    maxDelayMs: 0,
+    offlineChance: 0,
+    instruction: "",
+  },
+  realistic: {
+    minDelayMs: 2800,
+    maxDelayMs: 8500,
+    offlineChance: 0.3,
+    instruction:
+      "Realistik mode активен: отвечай естественно, иногда можешь вежливо не соглашаться, высказывать своё мнение и не всегда быть сразу в сети.",
+  },
 };
 
 const DEMO_BY_VIBE = {
-  standard: "Что думаете о будущем ИИ?",
-  biz: "Собери план запуска продукта на 14 дней с KPI и рисками.",
-  chill: "Помоги спокойно разобрать мой план и выбрать лучший следующий шаг.",
-  creator: "Придумай 10 коротких TikTok-идей с хуком на первые 2 секунды.",
-  study: "Сделай учебный план на 5 дней, чтобы быстро подготовиться к экзамену.",
+  standard: "Samii и Vivi, познакомьтесь со мной и устройте короткий дружеский баттл.",
+  biz: "Samii и Vivi, помогите мне выбрать лучший следующий шаг: поспорьте и дайте общий вердикт.",
+  chill: "Мне нужен тёплый разговор: Vivi поддерживает, Samii честно комментирует без хейта.",
+  creator: "Сделайте диалог, из которого получится вирусный TikTok-скрин и 3 цитаты.",
+  study: "Сделайте учебную мини-игру: Vivi объясняет тему, Samii задаёт проверку знаний.",
 };
 
 
@@ -682,6 +738,56 @@ let transcript = [];
 /** @type {{id: string, title: string, messages: typeof transcript, createdAt: number, updatedAt: number}[]} */
 let dialogs = [];
 let activeDialogId = null;
+let mentionCounter = loadMentionCounter();
+
+
+function loadMentionCounter() {
+  try {
+    const raw = localStorage.getItem(MENTION_COUNTER_KEY);
+    if (!raw) return { samii: 0, vivi: 0 };
+    const parsed = JSON.parse(raw);
+    return {
+      samii: Number.isFinite(parsed?.samii) ? Math.max(0, Math.floor(parsed.samii)) : 0,
+      vivi: Number.isFinite(parsed?.vivi) ? Math.max(0, Math.floor(parsed.vivi)) : 0,
+    };
+  } catch {
+    return { samii: 0, vivi: 0 };
+  }
+}
+
+function saveMentionCounter() {
+  try {
+    localStorage.setItem(MENTION_COUNTER_KEY, JSON.stringify(mentionCounter));
+  } catch {
+    // ignore
+  }
+}
+
+function extractMentionCounts(text) {
+  const content = String(text || "").toLowerCase();
+  const samiiMatches = content.match(/\b(samii|самии|сэмии|сами)\b/gi);
+  const viviMatches = content.match(/\b(vivi|виви)\b/gi);
+  return {
+    samii: samiiMatches ? samiiMatches.length : 0,
+    vivi: viviMatches ? viviMatches.length : 0,
+  };
+}
+
+function updateMentionCounterFromText(text) {
+  const counts = extractMentionCounts(text);
+  if (!counts.samii && !counts.vivi) return;
+  mentionCounter.samii += counts.samii;
+  mentionCounter.vivi += counts.vivi;
+  saveMentionCounter();
+}
+
+function getMentionPreferenceInstruction() {
+  const total = mentionCounter.samii + mentionCounter.vivi;
+  if (total < 3) return "";
+  if (mentionCounter.samii === mentionCounter.vivi) return "";
+  const preferred = mentionCounter.samii > mentionCounter.vivi ? "Samii" : "Vivi";
+  return `Контекст: пользователь чаще упоминает ${preferred}. Учитывай это как дружеский приоритет в тоне, но не превращай ответ в дебаты.`;
+}
 
 function touchLastSeen() {
   localStorage.setItem(LAST_SEEN_KEY, String(Date.now()));
@@ -773,6 +879,56 @@ function saveLocalProfile(profile) {
   localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
 }
 
+function loadProfilesByEmail() {
+  try {
+    const raw = localStorage.getItem(PROFILE_BY_EMAIL_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return {};
+    return parsed;
+  } catch {
+    return {};
+  }
+}
+
+function saveProfilesByEmail(map) {
+  localStorage.setItem(PROFILE_BY_EMAIL_KEY, JSON.stringify(map));
+}
+
+function saveProfileForEmail(email, profile) {
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+  if (!normalizedEmail || !profile) return;
+  const map = loadProfilesByEmail();
+  map[normalizedEmail] = {
+    name: String(profile.name || "").trim(),
+    birthDate: normalizeBirthDate(profile.birthDate || ""),
+    isAdult: Boolean(profile.isAdult),
+  };
+  saveProfilesByEmail(map);
+}
+
+function getProfileForEmail(email) {
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+  if (!normalizedEmail) return null;
+  const map = loadProfilesByEmail();
+  const profile = map[normalizedEmail];
+  if (!profile || typeof profile !== "object") return null;
+  return {
+    name: String(profile.name || "").trim(),
+    birthDate: normalizeBirthDate(profile.birthDate || ""),
+    isAdult: Boolean(profile.isAdult),
+  };
+}
+
+function applyRememberedProfileForEmail(email) {
+  if (!authNameEl || !authBirthdateEl) return;
+  if (String(authNameEl.value || "").trim() || String(authBirthdateEl.value || "").trim()) return;
+  const remembered = getProfileForEmail(email);
+  if (!remembered) return;
+  authNameEl.value = remembered.name || "";
+  authBirthdateEl.value = remembered.birthDate || "";
+}
+
 function getActiveUserProfile() {
   if (cachedActiveProfile !== undefined) return cachedActiveProfile;
 
@@ -826,11 +982,30 @@ function getUserProfileInstruction() {
   return `Контекст профиля пользователя: ${chunks.join(" ")}`;
 }
 
+let authMode = "signin";
+
+function renderAuthMode() {
+  const isSignUp = authMode === "signup";
+  if (authNameFieldEl) authNameFieldEl.hidden = !isSignUp;
+  if (authBirthdateFieldEl) authBirthdateFieldEl.hidden = !isSignUp;
+  if (authSignInBtn) authSignInBtn.hidden = isSignUp;
+  if (authSignUpBtn) authSignUpBtn.hidden = !isSignUp;
+  if (authTitleEl) authTitleEl.textContent = isSignUp ? t("authTitleSignUp") : t("authTitleSignIn");
+  if (authSwitchLabelEl) authSwitchLabelEl.textContent = isSignUp ? t("authSwitchHaveAccount") : t("authSwitchFirstTime");
+  if (authModeLinkEl) authModeLinkEl.textContent = isSignUp ? t("authSwitchToSignIn") : t("authSwitchToSignUp");
+}
+
+function setAuthMode(mode = "signin") {
+  authMode = mode === "signup" ? "signup" : "signin";
+  renderAuthMode();
+}
+
 function openAuthModal() {
   if (!supabase) {
     setStatus("Supabase не настроен или ещё инициализируется.", "error");
     return;
   }
+  setAuthMode("signin");
   setAuthScene(true);
   authEmailEl.focus();
 }
@@ -838,6 +1013,7 @@ function openAuthModal() {
 function closeAuthModal() {
   setAuthScene(false);
   setAuthMessage("");
+  setAuthMode("signin");
 }
 
 function updateAuthUI(session) {
@@ -856,11 +1032,13 @@ function updateAuthUI(session) {
   if (isSignedIn) {
     setAuthScene(false);
     if (profile) {
-      saveLocalProfile({
+      const normalizedProfile = {
         name: profile.name,
         birthDate: profile.birthDate,
         isAdult: Boolean(profile.isAdult),
-      });
+      };
+      saveLocalProfile(normalizedProfile);
+      if (user?.email) saveProfileForEmail(user.email, normalizedProfile);
     }
   }
   if (isSignedIn) {
@@ -1125,7 +1303,12 @@ function render() {
     meta.className = "meta";
     const left = document.createElement("div");
     const right = document.createElement("div");
-    right.textContent = new Date(m.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const messageTime = new Date(m.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    if (m.speaker === "user" && m.deliveryStatus) {
+      right.textContent = `${messageTime} · ${m.deliveryStatus === "queued" ? "✓" : "✓✓"}`;
+    } else {
+      right.textContent = messageTime;
+    }
 
     const speakerClass = m.speaker === "user" ? "user" : m.speaker === "R" ? "r" : "s";
     const speakerAvatar = document.createElement("span");
@@ -1954,9 +2137,16 @@ function loadSettings() {
       modelEl.value = exists ? s.model : modelEl.options[0]?.value || "";
     }
     if (typeof s.turns === "number") turnsEl.value = String(s.turns);
+    if (typeof s.liveChatMode === "string") {
+      const normalizedMode = s.liveChatMode === "offline" ? "realistic" : s.liveChatMode;
+      if (LIVE_CHAT_MODELS[normalizedMode]) {
+        liveChatModeEl.value = normalizedMode;
+      }
+    }
     if (typeof s.deepModeEnabled === "boolean") {
       deepModeEnabled = s.deepModeEnabled;
     }
+    updateLiveChatModeDetails();
     if (typeof s.theme === "string") {
       applyTheme(s.theme);
     }
@@ -1971,13 +2161,59 @@ function saveSettings(showStatus = true) {
   const turns = getExtraTurns();
   localStorage.setItem(
     STORAGE_KEY,
-    JSON.stringify({ model, turns, deepModeEnabled, theme: currentTheme })
+    JSON.stringify({ model, turns, liveChatMode: getLiveChatMode(), deepModeEnabled, theme: currentTheme })
   );
   if (showStatus) {
     setStatus("Настройки сохранены.", "ok");
   }
 }
 
+
+function updateLiveChatModeDetails() {
+  if (!liveChatModeDetailsEl) return;
+  const mode = getLiveChatMode();
+  const keyByMode = {
+    instant: "liveChatModeDetailsInstant",
+    realistic: "liveChatModeDetailsRealistic",
+  };
+  liveChatModeDetailsEl.textContent = t(keyByMode[mode] || keyByMode.instant);
+}
+
+function getLiveChatMode() {
+  const raw = String(liveChatModeEl?.value || "instant").trim();
+  return LIVE_CHAT_MODELS[raw] ? raw : "instant";
+}
+
+function getRandomDelay(minDelayMs, maxDelayMs) {
+  if (maxDelayMs <= minDelayMs) return minDelayMs;
+  return minDelayMs + Math.floor(Math.random() * (maxDelayMs - minDelayMs + 1));
+}
+
+async function applyLiveChatPacing(speaker) {
+  const mode = getLiveChatMode();
+  const config = LIVE_CHAT_MODELS[mode] || LIVE_CHAT_MODELS.instant;
+  if (!config || config.maxDelayMs <= 0) return;
+
+  const botName = speaker === "R" ? "Samii" : "Vivi";
+  const delay = getRandomDelay(config.minDelayMs, config.maxDelayMs);
+  const isOfflineMoment = config.offlineChance > 0 && Math.random() < config.offlineChance;
+
+  if (isOfflineMoment) {
+    setStatus(`${botName} был(а) в сети недавно. Ответит чуть позже…`);
+  } else {
+    setStatus(`${botName} печатает…`);
+  }
+
+  await new Promise((resolve, reject) => {
+    const timeout = setTimeout(resolve, delay);
+    if (activeAbortController?.signal) {
+      activeAbortController.signal.addEventListener("abort", () => {
+        clearTimeout(timeout);
+        reject(new Error("generation-aborted"));
+      }, { once: true });
+    }
+  });
+}
 
 function clearChat() {
   transcript = [];
@@ -2138,6 +2374,15 @@ async function runTurn(speaker) {
   if (vibeInstruction) {
     messages.push({ role: "user", content: vibeInstruction });
   }
+  const liveChatInstruction = LIVE_CHAT_MODELS[getLiveChatMode()]?.instruction;
+  if (liveChatInstruction) {
+    messages.push({ role: "user", content: liveChatInstruction });
+  }
+  const mentionPreferenceInstruction = getMentionPreferenceInstruction();
+  if (mentionPreferenceInstruction) {
+    messages.push({ role: "user", content: mentionPreferenceInstruction });
+  }
+  await applyLiveChatPacing(speaker);
   setStatus(`${speaker === "R" ? "Samii" : "Vivi"} думает…`);
   const pendingMessage = { speaker, content: "…", ts: Date.now() };
   transcript.push(pendingMessage);
@@ -2165,10 +2410,16 @@ async function runTurn(speaker) {
 
 async function sendUserMessage(text) {
   const extraTurns = getExtraTurns();
-  transcript.push({ speaker: "user", content: text, ts: Date.now() });
+  const userMessage = { speaker: "user", content: text, ts: Date.now(), deliveryStatus: "queued" };
+  transcript.push(userMessage);
+  updateMentionCounterFromText(text);
   render();
   persistActiveDialog();
   await incrementUsageCount();
+  userMessage.deliveryStatus = "sent";
+  userMessage.ts = Date.now();
+  render();
+  persistActiveDialog();
   await runTurn("R");
   await runTurn("S");
 
@@ -2179,10 +2430,16 @@ async function sendUserMessage(text) {
 }
 
 async function sendUserMessageWithTurns(text, extraTurnsOverride) {
-  transcript.push({ speaker: "user", content: text, ts: Date.now() });
+  const userMessage = { speaker: "user", content: text, ts: Date.now(), deliveryStatus: "queued" };
+  transcript.push(userMessage);
+  updateMentionCounterFromText(text);
   render();
   persistActiveDialog();
   await incrementUsageCount();
+  userMessage.deliveryStatus = "sent";
+  userMessage.ts = Date.now();
+  render();
+  persistActiveDialog();
   await runTurn("R");
   await runTurn("S");
 
@@ -2321,6 +2578,10 @@ deepModeToggle?.addEventListener("click", () => {
 });
 themeToggleEl?.addEventListener("change", () => {
   applyTheme(themeToggleEl.checked ? "dark" : "light");
+  saveSettings(false);
+});
+liveChatModeEl?.addEventListener("change", () => {
+  updateLiveChatModeDetails();
   saveSettings(false);
 });
 
@@ -2588,6 +2849,18 @@ authModal?.addEventListener("click", (event) => {
     closeAuthModal();
   }
 });
+authModeLinkEl?.addEventListener("click", () => {
+  setAuthMode(authMode === "signup" ? "signin" : "signup");
+});
+
+authEmailEl?.addEventListener("blur", () => {
+  applyRememberedProfileForEmail(authEmailEl.value);
+});
+
+authEmailEl?.addEventListener("change", () => {
+  applyRememberedProfileForEmail(authEmailEl.value);
+});
+
 authSignInBtn.addEventListener("click", async () => {
   if (!supabase) return;
   const email = authEmailEl.value.trim();
@@ -2599,12 +2872,17 @@ authSignInBtn.addEventListener("click", async () => {
     setAuthMessage("Введите email и пароль.", "error");
     return;
   }
+  const enteredProfile = {
+    name: displayName,
+    birthDate,
+    isAdult: age !== null ? age >= 18 : false,
+  };
   if (displayName || birthDate) {
-    saveLocalProfile({
-      name: displayName,
-      birthDate,
-      isAdult: age !== null ? age >= 18 : false,
-    });
+    saveLocalProfile(enteredProfile);
+    saveProfileForEmail(email, enteredProfile);
+  } else {
+    const rememberedProfile = getProfileForEmail(email);
+    if (rememberedProfile) saveLocalProfile(rememberedProfile);
   }
   authSignInBtn.disabled = true;
   authSignUpBtn.disabled = true;
@@ -2668,6 +2946,7 @@ authSignUpBtn.addEventListener("click", async () => {
     });
     if (error) throw error;
     saveLocalProfile(profilePayload);
+    saveProfileForEmail(email, profilePayload);
     setAuthMessage("Аккаунт создан. Проверьте почту для подтверждения.", "ok");
   } catch (e) {
     setAuthMessage(String(e?.message || e), "error");
@@ -2731,6 +3010,7 @@ const preferredLanguage = localStorage.getItem(LANG_KEY) || (navigator.language 
 applyLanguage(preferredLanguage);
 applyTheme("light");
 loadSettings();
+updateLiveChatModeDetails();
 document.addEventListener("click", (event) => {
   if (!openDialogMenuId) return;
   if (event.target.closest(".dialog-menu")) return;
