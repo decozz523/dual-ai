@@ -796,6 +796,30 @@ input:focus, textarea:focus { border-color: rgba(47, 126, 216, 0.9); box-shadow:
   color: var(--muted);
 }
 
+.chat-presence {
+  margin-top: 6px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.presence-pill {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .35px;
+  border-radius: 999px;
+  padding: 2px 7px;
+  border: 1px solid rgba(79,149,228,.3);
+  color: #245b91;
+  background: rgba(79,149,228,.16);
+}
+
+.presence-pill.is-offline {
+  color: #6f7680;
+  background: rgba(111,118,128,.14);
+  border-color: rgba(111,118,128,.3);
+}
+
 .messages {
   padding: 2px;
   display: grid;
