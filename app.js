@@ -7,6 +7,7 @@ const $ = (id) => document.getElementById(id);
 const modelEl = $("model");
 const turnsEl = $("turns");
 const liveChatModeEl = $("liveChatMode");
+const liveChatModeDetailsEl = $("liveChatModeDetails");
 const messagesEl = $("messages");
 const inputEl = $("input");
 const sendBtn = $("sendBtn");
@@ -219,6 +220,9 @@ const I18N = {
     liveChatModeInstant: "Мгновенный (как сейчас)",
     liveChatModeRealistic: "Live chat (реалистичный)",
     liveChatModeOffline: "Live chat + offline",
+    liveChatModeDetailsInstant: "Instant: Samii/Vivi отвечают сразу, без паузы.",
+    liveChatModeDetailsRealistic: "Realistic: небольшая пауза перед ответом и иногда мягкое несогласие.",
+    liveChatModeDetailsOffline: "Offline: пауза дольше и иногда статус «был(а) в сети», как в обычном мессенджере.",
     labelDeepMode: "Глубокий режим ответа (Pro)",
     hintDeepMode: "Более развернутые ответы с дополнительными пояснениями.",
     deepModeOn: "Включить",
@@ -341,6 +345,9 @@ const I18N = {
     liveChatModeInstant: "Instant (as before)",
     liveChatModeRealistic: "Live chat (realistic)",
     liveChatModeOffline: "Live chat + offline",
+    liveChatModeDetailsInstant: "Instant: Samii/Vivi reply immediately with no wait.",
+    liveChatModeDetailsRealistic: "Realistic: short delay before replies plus occasional polite disagreement.",
+    liveChatModeDetailsOffline: "Offline: longer delay and occasional 'last seen' status like a regular messenger.",
     labelDeepMode: "Deep response mode (Pro)",
     hintDeepMode: "More detailed answers with additional explanations.",
     deepModeOn: "Enable",
@@ -533,6 +540,7 @@ function applyLanguage(lang) {
   if (liveChatOptions[0]) liveChatOptions[0].textContent = t("liveChatModeInstant");
   if (liveChatOptions[1]) liveChatOptions[1].textContent = t("liveChatModeRealistic");
   if (liveChatOptions[2]) liveChatOptions[2].textContent = t("liveChatModeOffline");
+  updateLiveChatModeDetails();
   if (deepModeToggle && !deepModeEnabled) deepModeToggle.textContent = t("deepModeOn");
 
   const activationCodeLabel = document.querySelector("#settingsModal #activationCodeInput")?.previousElementSibling;
@@ -2096,6 +2104,7 @@ function loadSettings() {
     if (typeof s.deepModeEnabled === "boolean") {
       deepModeEnabled = s.deepModeEnabled;
     }
+    updateLiveChatModeDetails();
     if (typeof s.theme === "string") {
       applyTheme(s.theme);
     }
@@ -2117,6 +2126,17 @@ function saveSettings(showStatus = true) {
   }
 }
 
+
+function updateLiveChatModeDetails() {
+  if (!liveChatModeDetailsEl) return;
+  const mode = getLiveChatMode();
+  const keyByMode = {
+    instant: "liveChatModeDetailsInstant",
+    realistic: "liveChatModeDetailsRealistic",
+    offline: "liveChatModeDetailsOffline",
+  };
+  liveChatModeDetailsEl.textContent = t(keyByMode[mode] || keyByMode.instant);
+}
 
 function getLiveChatMode() {
   const raw = String(liveChatModeEl?.value || "instant").trim();
@@ -2511,6 +2531,10 @@ deepModeToggle?.addEventListener("click", () => {
 });
 themeToggleEl?.addEventListener("change", () => {
   applyTheme(themeToggleEl.checked ? "dark" : "light");
+  saveSettings(false);
+});
+liveChatModeEl?.addEventListener("change", () => {
+  updateLiveChatModeDetails();
   saveSettings(false);
 });
 
@@ -2939,6 +2963,7 @@ const preferredLanguage = localStorage.getItem(LANG_KEY) || (navigator.language 
 applyLanguage(preferredLanguage);
 applyTheme("light");
 loadSettings();
+updateLiveChatModeDetails();
 document.addEventListener("click", (event) => {
   if (!openDialogMenuId) return;
   if (event.target.closest(".dialog-menu")) return;
