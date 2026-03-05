@@ -217,12 +217,10 @@ const I18N = {
     labelAutoDialog: "Авто-диалог ботов (ходов после твоего сообщения)",
     labelLiveChatMode: "Live chat режим",
     hintLiveChatMode: "Паузы и немного более живые реакции: иногда несогласие и статус \"был(а) в сети\".",
-    liveChatModeInstant: "Мгновенный (как сейчас)",
-    liveChatModeRealistic: "Live chat (реалистичный)",
-    liveChatModeOffline: "Live chat + offline",
-    liveChatModeDetailsInstant: "Instant: Samii/Vivi отвечают сразу, без паузы.",
-    liveChatModeDetailsRealistic: "Realistic: небольшая пауза перед ответом и иногда мягкое несогласие.",
-    liveChatModeDetailsOffline: "Offline: пауза дольше и иногда статус «был(а) в сети», как в обычном мессенджере.",
+    liveChatModeInstant: "AI (быстрый ответ)",
+    liveChatModeRealistic: "Realistik (как человек)",
+    liveChatModeDetailsInstant: "AI: Samii/Vivi отвечают сразу, без паузы.",
+    liveChatModeDetailsRealistic: "Realistik: небольшая пауза, иногда статус «был(а) в сети» и вежливое несогласие.",
     labelDeepMode: "Глубокий режим ответа (Pro)",
     hintDeepMode: "Более развернутые ответы с дополнительными пояснениями.",
     deepModeOn: "Включить",
@@ -342,12 +340,10 @@ const I18N = {
     labelAutoDialog: "Bot auto-dialog (turns after your message)",
     labelLiveChatMode: "Live chat mode",
     hintLiveChatMode: "Adds human-like pacing: delays, occasional disagreement, and 'last seen' vibe.",
-    liveChatModeInstant: "Instant (as before)",
-    liveChatModeRealistic: "Live chat (realistic)",
-    liveChatModeOffline: "Live chat + offline",
-    liveChatModeDetailsInstant: "Instant: Samii/Vivi reply immediately with no wait.",
-    liveChatModeDetailsRealistic: "Realistic: short delay before replies plus occasional polite disagreement.",
-    liveChatModeDetailsOffline: "Offline: longer delay and occasional 'last seen' status like a regular messenger.",
+    liveChatModeInstant: "AI (fast reply)",
+    liveChatModeRealistic: "Realistik (human-like)",
+    liveChatModeDetailsInstant: "AI: Samii/Vivi reply immediately with no wait.",
+    liveChatModeDetailsRealistic: "Realistik: short delay, occasional 'last seen' status, and polite disagreement.",
     labelDeepMode: "Deep response mode (Pro)",
     hintDeepMode: "More detailed answers with additional explanations.",
     deepModeOn: "Enable",
@@ -539,7 +535,6 @@ function applyLanguage(lang) {
   const liveChatOptions = liveChatModeEl?.options || [];
   if (liveChatOptions[0]) liveChatOptions[0].textContent = t("liveChatModeInstant");
   if (liveChatOptions[1]) liveChatOptions[1].textContent = t("liveChatModeRealistic");
-  if (liveChatOptions[2]) liveChatOptions[2].textContent = t("liveChatModeOffline");
   updateLiveChatModeDetails();
   if (deepModeToggle && !deepModeEnabled) deepModeToggle.textContent = t("deepModeOn");
 
@@ -696,18 +691,11 @@ const LIVE_CHAT_MODELS = {
     instruction: "",
   },
   realistic: {
-    minDelayMs: 1200,
-    maxDelayMs: 3500,
-    offlineChance: 0,
+    minDelayMs: 2800,
+    maxDelayMs: 8500,
+    offlineChance: 0.3,
     instruction:
-      "Live chat mode активен: отвечай естественно, иногда можешь вежливо не соглашаться и высказывать своё мнение.",
-  },
-  offline: {
-    minDelayMs: 4500,
-    maxDelayMs: 9500,
-    offlineChance: 0.35,
-    instruction:
-      "Live chat + offline mode активен: отвечай естественно, иногда можешь вежливо не соглашаться и высказывать своё мнение.",
+      "Realistik mode активен: отвечай естественно, иногда можешь вежливо не соглашаться, высказывать своё мнение и не всегда быть сразу в сети.",
   },
 };
 
@@ -2098,8 +2086,11 @@ function loadSettings() {
       modelEl.value = exists ? s.model : modelEl.options[0]?.value || "";
     }
     if (typeof s.turns === "number") turnsEl.value = String(s.turns);
-    if (typeof s.liveChatMode === "string" && LIVE_CHAT_MODELS[s.liveChatMode]) {
-      liveChatModeEl.value = s.liveChatMode;
+    if (typeof s.liveChatMode === "string") {
+      const normalizedMode = s.liveChatMode === "offline" ? "realistic" : s.liveChatMode;
+      if (LIVE_CHAT_MODELS[normalizedMode]) {
+        liveChatModeEl.value = normalizedMode;
+      }
     }
     if (typeof s.deepModeEnabled === "boolean") {
       deepModeEnabled = s.deepModeEnabled;
@@ -2133,7 +2124,6 @@ function updateLiveChatModeDetails() {
   const keyByMode = {
     instant: "liveChatModeDetailsInstant",
     realistic: "liveChatModeDetailsRealistic",
-    offline: "liveChatModeDetailsOffline",
   };
   liveChatModeDetailsEl.textContent = t(keyByMode[mode] || keyByMode.instant);
 }
