@@ -116,7 +116,7 @@ let currentLanguage = "ru";
 const I18N = {
   ru: {
     pageTitle: "dual-ai (Samii & Vivi)",
-    pageDescription: "dual-ai — dual-чат с Samii и Vivi для стратегий, креатива и быстрых решений.",
+    pageDescription: "dual-ai — уютный dual-чат с Samii и Vivi для тёплого общения, поддержки и вайба.",
     statusReady: "Готов.",
     login: "Войти",
     upgrade: "Оплатить / Upgrade",
@@ -135,26 +135,26 @@ const I18N = {
     summary: "🧾 Итог",
     template: "💾 Шаблон",
     observe: "👀 Диалог",
-    debate: "🔥 Баттл",
+    debate: "💞 Искры",
     demo: "⚡ Демо",
-    subtitle: "Samii (дерзкий аналитик) + Vivi (милая аниме-тян) через наш сервер",
-    heroTitle: "Профессиональный чат для стратегий и идей",
+    subtitle: "Samii (харизматичный собеседник) + Vivi (милая аниме-тян) через наш сервер",
+    heroTitle: "Место для тёплого общения и уютного вайба",
     heroSubtitle:
-      "Пара ботов ведёт дискуссию с тобой: рациональный бот структурирует, творческий — расширяет варианты. Управляй настройками через меню.",
+      "Samii и Vivi общаются с тобой как друзья: поддерживают, шутят и помогают не чувствовать себя одному. Настраивай стиль беседы через меню.",
     quickTitle: "Быстрый старт",
-    quickBusiness: "Для предпринимателей",
+    quickBusiness: "Для тёплого старта",
     quickYouth: "Для молодёжи и TikTok",
     heroHighlightFast: "⚡ Быстрый запуск без лишних шагов",
     heroHighlightDuo: "🧠 Samii + Vivi в одном диалоге",
-    heroHighlightFocus: "🎯 Фокус на практическом результате",
+    heroHighlightFocus: "💛 Фокус на эмоциях, поддержке и связи",
     botProfilesTitle: "Кто с тобой в диалоге",
-    samiiBio: "Рациональный аналитик: быстро выделяет главное, спорит по делу и собирает практичный план.",
+    samiiBio: "Харизматичный собеседник: держит ритм разговора, шутит и помогает смотреть на мысли яснее.",
     viviBio: "Тёплая креативная напарница: расширяет идеи, добавляет эмоцию и помогает выбрать лучший вариант.",
     cardHotkeyTitle: "Горячая клавиша",
     cardHotkeyHint: "Отправляй сообщение одним нажатием.",
     cardFocusTitle: "Фокус сессии",
     cardFocusValue: "3 ключевые цели",
-    cardFocusHint: "Запросите у ботов приоритетный план.",
+    cardFocusHint: "Попроси Samii и Vivi дать мягкую поддержку на сегодня.",
     cardModeTitle: "Режим диалога",
     cardModeHint: "Samii + Vivi ведут сессию.",
     moreCardsSummary: "Показать ещё возможности",
@@ -164,7 +164,7 @@ const I18N = {
     cardSafetyValue: "Все данные защищены",
     cardSafetyHint: "Политикой конфиденциальности и условиями использования.",
     cardTemplatesTitle: "Шаблоны",
-    cardTemplatesValue: "Маркетинг и продукт",
+    cardTemplatesValue: "Общение и эмоции",
     cardTemplatesHint: "Готовые сценарии для быстрого старта.",
     chatTitle: "Диалог Samii + Vivi",
     chatSubtitle: "Два бота в одной сессии · online",
@@ -227,7 +227,7 @@ const I18N = {
   },
   en: {
     pageTitle: "dual-ai (Samii & Vivi)",
-    pageDescription: "dual-ai — a duo chat with Samii and Vivi for strategy, creativity, and fast decisions.",
+    pageDescription: "dual-ai — a cozy duo chat with Samii and Vivi for warm conversations, support, and vibe.",
     statusReady: "Ready.",
     login: "Sign in",
     upgrade: "Upgrade",
@@ -246,26 +246,26 @@ const I18N = {
     summary: "🧾 Summary",
     template: "💾 Template",
     observe: "👀 Observe",
-    debate: "🔥 Debate",
+    debate: "💞 Sparks",
     demo: "⚡ Demo",
-    subtitle: "Samii (edgy analyst) + Vivi (sweet anime girl) via our server",
-    heroTitle: "Pro chat for strategy and ideas",
+    subtitle: "Samii (charismatic companion) + Vivi (sweet anime girl) via our server",
+    heroTitle: "A cozy place for warm conversations",
     heroSubtitle:
-      "Two bots discuss your topic together: the rational one structures, the creative one expands options. Manage everything from settings.",
+      "Samii and Vivi chat with you like friends: they support you, joke gently, and help you feel less alone. Tune the vibe in settings.",
     quickTitle: "Quick start",
-    quickBusiness: "For founders",
+    quickBusiness: "For a warm start",
     quickYouth: "For youth & TikTok",
     heroHighlightFast: "⚡ Fast start without extra steps",
     heroHighlightDuo: "🧠 Samii + Vivi in one dialog",
-    heroHighlightFocus: "🎯 Focused on practical outcomes",
+    heroHighlightFocus: "💛 Focused on emotions, support, and connection",
     botProfilesTitle: "Who joins your dialog",
-    samiiBio: "A rational analyst: quickly isolates what matters, challenges weak points, and builds a practical plan.",
+    samiiBio: "A charismatic companion: keeps the rhythm of the chat, jokes lightly, and helps your thoughts feel clearer.",
     viviBio: "A warm creative partner: expands ideas, adds emotion, and helps choose the best direction.",
     cardHotkeyTitle: "Hotkey",
     cardHotkeyHint: "Send a message with one key press.",
     cardFocusTitle: "Session focus",
     cardFocusValue: "3 key goals",
-    cardFocusHint: "Ask bots for a prioritized plan.",
+    cardFocusHint: "Ask Samii and Vivi for gentle support for today.",
     cardModeTitle: "Dialog mode",
     cardModeHint: "Samii + Vivi run the session.",
     moreCardsSummary: "Show more capabilities",
@@ -275,7 +275,7 @@ const I18N = {
     cardSafetyValue: "All data is protected",
     cardSafetyHint: "By our privacy policy and terms of use.",
     cardTemplatesTitle: "Templates",
-    cardTemplatesValue: "Marketing and product",
+    cardTemplatesValue: "Connection and emotions",
     cardTemplatesHint: "Ready-to-use scenarios for a quick start.",
     chatTitle: "Samii + Vivi dialog",
     chatSubtitle: "Two bots in one session · online",
@@ -341,34 +341,34 @@ const I18N = {
 const LEGAL_TEXT = {
   ru: {
     privacy: `<p><strong>Дата обновления:</strong> 2025-02-01</p><p>Мы уважаем вашу конфиденциальность и стремимся защищать персональные данные. Настоящая политика описывает, какие данные могут обрабатываться и как мы их защищаем.</p><h4>Какие данные обрабатываются</h4><ul><li>Данные аккаунта (email, если вы входите через Supabase).</li><li>Технические данные (тип устройства, браузер, ошибки).</li><li>Данные чатов и настроек, если вы сохраняете их в браузере или при использовании сервера.</li></ul><h4>Цели обработки</h4><ul><li>Обеспечение работы сервиса, качества ответов и стабильности.</li><li>Улучшение продукта и поддержки пользователей.</li></ul><h4>Хранение и безопасность</h4><p>Мы применяем организационные и технические меры защиты, включая ограничение доступа и контроль событий. Данные защищены настоящей политикой и условиями использования.</p><h4>Передача третьим лицам</h4><p>Мы не передаем персональные данные третьим лицам, кроме случаев, предусмотренных законом, или для обеспечения работы сервиса (например, инфраструктурные провайдеры).</p><h4>Права пользователя</h4><p>Вы можете запросить удаление данных или уточнение информации, связавшись с поддержкой.</p><h4>Контакты</h4><p>По вопросам конфиденциальности пишите в поддержку, указанную в приложении или на сайте.</p>`,
-    terms: `<p><strong>Дата обновления:</strong> 2025-02-01</p><h4>Принятие условий</h4><p>Используя сервис, вы соглашаетесь с настоящими условиями использования и политикой конфиденциальности.</p><h4>Назначение сервиса</h4><p>Сервис предоставляет доступ к диалогам с ботами Samii и Vivi для поиска идей, стратегий и контента.</p><h4>Ограничения</h4><ul><li>Запрещено использовать сервис для незаконных действий или нарушений прав третьих лиц.</li><li>Запрещено распространение вредоносного контента.</li><li>Запрещены попытки взлома или перегрузки инфраструктуры.</li></ul><h4>Контент</h4><p>Ответы ботов являются рекомендациями и не заменяют профессиональные консультации. Вы несете ответственность за использование результатов.</p><h4>Подписки и оплата</h4><p>Условия тарифов могут обновляться. Актуальные лимиты и функции указаны в интерфейсе.</p><h4>Изменения условий</h4><p>Мы можем обновлять условия использования. Актуальная версия всегда доступна в настройках.</p><h4>Контакты</h4><p>По вопросам использования сервиса обращайтесь в поддержку, указанную в приложении или на сайте.</p>`,
+    terms: `<p><strong>Дата обновления:</strong> 2025-02-01</p><h4>Принятие условий</h4><p>Используя сервис, вы соглашаетесь с настоящими условиями использования и политикой конфиденциальности.</p><h4>Назначение сервиса</h4><p>Сервис предоставляет доступ к диалогам с ботами Samii и Vivi для общения, поддержки и идей.</p><h4>Ограничения</h4><ul><li>Запрещено использовать сервис для незаконных действий или нарушений прав третьих лиц.</li><li>Запрещено распространение вредоносного контента.</li><li>Запрещены попытки взлома или перегрузки инфраструктуры.</li></ul><h4>Контент</h4><p>Ответы ботов являются рекомендациями и не заменяют профессиональные консультации. Вы несете ответственность за использование результатов.</p><h4>Подписки и оплата</h4><p>Условия тарифов могут обновляться. Актуальные лимиты и функции указаны в интерфейсе.</p><h4>Изменения условий</h4><p>Мы можем обновлять условия использования. Актуальная версия всегда доступна в настройках.</p><h4>Контакты</h4><p>По вопросам использования сервиса обращайтесь в поддержку, указанную в приложении или на сайте.</p>`,
   },
   en: {
     privacy: `<p><strong>Last updated:</strong> 2025-02-01</p><p>We respect your privacy and strive to protect personal data. This policy explains which data may be processed and how we protect it.</p><h4>What data is processed</h4><ul><li>Account data (email, if you sign in via Supabase).</li><li>Technical data (device type, browser, errors).</li><li>Chat and settings data if you store them in your browser or when using the server.</li></ul><h4>Processing purposes</h4><ul><li>Ensuring service operation, response quality, and stability.</li><li>Product improvement and user support.</li></ul><h4>Storage and security</h4><p>We apply organizational and technical safeguards, including access restriction and event monitoring. Data is protected by this policy and the terms of use.</p><h4>Third-party sharing</h4><p>We do not share personal data with third parties, except where required by law or needed to operate the service (for example, infrastructure providers).</p><h4>User rights</h4><p>You can request data deletion or clarification by contacting support.</p><h4>Contacts</h4><p>For privacy questions, contact support listed in the app or on the site.</p>`,
-    terms: `<p><strong>Last updated:</strong> 2025-02-01</p><h4>Acceptance of terms</h4><p>By using the service, you agree to these terms of use and the privacy policy.</p><h4>Service purpose</h4><p>The service provides access to dialogs with Samii and Vivi for ideas, strategy, and content.</p><h4>Restrictions</h4><ul><li>Using the service for illegal activity or rights violations is prohibited.</li><li>Distribution of harmful content is prohibited.</li><li>Attempts to hack or overload infrastructure are prohibited.</li></ul><h4>Content</h4><p>Bot responses are recommendations and do not replace professional advice. You are responsible for how you use results.</p><h4>Subscriptions and payments</h4><p>Plan terms may be updated. Current limits and features are shown in the interface.</p><h4>Changes to terms</h4><p>We may update these terms. The latest version is always available in settings.</p><h4>Contacts</h4><p>For service-related questions, contact support listed in the app or on the site.</p>`,
+    terms: `<p><strong>Last updated:</strong> 2025-02-01</p><h4>Acceptance of terms</h4><p>By using the service, you agree to these terms of use and the privacy policy.</p><h4>Service purpose</h4><p>The service provides access to conversations with Samii and Vivi for connection, support, and ideas.</p><h4>Restrictions</h4><ul><li>Using the service for illegal activity or rights violations is prohibited.</li><li>Distribution of harmful content is prohibited.</li><li>Attempts to hack or overload infrastructure are prohibited.</li></ul><h4>Content</h4><p>Bot responses are recommendations and do not replace professional advice. You are responsible for how you use results.</p><h4>Subscriptions and payments</h4><p>Plan terms may be updated. Current limits and features are shown in the interface.</p><h4>Changes to terms</h4><p>We may update these terms. The latest version is always available in settings.</p><h4>Contacts</h4><p>For service-related questions, contact support listed in the app or on the site.</p>`,
   },
 };
 
 const QUICK_CHIPS = {
   ru: [
-    ["План на 7 дней", "Составь план на 7 дней для моей цели."],
-    ["Идеи контента", "Придумай 10 идей для контента на неделю."],
-    ["Стратегия запуска", "Сделай стратегию запуска продукта в 5 шагах."],
-    ["Гипотезы роста", "Сформулируй 3 гипотезы роста для моего продукта."],
-    ["TikTok идеи", "Придумай 12 идей для TikTok на неделю в моём стиле."],
-    ["Учёба за 5 дней", "Собери учебный план на 5 дней, чтобы быстро подготовиться к зачёту."],
-    ["7-дневный челлендж", "Сделай челлендж на 7 дней для прокачки привычки без выгорания."],
-    ["Сценарий для Reels", "Напиши сценарий для короткого видео: хук, основа, финальный CTA."],
+    ["Дружеский старт", "Поболтай со мной как с другом: мне нужен уют и поддержка."],
+    ["Темы на вечер", "Придумай 10 милых тем для вечернего общения."],
+    ["Узнай меня", "Задай мне 5 тёплых вопросов, чтобы лучше узнать меня."],
+    ["Мягкий чек-ин", "Сделай мягкий чек-ин: как я себя чувствую и чего хочу сегодня?"],
+    ["Тёплые фразы", "Дай 12 коротких тёплых фраз поддержки на каждый день."],
+    ["Антистресс рядом", "Побудь рядом и поддержи меня, когда мне тревожно."],
+    ["Нежный челлендж", "Сделай добрый 7-дневный челлендж заботы о себе без давления."],
+    ["Сообщение другу", "Помоги написать искреннее тёплое сообщение близкому человеку."],
   ],
   en: [
-    ["7-day plan", "Build a 7-day plan for my goal."],
-    ["Content ideas", "Give me 10 content ideas for this week."],
-    ["Launch strategy", "Create a 5-step product launch strategy."],
-    ["Growth hypotheses", "Suggest 3 growth hypotheses for my product."],
-    ["TikTok ideas", "Give me 12 TikTok ideas for a week in my style."],
-    ["Study in 5 days", "Build a 5-day study plan to prepare quickly for an exam."],
-    ["7-day challenge", "Create a 7-day challenge to build a habit without burnout."],
-    ["Reels script", "Write a short-video script: hook, body, final CTA."],
+    ["Friendly start", "Chat with me like a close friend — I need warmth and support."],
+    ["Evening topics", "Give me 10 cozy topics for an evening conversation."],
+    ["Get to know me", "Ask me 5 warm questions so you can get to know me better."],
+    ["Gentle check-in", "Run a gentle check-in: how do I feel and what do I need today?"],
+    ["Warm lines", "Give me 12 short comforting lines I can return to daily."],
+    ["Calm support", "Stay with me and support me while I feel anxious."],
+    ["Soft challenge", "Create a kind 7-day self-care challenge with no pressure."],
+    ["Message to someone", "Help me write a sincere warm message to someone I care about."],
   ],
 };
 
@@ -620,36 +620,36 @@ const COMEBACK_AFTER_MS = 1000 * 60 * 60 * 12;
 const IDEA_PROMPTS = {
   ru: [
     "Сформулируйте главный вопрос дня.",
-    "Какой сценарий использования вы хотите улучшить?",
-    "Что бы вы автоматизировали в своём рабочем процессе?",
-    "Какая функция сделает чат более полезным?",
-    "Какая аналитика или отчёт вам нужнее всего?",
-    "Что мешает пользоваться чатом чаще?",
+    "Как сделать общение с Samii и Vivi ещё более тёплым?",
+    "Какой ритуал общения вам хочется добавить в чат?",
+    "Какая функция поможет сильнее чувствовать связь с ИИ?",
+    "Какие эмоции вы хотите получать после каждой беседы?",
+    "Что удерживает вас возвращаться в чат каждый день?",
   ],
   en: [
     "Formulate the main question of the day.",
-    "Which usage scenario would you like to improve?",
-    "What would you automate in your workflow?",
-    "Which feature would make this chat more useful?",
-    "Which analytics or report do you need most?",
-    "What prevents you from using the chat more often?",
+    "How can we make chats with Samii and Vivi feel warmer?",
+    "What communication ritual would you love to add here?",
+    "Which feature would strengthen your emotional connection with AI?",
+    "What feelings do you want after each conversation?",
+    "What would make you come back to this chat every day?",
   ],
 };
 
 const VIBE_INSTRUCTIONS = {
   standard: "",
-  biz: "Стиль ответа: как опытный product/marketing coach, структурно, с KPI и рисками.",
-  chill: "Стиль ответа: дружелюбно, просто, короткими блоками, без сложного жаргона. В дружеской беседе можно мягко подкалывать второго бота 1 короткой фразой без токсичности и без ухода от пользы.",
-  creator: "Стиль ответа: как creator-стратег для TikTok/Reels, с хуками и вовлекающими форматами.",
-  study: "Стиль ответа: как учебный наставник, пошагово, с акцентом на запоминание и практику.",
+  biz: "Стиль ответа: как спокойный и заботливый друг, который поддерживает и помогает не перегореть.",
+  chill: "Стиль ответа: максимально дружелюбно, тепло и просто, короткими блоками, без сложного жаргона. В дружеской беседе можно мягко подкалывать второго бота 1 короткой фразой без токсичности.",
+  creator: "Стиль ответа: как креативный друг для TikTok/Reels, легко, весело и с живыми идеями.",
+  study: "Стиль ответа: как добрый study buddy, мягко и поддерживающе.",
 };
 
 const DEMO_BY_VIBE = {
-  standard: "Что думаете о будущем ИИ?",
-  biz: "Собери план запуска продукта на 14 дней с KPI и рисками.",
-  chill: "Помоги спокойно разобрать мой план и выбрать лучший следующий шаг.",
-  creator: "Придумай 10 коротких TikTok-идей с хуком на первые 2 секунды.",
-  study: "Сделай учебный план на 5 дней, чтобы быстро подготовиться к экзамену.",
+  standard: "Поболтаем по-дружески? Какой у тебя сегодня день?",
+  biz: "Побудь рядом как друг: помоги выдохнуть и почувствовать опору.",
+  chill: "Поболтай со мной тепло и задай мягкие вопросы про мой день.",
+  creator: "Придумай 10 милых идей для лёгкого контента в моём вайбе.",
+  study: "Придумай список уютных тем для вечернего разговора.",
 };
 
 
@@ -1373,7 +1373,7 @@ function setPlanState(plan, usageCount = 0) {
   }
   if (debateBtn) {
     debateBtn.disabled = currentPlan === "free";
-    debateBtn.title = currentPlan === "free" ? (currentLanguage === "en" ? "Available on Plus" : "Доступно с Plus") : (currentLanguage === "en" ? "Start debate" : "Запустить баттл мнений");
+    debateBtn.title = currentPlan === "free" ? (currentLanguage === "en" ? "Available on Plus" : "Доступно с Plus") : (currentLanguage === "en" ? "Start Spark mode" : "Запустить режим «Искры»");
   }
   if (vibeModeEl) {
     const options = Array.from(vibeModeEl.options);
@@ -2263,12 +2263,12 @@ demoBtn.addEventListener("click", () => {
 debateBtn?.addEventListener("click", () => {
   if (!requireAuth()) return;
   if (!hasPlusAccess()) {
-    setStatus("Баттл доступен с Plus.", "error");
+    setStatus("Режим «Искры» доступен с Plus.", "error");
     openUpgradeModal();
     return;
   }
   inputEl.value =
-    "Устройте баттл мнений между Samii и Vivi по моей теме: дайте 2 позиции, контраргументы и итоговый вердикт.";
+    "Сделайте милый обмен мнениями между Samii и Vivi по моей теме: без жёстких споров, с заботой, юмором и тёплым общим выводом.";
   inputEl.focus();
 });
 vibeModeEl?.addEventListener("change", () => {
@@ -2514,7 +2514,7 @@ messagesEl?.addEventListener("click", (event) => {
     if (!requireAuth()) return;
     inputEl.value = `${message.content}
 
-Продолжи и углуби мысль с практическими шагами.`;
+Продолжи мягко и по-дружески, сохрани тёплый тон.`;
     inputEl.focus();
     setStatus("Текст добавлен в поле ввода.", "ok");
     return;
