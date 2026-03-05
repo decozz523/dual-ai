@@ -110,6 +110,7 @@ const languageToggleEl = $("languageToggle");
 
 const LANG_KEY = "dual-ai-lang-v1";
 const PROFILE_KEY = "dual-ai-user-profile-v1";
+const PROFILE_BY_EMAIL_KEY = "dual-ai-user-profiles-by-email-v1";
 const SUPPORTED_LANGS = ["ru", "en"];
 let currentLanguage = "ru";
 
@@ -773,6 +774,56 @@ function saveLocalProfile(profile) {
   localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
 }
 
+function loadProfilesByEmail() {
+  try {
+    const raw = localStorage.getItem(PROFILE_BY_EMAIL_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return {};
+    return parsed;
+  } catch {
+    return {};
+  }
+}
+
+function saveProfilesByEmail(map) {
+  localStorage.setItem(PROFILE_BY_EMAIL_KEY, JSON.stringify(map));
+}
+
+function saveProfileForEmail(email, profile) {
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+  if (!normalizedEmail || !profile) return;
+  const map = loadProfilesByEmail();
+  map[normalizedEmail] = {
+    name: String(profile.name || "").trim(),
+    birthDate: normalizeBirthDate(profile.birthDate || ""),
+    isAdult: Boolean(profile.isAdult),
+  };
+  saveProfilesByEmail(map);
+}
+
+function getProfileForEmail(email) {
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+  if (!normalizedEmail) return null;
+  const map = loadProfilesByEmail();
+  const profile = map[normalizedEmail];
+  if (!profile || typeof profile !== "object") return null;
+  return {
+    name: String(profile.name || "").trim(),
+    birthDate: normalizeBirthDate(profile.birthDate || ""),
+    isAdult: Boolean(profile.isAdult),
+  };
+}
+
+function applyRememberedProfileForEmail(email) {
+  if (!authNameEl || !authBirthdateEl) return;
+  if (String(authNameEl.value || "").trim() || String(authBirthdateEl.value || "").trim()) return;
+  const remembered = getProfileForEmail(email);
+  if (!remembered) return;
+  authNameEl.value = remembered.name || "";
+  authBirthdateEl.value = remembered.birthDate || "";
+}
+
 function getActiveUserProfile() {
   if (cachedActiveProfile !== undefined) return cachedActiveProfile;
 
@@ -856,11 +907,13 @@ function updateAuthUI(session) {
   if (isSignedIn) {
     setAuthScene(false);
     if (profile) {
-      saveLocalProfile({
+      const normalizedProfile = {
         name: profile.name,
         birthDate: profile.birthDate,
         isAdult: Boolean(profile.isAdult),
-      });
+      };
+      saveLocalProfile(normalizedProfile);
+      if (user?.email) saveProfileForEmail(user.email, normalizedProfile);
     }
   }
   if (isSignedIn) {
@@ -2588,6 +2641,14 @@ authModal?.addEventListener("click", (event) => {
     closeAuthModal();
   }
 });
+authEmailEl?.addEventListener("blur", () => {
+  applyRememberedProfileForEmail(authEmailEl.value);
+});
+
+authEmailEl?.addEventListener("change", () => {
+  applyRememberedProfileForEmail(authEmailEl.value);
+});
+
 authSignInBtn.addEventListener("click", async () => {
   if (!supabase) return;
   const email = authEmailEl.value.trim();
@@ -2599,12 +2660,17 @@ authSignInBtn.addEventListener("click", async () => {
     setAuthMessage("Введите email и пароль.", "error");
     return;
   }
+  const enteredProfile = {
+    name: displayName,
+    birthDate,
+    isAdult: age !== null ? age >= 18 : false,
+  };
   if (displayName || birthDate) {
-    saveLocalProfile({
-      name: displayName,
-      birthDate,
-      isAdult: age !== null ? age >= 18 : false,
-    });
+    saveLocalProfile(enteredProfile);
+    saveProfileForEmail(email, enteredProfile);
+  } else {
+    const rememberedProfile = getProfileForEmail(email);
+    if (rememberedProfile) saveLocalProfile(rememberedProfile);
   }
   authSignInBtn.disabled = true;
   authSignUpBtn.disabled = true;
@@ -2668,6 +2734,7 @@ authSignUpBtn.addEventListener("click", async () => {
     });
     if (error) throw error;
     saveLocalProfile(profilePayload);
+    saveProfileForEmail(email, profilePayload);
     setAuthMessage("Аккаунт создан. Проверьте почту для подтверждения.", "ok");
   } catch (e) {
     setAuthMessage(String(e?.message || e), "error");
