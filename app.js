@@ -2,6 +2,7 @@ const STORAGE_KEY = "dual-ai-chat-settings-v1";
 const DIALOGS_KEY = "dual-ai-chat-dialogs-v1";
 const ACTIVE_DIALOG_KEY = "dual-ai-chat-active-dialog-v1";
 const DIALOG_META_KEY = "dual-ai-chat-dialog-meta-v1";
+const MENTION_COUNTER_KEY = "dual-ai-chat-mention-counter-v1";
 
 const $ = (id) => document.getElementById(id);
 const modelEl = $("model");
@@ -737,6 +738,56 @@ let transcript = [];
 /** @type {{id: string, title: string, messages: typeof transcript, createdAt: number, updatedAt: number}[]} */
 let dialogs = [];
 let activeDialogId = null;
+let mentionCounter = loadMentionCounter();
+
+
+function loadMentionCounter() {
+  try {
+    const raw = localStorage.getItem(MENTION_COUNTER_KEY);
+    if (!raw) return { samii: 0, vivi: 0 };
+    const parsed = JSON.parse(raw);
+    return {
+      samii: Number.isFinite(parsed?.samii) ? Math.max(0, Math.floor(parsed.samii)) : 0,
+      vivi: Number.isFinite(parsed?.vivi) ? Math.max(0, Math.floor(parsed.vivi)) : 0,
+    };
+  } catch {
+    return { samii: 0, vivi: 0 };
+  }
+}
+
+function saveMentionCounter() {
+  try {
+    localStorage.setItem(MENTION_COUNTER_KEY, JSON.stringify(mentionCounter));
+  } catch {
+    // ignore
+  }
+}
+
+function extractMentionCounts(text) {
+  const content = String(text || "").toLowerCase();
+  const samiiMatches = content.match(/\b(samii|самии|сэмии|сами)\b/gi);
+  const viviMatches = content.match(/\b(vivi|виви)\b/gi);
+  return {
+    samii: samiiMatches ? samiiMatches.length : 0,
+    vivi: viviMatches ? viviMatches.length : 0,
+  };
+}
+
+function updateMentionCounterFromText(text) {
+  const counts = extractMentionCounts(text);
+  if (!counts.samii && !counts.vivi) return;
+  mentionCounter.samii += counts.samii;
+  mentionCounter.vivi += counts.vivi;
+  saveMentionCounter();
+}
+
+function getMentionPreferenceInstruction() {
+  const total = mentionCounter.samii + mentionCounter.vivi;
+  if (total < 3) return "";
+  if (mentionCounter.samii === mentionCounter.vivi) return "";
+  const preferred = mentionCounter.samii > mentionCounter.vivi ? "Samii" : "Vivi";
+  return `Контекст: пользователь чаще упоминает ${preferred}. Учитывай это как дружеский приоритет в тоне, но не превращай ответ в дебаты.`;
+}
 
 function touchLastSeen() {
   localStorage.setItem(LAST_SEEN_KEY, String(Date.now()));
@@ -2327,6 +2378,10 @@ async function runTurn(speaker) {
   if (liveChatInstruction) {
     messages.push({ role: "user", content: liveChatInstruction });
   }
+  const mentionPreferenceInstruction = getMentionPreferenceInstruction();
+  if (mentionPreferenceInstruction) {
+    messages.push({ role: "user", content: mentionPreferenceInstruction });
+  }
   await applyLiveChatPacing(speaker);
   setStatus(`${speaker === "R" ? "Samii" : "Vivi"} думает…`);
   const pendingMessage = { speaker, content: "…", ts: Date.now() };
@@ -2357,6 +2412,7 @@ async function sendUserMessage(text) {
   const extraTurns = getExtraTurns();
   const userMessage = { speaker: "user", content: text, ts: Date.now(), deliveryStatus: "queued" };
   transcript.push(userMessage);
+  updateMentionCounterFromText(text);
   render();
   persistActiveDialog();
   await incrementUsageCount();
@@ -2376,6 +2432,7 @@ async function sendUserMessage(text) {
 async function sendUserMessageWithTurns(text, extraTurnsOverride) {
   const userMessage = { speaker: "user", content: text, ts: Date.now(), deliveryStatus: "queued" };
   transcript.push(userMessage);
+  updateMentionCounterFromText(text);
   render();
   persistActiveDialog();
   await incrementUsageCount();
