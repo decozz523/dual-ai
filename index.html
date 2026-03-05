@@ -254,6 +254,15 @@
             <input id="turns" type="number" min="0" max="10" value="0" />
           </label>
           <label class="field">
+            <div class="label" id="liveChatModeLabel">Live chat режим</div>
+            <div class="hint" id="liveChatModeHint">Делает ответы более «человечными»: паузы, иногда несогласие и статус «был(а) в сети».</div>
+            <select id="liveChatMode">
+              <option value="instant">Мгновенный (как сейчас)</option>
+              <option value="realistic">Live chat (реалистичный)</option>
+              <option value="offline">Live chat + offline</option>
+            </select>
+          </label>
+          <label class="field">
             <div class="label">Глубокий режим ответа (Pro)</div>
             <div class="hint">Более развернутые ответы с дополнительными пояснениями.</div>
             <button id="deepModeToggle" class="btn btn-secondary" type="button">Включить</button>

@@ -6,6 +6,7 @@ const DIALOG_META_KEY = "dual-ai-chat-dialog-meta-v1";
 const $ = (id) => document.getElementById(id);
 const modelEl = $("model");
 const turnsEl = $("turns");
+const liveChatModeEl = $("liveChatMode");
 const messagesEl = $("messages");
 const inputEl = $("input");
 const sendBtn = $("sendBtn");
@@ -213,6 +214,11 @@ const I18N = {
     sectionDialogs: "Диалоги",
     labelConnection: "Соединение (наш сервер)",
     labelAutoDialog: "Авто-диалог ботов (ходов после твоего сообщения)",
+    labelLiveChatMode: "Live chat режим",
+    hintLiveChatMode: "Паузы и немного более живые реакции: иногда несогласие и статус \"был(а) в сети\".",
+    liveChatModeInstant: "Мгновенный (как сейчас)",
+    liveChatModeRealistic: "Live chat (реалистичный)",
+    liveChatModeOffline: "Live chat + offline",
     labelDeepMode: "Глубокий режим ответа (Pro)",
     hintDeepMode: "Более развернутые ответы с дополнительными пояснениями.",
     deepModeOn: "Включить",
@@ -330,6 +336,11 @@ const I18N = {
     sectionDialogs: "Dialogs",
     labelConnection: "Connection (our server)",
     labelAutoDialog: "Bot auto-dialog (turns after your message)",
+    labelLiveChatMode: "Live chat mode",
+    hintLiveChatMode: "Adds human-like pacing: delays, occasional disagreement, and 'last seen' vibe.",
+    liveChatModeInstant: "Instant (as before)",
+    liveChatModeRealistic: "Live chat (realistic)",
+    liveChatModeOffline: "Live chat + offline",
     labelDeepMode: "Deep response mode (Pro)",
     hintDeepMode: "More detailed answers with additional explanations.",
     deepModeOn: "Enable",
@@ -470,6 +481,8 @@ function applyLanguage(lang) {
   setText("#consentText", t("consentText"));
   setText("#authNameLabel", t("authNameLabel"));
   setText("#authBirthdateLabel", t("authBirthdateLabel"));
+  setText("#liveChatModeLabel", t("labelLiveChatMode"));
+  setText("#liveChatModeHint", t("hintLiveChatMode"));
   setText("#profileNameLabel", t("profileName"));
   setText("#profileAgeLabel", t("profileAgeGroup"));
   setText("#profileBirthdateLabel", t("profileBirthdate"));
@@ -510,10 +523,16 @@ function applyLanguage(lang) {
   const settingsHints = document.querySelectorAll("#settingsModal .drawer-section:first-of-type .field > .hint");
   if (settingsLabels[0]) settingsLabels[0].textContent = t("labelConnection");
   if (settingsLabels[1]) settingsLabels[1].textContent = t("labelAutoDialog");
-  if (settingsLabels[2]) settingsLabels[2].textContent = t("labelDeepMode");
-  if (settingsLabels[3]) settingsLabels[3].textContent = t("labelTheme");
-  if (settingsHints[0]) settingsHints[0].textContent = t("hintDeepMode");
-  if (settingsHints[1]) settingsHints[1].textContent = t("hintTheme");
+  if (settingsLabels[2]) settingsLabels[2].textContent = t("labelLiveChatMode");
+  if (settingsLabels[3]) settingsLabels[3].textContent = t("labelDeepMode");
+  if (settingsLabels[4]) settingsLabels[4].textContent = t("labelTheme");
+  if (settingsHints[1]) settingsHints[1].textContent = t("hintLiveChatMode");
+  if (settingsHints[2]) settingsHints[2].textContent = t("hintDeepMode");
+  if (settingsHints[3]) settingsHints[3].textContent = t("hintTheme");
+  const liveChatOptions = liveChatModeEl?.options || [];
+  if (liveChatOptions[0]) liveChatOptions[0].textContent = t("liveChatModeInstant");
+  if (liveChatOptions[1]) liveChatOptions[1].textContent = t("liveChatModeRealistic");
+  if (liveChatOptions[2]) liveChatOptions[2].textContent = t("liveChatModeOffline");
   if (deepModeToggle && !deepModeEnabled) deepModeToggle.textContent = t("deepModeOn");
 
   const activationCodeLabel = document.querySelector("#settingsModal #activationCodeInput")?.previousElementSibling;
@@ -659,6 +678,29 @@ const VIBE_INSTRUCTIONS = {
   chill: "Стиль ответа: дружелюбно, просто и коротко, как разговор в чате друзей. Допустимы лёгкие шутки и подколы между Samii и Vivi без токсичности.",
   creator: "Стиль ответа: как creator для TikTok/Reels — ярко, мемно, с цитатами и моментами, которые хочется скринить.",
   study: "Стиль ответа: как поддерживающий учебный дуэт: Vivi мягко объясняет, Samii проверяет и задаёт челлендж-вопросы.",
+};
+
+const LIVE_CHAT_MODELS = {
+  instant: {
+    minDelayMs: 0,
+    maxDelayMs: 0,
+    offlineChance: 0,
+    instruction: "",
+  },
+  realistic: {
+    minDelayMs: 1200,
+    maxDelayMs: 3500,
+    offlineChance: 0,
+    instruction:
+      "Live chat mode активен: отвечай естественно, иногда можешь вежливо не соглашаться и высказывать своё мнение.",
+  },
+  offline: {
+    minDelayMs: 4500,
+    maxDelayMs: 9500,
+    offlineChance: 0.35,
+    instruction:
+      "Live chat + offline mode активен: отвечай естественно, иногда можешь вежливо не соглашаться и высказывать своё мнение.",
+  },
 };
 
 const DEMO_BY_VIBE = {
@@ -1214,7 +1256,12 @@ function render() {
     meta.className = "meta";
     const left = document.createElement("div");
     const right = document.createElement("div");
-    right.textContent = new Date(m.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const messageTime = new Date(m.ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    if (m.speaker === "user" && m.deliveryStatus) {
+      right.textContent = `${messageTime} · ${m.deliveryStatus === "queued" ? "✓" : "✓✓"}`;
+    } else {
+      right.textContent = messageTime;
+    }
 
     const speakerClass = m.speaker === "user" ? "user" : m.speaker === "R" ? "r" : "s";
     const speakerAvatar = document.createElement("span");
@@ -2043,6 +2090,9 @@ function loadSettings() {
       modelEl.value = exists ? s.model : modelEl.options[0]?.value || "";
     }
     if (typeof s.turns === "number") turnsEl.value = String(s.turns);
+    if (typeof s.liveChatMode === "string" && LIVE_CHAT_MODELS[s.liveChatMode]) {
+      liveChatModeEl.value = s.liveChatMode;
+    }
     if (typeof s.deepModeEnabled === "boolean") {
       deepModeEnabled = s.deepModeEnabled;
     }
@@ -2060,13 +2110,49 @@ function saveSettings(showStatus = true) {
   const turns = getExtraTurns();
   localStorage.setItem(
     STORAGE_KEY,
-    JSON.stringify({ model, turns, deepModeEnabled, theme: currentTheme })
+    JSON.stringify({ model, turns, liveChatMode: getLiveChatMode(), deepModeEnabled, theme: currentTheme })
   );
   if (showStatus) {
     setStatus("Настройки сохранены.", "ok");
   }
 }
 
+
+function getLiveChatMode() {
+  const raw = String(liveChatModeEl?.value || "instant").trim();
+  return LIVE_CHAT_MODELS[raw] ? raw : "instant";
+}
+
+function getRandomDelay(minDelayMs, maxDelayMs) {
+  if (maxDelayMs <= minDelayMs) return minDelayMs;
+  return minDelayMs + Math.floor(Math.random() * (maxDelayMs - minDelayMs + 1));
+}
+
+async function applyLiveChatPacing(speaker) {
+  const mode = getLiveChatMode();
+  const config = LIVE_CHAT_MODELS[mode] || LIVE_CHAT_MODELS.instant;
+  if (!config || config.maxDelayMs <= 0) return;
+
+  const botName = speaker === "R" ? "Samii" : "Vivi";
+  const delay = getRandomDelay(config.minDelayMs, config.maxDelayMs);
+  const isOfflineMoment = config.offlineChance > 0 && Math.random() < config.offlineChance;
+
+  if (isOfflineMoment) {
+    setStatus(`${botName} был(а) в сети недавно. Ответит чуть позже…`);
+  } else {
+    setStatus(`${botName} печатает…`);
+  }
+
+  await new Promise((resolve, reject) => {
+    const timeout = setTimeout(resolve, delay);
+    if (activeAbortController?.signal) {
+      activeAbortController.signal.addEventListener("abort", () => {
+        clearTimeout(timeout);
+        reject(new Error("generation-aborted"));
+      }, { once: true });
+    }
+  });
+}
 
 function clearChat() {
   transcript = [];
@@ -2227,6 +2313,11 @@ async function runTurn(speaker) {
   if (vibeInstruction) {
     messages.push({ role: "user", content: vibeInstruction });
   }
+  const liveChatInstruction = LIVE_CHAT_MODELS[getLiveChatMode()]?.instruction;
+  if (liveChatInstruction) {
+    messages.push({ role: "user", content: liveChatInstruction });
+  }
+  await applyLiveChatPacing(speaker);
   setStatus(`${speaker === "R" ? "Samii" : "Vivi"} думает…`);
   const pendingMessage = { speaker, content: "…", ts: Date.now() };
   transcript.push(pendingMessage);
@@ -2254,10 +2345,15 @@ async function runTurn(speaker) {
 
 async function sendUserMessage(text) {
   const extraTurns = getExtraTurns();
-  transcript.push({ speaker: "user", content: text, ts: Date.now() });
+  const userMessage = { speaker: "user", content: text, ts: Date.now(), deliveryStatus: "queued" };
+  transcript.push(userMessage);
   render();
   persistActiveDialog();
   await incrementUsageCount();
+  userMessage.deliveryStatus = "sent";
+  userMessage.ts = Date.now();
+  render();
+  persistActiveDialog();
   await runTurn("R");
   await runTurn("S");
 
@@ -2268,10 +2364,15 @@ async function sendUserMessage(text) {
 }
 
 async function sendUserMessageWithTurns(text, extraTurnsOverride) {
-  transcript.push({ speaker: "user", content: text, ts: Date.now() });
+  const userMessage = { speaker: "user", content: text, ts: Date.now(), deliveryStatus: "queued" };
+  transcript.push(userMessage);
   render();
   persistActiveDialog();
   await incrementUsageCount();
+  userMessage.deliveryStatus = "sent";
+  userMessage.ts = Date.now();
+  render();
+  persistActiveDialog();
   await runTurn("R");
   await runTurn("S");
 
