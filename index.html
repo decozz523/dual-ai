@@ -372,11 +372,11 @@
           <div class="label">Пароль</div>
           <input id="authPassword" type="password" placeholder="••••••••" autocomplete="current-password" />
         </label>
-        <label class="field">
+        <label class="field" id="authNameField">
           <div class="label" id="authNameLabel">Имя (для обращения)</div>
           <input id="authName" type="text" placeholder="Например, Алекс" autocomplete="name" />
         </label>
-        <label class="field">
+        <label class="field" id="authBirthdateField">
           <div class="label" id="authBirthdateLabel">Дата рождения</div>
           <input id="authBirthdate" type="date" autocomplete="bday" />
         </label>
@@ -390,8 +390,12 @@
         </label>
         <div class="row">
           <button id="authSignInBtn" class="btn btn-primary">Войти</button>
-          <button id="authSignUpBtn" class="btn btn-secondary">Создать аккаунт</button>
+          <button id="authSignUpBtn" class="btn btn-primary" hidden>Создать аккаунт</button>
           <button id="authResendBtn" class="btn btn-secondary">Отправить письмо ещё раз</button>
+        </div>
+        <div class="auth-switch">
+          <span id="authSwitchLabel">Вы впервые?</span>
+          <button id="authModeLink" class="auth-mode-link" type="button">Регистрация</button>
         </div>
       </div>
     </div>

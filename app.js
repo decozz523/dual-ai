@@ -50,10 +50,15 @@ const editProfileBtn = $("editProfileBtn");
 const authOverlay = $("authOverlay");
 const authModal = $("authModal");
 const authCloseBtn = $("authCloseBtn");
+const authTitleEl = $("authTitle");
 const authEmailEl = $("authEmail");
 const authPasswordEl = $("authPassword");
 const authNameEl = $("authName");
 const authBirthdateEl = $("authBirthdate");
+const authNameFieldEl = $("authNameField");
+const authBirthdateFieldEl = $("authBirthdateField");
+const authModeLinkEl = $("authModeLink");
+const authSwitchLabelEl = $("authSwitchLabel");
 const authMessageEl = $("authMessage");
 const authSignInBtn = $("authSignInBtn");
 const authSignUpBtn = $("authSignUpBtn");
@@ -225,6 +230,12 @@ const I18N = {
     authNameLabel: "Имя (для обращения)",
     authNamePlaceholder: "Например, Алекс",
     authBirthdateLabel: "Дата рождения",
+    authTitleSignIn: "Вход в аккаунт",
+    authTitleSignUp: "Регистрация",
+    authSwitchFirstTime: "Вы впервые?",
+    authSwitchHaveAccount: "Уже есть аккаунт?",
+    authSwitchToSignUp: "Регистрация",
+    authSwitchToSignIn: "Вход",
   },
   en: {
     pageTitle: "dual-ai (Samii & Vivi)",
@@ -336,6 +347,12 @@ const I18N = {
     authNameLabel: "Name (for addressing)",
     authNamePlaceholder: "For example, Alex",
     authBirthdateLabel: "Date of birth",
+    authTitleSignIn: "Sign in",
+    authTitleSignUp: "Registration",
+    authSwitchFirstTime: "First time here?",
+    authSwitchHaveAccount: "Already have an account?",
+    authSwitchToSignUp: "Register",
+    authSwitchToSignIn: "Sign in",
   },
 };
 
@@ -458,6 +475,7 @@ function applyLanguage(lang) {
   setText("#profileBirthdateLabel", t("profileBirthdate"));
   setText("#editProfileBtn", t("editProfile"));
   if (authNameEl) authNameEl.placeholder = t("authNamePlaceholder");
+  renderAuthMode();
   setText("#upgradeSubtitle", t("upgradeSubtitle"));
   setText("#upgradeStep1Title", t("upgradeStep1Title"));
   setText("#upgradeStep1Text", t("upgradeStep1Text"));
@@ -517,7 +535,6 @@ function applyLanguage(lang) {
       '#settingsLogoutBtn': 'Выйти из аккаунта',
       '#openPrivacyBtn': 'Политика конфиденциальности',
       '#openTermsBtn': 'Условия использования',
-      '#authTitle': 'Вход в аккаунт',
       '#authSignInBtn': 'Войти',
       '#authSignUpBtn': 'Создать аккаунт',
       '#authResendBtn': 'Отправить письмо ещё раз',
@@ -543,7 +560,6 @@ function applyLanguage(lang) {
       '#settingsLogoutBtn': 'Sign out',
       '#openPrivacyBtn': 'Privacy policy',
       '#openTermsBtn': 'Terms of use',
-      '#authTitle': 'Sign in',
       '#authSignInBtn': 'Sign in',
       '#authSignUpBtn': 'Create account',
       '#authResendBtn': 'Resend email',
@@ -877,11 +893,30 @@ function getUserProfileInstruction() {
   return `Контекст профиля пользователя: ${chunks.join(" ")}`;
 }
 
+let authMode = "signin";
+
+function renderAuthMode() {
+  const isSignUp = authMode === "signup";
+  if (authNameFieldEl) authNameFieldEl.hidden = !isSignUp;
+  if (authBirthdateFieldEl) authBirthdateFieldEl.hidden = !isSignUp;
+  if (authSignInBtn) authSignInBtn.hidden = isSignUp;
+  if (authSignUpBtn) authSignUpBtn.hidden = !isSignUp;
+  if (authTitleEl) authTitleEl.textContent = isSignUp ? t("authTitleSignUp") : t("authTitleSignIn");
+  if (authSwitchLabelEl) authSwitchLabelEl.textContent = isSignUp ? t("authSwitchHaveAccount") : t("authSwitchFirstTime");
+  if (authModeLinkEl) authModeLinkEl.textContent = isSignUp ? t("authSwitchToSignIn") : t("authSwitchToSignUp");
+}
+
+function setAuthMode(mode = "signin") {
+  authMode = mode === "signup" ? "signup" : "signin";
+  renderAuthMode();
+}
+
 function openAuthModal() {
   if (!supabase) {
     setStatus("Supabase не настроен или ещё инициализируется.", "error");
     return;
   }
+  setAuthMode("signin");
   setAuthScene(true);
   authEmailEl.focus();
 }
@@ -889,6 +924,7 @@ function openAuthModal() {
 function closeAuthModal() {
   setAuthScene(false);
   setAuthMessage("");
+  setAuthMode("signin");
 }
 
 function updateAuthUI(session) {
@@ -2641,6 +2677,10 @@ authModal?.addEventListener("click", (event) => {
     closeAuthModal();
   }
 });
+authModeLinkEl?.addEventListener("click", () => {
+  setAuthMode(authMode === "signup" ? "signin" : "signup");
+});
+
 authEmailEl?.addEventListener("blur", () => {
   applyRememberedProfileForEmail(authEmailEl.value);
 });

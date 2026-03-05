@@ -1178,6 +1178,30 @@ input:focus, textarea:focus { border-color: rgba(47, 126, 216, 0.9); box-shadow:
   background: rgba(228, 242, 255, 0.72);
 }
 
+.auth-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.auth-mode-link {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.auth-mode-link:hover {
+  color: var(--accent-2);
+}
+
 .doc-link {
   color: var(--text);
   text-decoration: none;
