@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="dual-ai — dual-чат с Samii и Vivi для стратегий, креатива и быстрых решений."
+      content="dual-ai — dual-чат с Semii и Vivi для стратегий, креатива и быстрых решений."
     />
-    <title>dual-ai (Samii & Vivi)</title>
+    <title>dual-ai (Semii & Vivi)</title>
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <link rel="alternate icon" type="image/png" sizes="32x32" href="./favikon.png" />
     <link rel="shortcut icon" href="./favikon.png" />
@@ -34,7 +34,7 @@
             <img class="brand-logo" src="./favikon.png" alt="Логотип dual-ai" />
             <a id="brandHomeLink" class="h1 brand-mark brand-link" href="#" aria-label="На главную">dual-ai</a>
           </div>
-          <div class="subtitle">Samii (дерзкий аналитик) + Vivi (милая аниме-тян) через наш сервер</div>
+          <div class="subtitle">Semii и Vivi — персонажи, с которыми хочется болтать каждый день</div>
         </div>
         <div class="topbar-right">
           <label class="theme-toggle-row language-toggle-row" for="languageToggle">
@@ -57,10 +57,10 @@
       <main class="app">
         <section class="hero">
           <div class="hero-main">
-            <div class="hero-title">Профессиональный чат для стратегий и идей</div>
+            <div class="hero-title">Не просто чат, а история с Semii и Vivi</div>
             <div class="hero-subtitle">
-              Пара ботов ведёт дискуссию с тобой: рациональный бот структурирует, творческий — расширяет
-              варианты. Управляй настройками через меню.
+              Здесь важны эмоции, стиль и вайб: Semii спорит, Vivi поддерживает, а ты выбираешь, чей ответ
+              зашёл сильнее. Сохраняй смешные моменты и делись ими в соцсетях.
             </div>
             <div class="hero-actions">
               <button id="newChatBtn" class="btn btn-primary btn-cta">Начать чат</button>
@@ -68,19 +68,19 @@
               <button id="ideaBtn" class="btn btn-secondary">Предложить идею</button>
             </div>
             <div class="hero-highlights">
-              <span class="hero-highlight" id="heroHighlightFast">⚡ Быстрый запуск без лишних шагов</span>
-              <span class="hero-highlight" id="heroHighlightDuo">🧠 Samii + Vivi в одном диалоге</span>
-              <span class="hero-highlight" id="heroHighlightFocus">🎯 Фокус на практическом результате</span>
+              <span class="hero-highlight" id="heroHighlightFast">⚡ Моментальный вход в диалог</span>
+              <span class="hero-highlight" id="heroHighlightDuo">🧠 Semii + Vivi в одном диалоге</span>
+              <span class="hero-highlight" id="heroHighlightFocus">🎬 Репостные моменты для TikTok и Reels</span>
             </div>
             <div class="bot-profiles">
               <div class="bot-profiles-title" id="botProfilesTitle">Кто с тобой в диалоге</div>
               <div class="bot-profiles-grid">
-                <article class="bot-profile-card" aria-label="Профиль Samii">
-                  <img class="bot-profile-avatar" src="./sempo.png" alt="Аватар Samii" />
+                <article class="bot-profile-card" aria-label="Профиль Semii">
+                  <img class="bot-profile-avatar" src="./sempo.png" alt="Аватар Semii" />
                   <div class="bot-profile-body">
-                    <div class="bot-profile-name">Samii</div>
-                    <p class="bot-profile-bio" id="samiiBio">
-                      Рациональный аналитик: быстро выделяет главное, спорит по делу и собирает практичный план.
+                    <div class="bot-profile-name">Semii</div>
+                    <p class="bot-profile-bio" id="semiiBio">
+                      Острый и смешной. Может подколоть, но всегда объяснит логику и скажет честно.
                     </p>
                   </div>
                 </article>
@@ -89,7 +89,7 @@
                   <div class="bot-profile-body">
                     <div class="bot-profile-name">Vivi</div>
                     <p class="bot-profile-bio" id="viviBio">
-                      Тёплая креативная напарница: расширяет идеи, добавляет эмоцию и помогает выбрать лучший вариант.
+                      Тёплая, вайбовая и очень поддерживающая. Умеет поднять настроение и вдохновить.
                     </p>
                   </div>
                 </article>
@@ -98,19 +98,19 @@
           </div>
           <div class="quick-start">
             <div class="quick-title">Быстрый старт</div>
-            <div class="quick-section-title">Для предпринимателей</div>
+            <div class="quick-section-title">Сцены с персонажами</div>
             <div class="quick-actions">
-              <button class="chip-btn" data-template="Составь план на 7 дней для моей цели.">План на 7 дней</button>
-              <button class="chip-btn" data-template="Придумай 10 идей для контента на неделю.">Идеи контента</button>
-              <button class="chip-btn" data-template="Сделай стратегию запуска продукта в 5 шагах.">Стратегия запуска</button>
-              <button class="chip-btn" data-template="Сформулируй 3 гипотезы роста для моего продукта.">Гипотезы роста</button>
+              <button class="chip-btn" data-template="Semii и Vivi, устройте мини-баттл: кто из вас лучше поймёт меня сегодня?">Мини-баттл</button>
+              <button class="chip-btn" data-template="Vivi, напиши тёплый ответ на мой день, а Semii пусть честно прокомментирует.">Тёплый vs честный</button>
+              <button class="chip-btn" data-template="Дайте смешной диалог, который я захочу заскринить и отправить другу.">Смешной скрин</button>
+              <button class="chip-btn" data-template="Сделайте клиффхэнгер-ответ, чтобы мне захотелось вернуться завтра.">Клиффхэнгер</button>
             </div>
-            <div class="quick-section-title">Для молодёжи и TikTok</div>
+            <div class="quick-section-title">Контент для TikTok и сторис</div>
             <div class="quick-actions">
-              <button class="chip-btn" data-template="Придумай 12 идей для TikTok на неделю в моём стиле.">TikTok идеи</button>
-              <button class="chip-btn" data-template="Собери учебный план на 5 дней, чтобы быстро подготовиться к зачёту.">Учёба за 5 дней</button>
-              <button class="chip-btn" data-template="Сделай челлендж на 7 дней для прокачки привычки без выгорания.">7-дневный челлендж</button>
-              <button class="chip-btn" data-template="Напиши сценарий для короткого видео: хук, основа, финальный CTA.">Сценарий для Reels</button>
+              <button class="chip-btn" data-template="Придумайте момент «Vivi была права / Semii был прав» для ролика в TikTok.">Кто был прав?</button>
+              <button class="chip-btn" data-template="Сделайте диалог в формате переписки, который можно сразу превратить в сторис.">Готово для сторис</button>
+              <button class="chip-btn" data-template="Сыграйте мини-сцену: Semii ревнует к популярности Vivi, но по-доброму.">Мини-сцена</button>
+              <button class="chip-btn" data-template="Дайте 3 короткие фразы, которые звучат как цитаты и будут вируситься.">Цитаты для репоста</button>
             </div>
           </div>
           <div class="hero-cards hero-cards-primary">
@@ -121,13 +121,13 @@
             </div>
             <div class="info-card info-card-focus">
               <div class="info-title" id="cardFocusTitle">Фокус сессии</div>
-              <div class="info-value" id="cardFocusValue">3 ключевые цели</div>
-              <div class="info-hint" id="cardFocusHint">Запросите у ботов приоритетный план.</div>
+              <div class="info-value" id="cardFocusValue">Кто сегодня ближе тебе?</div>
+              <div class="info-hint" id="cardFocusHint">Сравни ответы Semii и Vivi и выбери фаворита.</div>
             </div>
             <div class="info-card info-card-shortcut">
               <div class="info-title" id="cardModeTitle">Режим диалога</div>
               <div class="info-value">dual-ai</div>
-              <div class="info-hint" id="cardModeHint">Samii + Vivi ведут сессию.</div>
+              <div class="info-hint" id="cardModeHint">Персонажи ведут беседу как мини-шоу с тобой в центре.</div>
             </div>
           </div>
           <details class="more-cards">
@@ -135,8 +135,8 @@
             <div class="hero-cards hero-cards-extra">
               <div class="info-card">
                 <div class="info-title" id="cardIdeaTitle">Идея дня</div>
-                <div class="info-value" id="ideaPrompt">Сформулируйте главный вопрос дня.</div>
-                <div class="info-hint" id="cardIdeaHint">Поделитесь своей идеей с командой.</div>
+                <div class="info-value" id="ideaPrompt">Какой момент сегодня хочется заскринить?</div>
+                <div class="info-hint" id="cardIdeaHint">Попроси Semii и Vivi устроить диалог под твой вайб.</div>
               </div>
               <div class="info-card">
                 <div class="info-title" id="cardSafetyTitle">Безопасность</div>
@@ -145,8 +145,8 @@
               </div>
               <div class="info-card">
                 <div class="info-title" id="cardTemplatesTitle">Шаблоны</div>
-                <div class="info-value" id="cardTemplatesValue">Маркетинг и продукт</div>
-                <div class="info-hint" id="cardTemplatesHint">Готовые сценарии для быстрого старта.</div>
+                <div class="info-value" id="cardTemplatesValue">Сцены, баттлы и цитаты</div>
+                <div class="info-hint" id="cardTemplatesHint">Запускай сюжет одним кликом и возвращайся за продолжением.</div>
               </div>
             </div>
           </details>
@@ -156,8 +156,8 @@
           <div class="chat-head">
             <div class="chat-avatar" aria-hidden="true">◉</div>
             <div>
-              <div class="chat-title">Диалог Samii + Vivi</div>
-              <div class="chat-subtitle">Два бота в одной сессии · online</div>
+              <div class="chat-title">Диалог Semii + Vivi</div>
+              <div class="chat-subtitle">Персонажи online · спорят, шутят и отвечают тебе</div>
             </div>
           </div>
           <div id="messages" class="messages" aria-live="polite"></div>
@@ -254,6 +254,15 @@
             <input id="turns" type="number" min="0" max="10" value="0" />
           </label>
           <label class="field">
+            <div class="label" id="liveChatModeLabel">Live chat режим</div>
+            <div class="hint" id="liveChatModeHint">Делает ответы более «человечными»: паузы, иногда несогласие и статус «был(а) в сети».</div>
+            <select id="liveChatMode">
+              <option value="instant">AI (быстрый ответ)</option>
+              <option value="realistic">Realistik (как человек)</option>
+            </select>
+            <div class="hint live-chat-mode-details" id="liveChatModeDetails">AI: быстрый ответ без ожидания.</div>
+          </label>
+          <label class="field">
             <div class="label">Глубокий режим ответа (Pro)</div>
             <div class="hint">Более развернутые ответы с дополнительными пояснениями.</div>
             <button id="deepModeToggle" class="btn btn-secondary" type="button">Включить</button>
@@ -288,7 +297,7 @@
             <div class="plan-perks-title">Преимущества тарифа</div>
             <ul class="plan-perks-list" id="planPerksList">
               <li>30 сообщений в день</li>
-              <li>Доступ к Samii + Vivi</li>
+              <li>Доступ к Semii + Vivi</li>
               <li>История диалогов сохраняется</li>
             </ul>
           </div>
@@ -372,11 +381,11 @@
           <div class="label">Пароль</div>
           <input id="authPassword" type="password" placeholder="••••••••" autocomplete="current-password" />
         </label>
-        <label class="field">
+        <label class="field" id="authNameField">
           <div class="label" id="authNameLabel">Имя (для обращения)</div>
           <input id="authName" type="text" placeholder="Например, Алекс" autocomplete="name" />
         </label>
-        <label class="field">
+        <label class="field" id="authBirthdateField">
           <div class="label" id="authBirthdateLabel">Дата рождения</div>
           <input id="authBirthdate" type="date" autocomplete="bday" />
         </label>
@@ -390,8 +399,12 @@
         </label>
         <div class="row">
           <button id="authSignInBtn" class="btn btn-primary">Войти</button>
-          <button id="authSignUpBtn" class="btn btn-secondary">Создать аккаунт</button>
+          <button id="authSignUpBtn" class="btn btn-primary" hidden>Создать аккаунт</button>
           <button id="authResendBtn" class="btn btn-secondary">Отправить письмо ещё раз</button>
+        </div>
+        <div class="auth-switch">
+          <span id="authSwitchLabel">Вы впервые?</span>
+          <button id="authModeLink" class="auth-mode-link" type="button">Регистрация</button>
         </div>
       </div>
     </div>
@@ -510,7 +523,7 @@
           <h4>Принятие условий</h4>
           <p>Используя сервис, вы соглашаетесь с настоящими условиями использования и политикой конфиденциальности.</p>
           <h4>Назначение сервиса</h4>
-          <p>Сервис предоставляет доступ к диалогам с ботами Samii и Vivi для поиска идей, стратегий и контента.</p>
+          <p>Сервис предоставляет доступ к диалогам с ботами Semii и Vivi для поиска идей, стратегий и контента.</p>
           <h4>Ограничения</h4>
           <ul>
             <li>Запрещено использовать сервис для незаконных действий или нарушений прав третьих лиц.</li>
