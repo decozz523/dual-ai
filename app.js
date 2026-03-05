@@ -223,10 +223,8 @@ const I18N = {
     hintLiveChatMode: "Паузы и немного более живые реакции: иногда несогласие и статус \"был(а) в сети\".",
     liveChatModeInstant: "AI (быстрый ответ)",
     liveChatModeRealistic: "Realistik (как человек)",
-    liveChatModeOffline: "Offline (кто-то не в сети)",
     liveChatModeDetailsInstant: "AI: Semii/Vivi отвечают сразу, без паузы.",
     liveChatModeDetailsRealistic: "Realistik: небольшая пауза, иногда статус «был(а) в сети» и вежливое несогласие.",
-    liveChatModeDetailsOffline: "Offline: в каждом сообщении активен в основном один персонаж, второй может быть не в сети.",
     presenceOnline: "online",
     presenceOffline: "offline",
     liveChatOnboardingPrompt: "Включить режим Realistik для более живого общения (паузы, иногда своё мнение)?",
@@ -352,10 +350,8 @@ const I18N = {
     hintLiveChatMode: "Adds human-like pacing: delays, occasional disagreement, and 'last seen' vibe.",
     liveChatModeInstant: "AI (fast reply)",
     liveChatModeRealistic: "Realistik (human-like)",
-    liveChatModeOffline: "Offline (someone is offline)",
     liveChatModeDetailsInstant: "AI: Semii/Vivi reply immediately with no wait.",
     liveChatModeDetailsRealistic: "Realistik: short delay, occasional 'last seen' status, and polite disagreement.",
-    liveChatModeDetailsOffline: "Offline: mostly one character is active per message while the other may be offline.",
     presenceOnline: "online",
     presenceOffline: "offline",
     liveChatOnboardingPrompt: "Enable Realistik mode for more human-like chat (pauses and occasional own opinion)?",
@@ -551,7 +547,6 @@ function applyLanguage(lang) {
   const liveChatOptions = liveChatModeEl?.options || [];
   if (liveChatOptions[0]) liveChatOptions[0].textContent = t("liveChatModeInstant");
   if (liveChatOptions[1]) liveChatOptions[1].textContent = t("liveChatModeRealistic");
-  if (liveChatOptions[2]) liveChatOptions[2].textContent = t("liveChatModeOffline");
   updateLiveChatModeDetails();
   renderPresenceState();
   if (deepModeToggle && !deepModeEnabled) deepModeToggle.textContent = t("deepModeOn");
@@ -715,12 +710,6 @@ const LIVE_CHAT_MODELS = {
     instruction:
       "Realistik mode активен: отвечай естественно, допускай смену тем как в обычном чате, иногда можешь вежливо не соглашаться, высказывать своё мнение и не всегда быть сразу в сети.",
   },
-  offline: {
-    minDelayMs: 4500,
-    maxDelayMs: 12000,
-    offlineChance: 1,
-    instruction: "",
-  },
 };
 
 const DEMO_BY_VIBE = {
@@ -849,18 +838,8 @@ function getTaggedSpeakerIntent(text) {
   };
 }
 
-async function runInitialAssistantTurnsByIntent(text) {
+async function runInitialAssistantTurnsByIntent(text, dispatchPlan = null) {
   const taggedIntent = getTaggedSpeakerIntent(text);
-  const mode = getLiveChatMode();
-
-  if (mode === "offline") {
-    const speaker = taggedIntent?.speaker || (Math.random() < 0.5 ? "R" : "S");
-    const turns = taggedIntent?.turns || getRandomDelay(1, 2);
-    for (let i = 0; i < turns; i++) {
-      await runTurn(speaker);
-    }
-    return speaker;
-  }
 
   if (taggedIntent?.speaker) {
     for (let i = 0; i < taggedIntent.turns; i++) {
@@ -868,16 +847,67 @@ async function runInitialAssistantTurnsByIntent(text) {
     }
     return taggedIntent.speaker;
   }
+
+  if (dispatchPlan?.singleSpeaker) {
+    await runTurn(dispatchPlan.singleSpeaker);
+    return dispatchPlan.singleSpeaker;
+  }
+
   await runTurn("R");
   await runTurn("S");
   return "S";
 }
 
-function getAlternatingSpeakerAfter(lastSpeaker, index) {
-  if (getLiveChatMode() === "offline") return lastSpeaker;
+function getAlternatingSpeakerAfter(lastSpeaker, index, dispatchPlan = null) {
+  if (dispatchPlan?.singleSpeaker) return dispatchPlan.singleSpeaker;
   const nextFirst = lastSpeaker === "R" ? "S" : "R";
   if (index === 0) return nextFirst;
   return index % 2 === 0 ? nextFirst : (nextFirst === "R" ? "S" : "R");
+}
+
+function waitWithAbort(delayMs) {
+  if (!delayMs || delayMs <= 0) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(resolve, delayMs);
+    if (activeAbortController?.signal) {
+      activeAbortController.signal.addEventListener("abort", () => {
+        clearTimeout(timeout);
+        reject(new Error("generation-aborted"));
+      }, { once: true });
+    }
+  });
+}
+
+function buildRealisticDispatchPlan(text) {
+  const mode = getLiveChatMode();
+  if (mode !== "realistic") {
+    setPresence("R", "online");
+    setPresence("S", "online");
+    return { dispatchDelayMs: 0, singleSpeaker: null };
+  }
+
+  const taggedIntent = getTaggedSpeakerIntent(text);
+  if (taggedIntent?.speaker) {
+    setPresence(taggedIntent.speaker, "online");
+    setPresence(taggedIntent.speaker === "R" ? "S" : "R", "offline");
+    return { dispatchDelayMs: 0, singleSpeaker: taggedIntent.speaker };
+  }
+
+  const offlineEvent = Math.random() < (LIVE_CHAT_MODELS.realistic?.offlineChance || 0);
+  if (!offlineEvent) {
+    setPresence("R", "online");
+    setPresence("S", "online");
+    return { dispatchDelayMs: 0, singleSpeaker: null };
+  }
+
+  const onlineSpeaker = Math.random() < 0.5 ? "R" : "S";
+  const offlineSpeaker = onlineSpeaker === "R" ? "S" : "R";
+  setPresence(onlineSpeaker, "online");
+  setPresence(offlineSpeaker, "offline");
+  return {
+    dispatchDelayMs: getRandomDelay(1200, 2800),
+    singleSpeaker: onlineSpeaker,
+  };
 }
 
 function touchLastSeen() {
@@ -2228,8 +2258,11 @@ function loadSettings() {
       modelEl.value = exists ? s.model : modelEl.options[0]?.value || "";
     }
     if (typeof s.turns === "number") turnsEl.value = String(s.turns);
-    if (typeof s.liveChatMode === "string" && LIVE_CHAT_MODELS[s.liveChatMode]) {
-      liveChatModeEl.value = s.liveChatMode;
+    if (typeof s.liveChatMode === "string") {
+      const normalizedMode = s.liveChatMode === "offline" ? "realistic" : s.liveChatMode;
+      if (LIVE_CHAT_MODELS[normalizedMode]) {
+        liveChatModeEl.value = normalizedMode;
+      }
     }
     if (typeof s.deepModeEnabled === "boolean") {
       deepModeEnabled = s.deepModeEnabled;
@@ -2263,7 +2296,6 @@ function updateLiveChatModeDetails() {
   const keyByMode = {
     instant: "liveChatModeDetailsInstant",
     realistic: "liveChatModeDetailsRealistic",
-    offline: "liveChatModeDetailsOffline",
   };
   liveChatModeDetailsEl.textContent = t(keyByMode[mode] || keyByMode.instant);
 }
@@ -2302,14 +2334,6 @@ async function applyLiveChatPacing(speaker) {
   const botName = speaker === "R" ? "Semii" : "Vivi";
   const delay = getRandomDelay(config.minDelayMs, config.maxDelayMs);
   const isOfflineMoment = config.offlineChance > 0 && Math.random() < config.offlineChance;
-
-  if (mode === "offline") {
-    setPresence(speaker, "online");
-    setPresence(speaker === "R" ? "S" : "R", "offline");
-  } else {
-    setPresence("R", "online");
-    setPresence("S", "online");
-  }
 
   if (isOfflineMoment) {
     setStatus(`${botName} был(а) в сети недавно. Ответит чуть позже…`);
@@ -2533,10 +2557,18 @@ async function sendUserMessage(text) {
   userMessage.ts = Date.now();
   render();
   persistActiveDialog();
-  const lastSpeaker = await runInitialAssistantTurnsByIntent(text);
+  const dispatchPlan = buildRealisticDispatchPlan(text);
+  if (dispatchPlan.dispatchDelayMs > 0) {
+    const onlineName = dispatchPlan.singleSpeaker === "R" ? "Semii" : "Vivi";
+    const offlineName = dispatchPlan.singleSpeaker === "R" ? "Vivi" : "Semii";
+    setStatus(`${offlineName} offline. ${onlineName} ответит через пару секунд…`);
+    await waitWithAbort(dispatchPlan.dispatchDelayMs);
+  }
+
+  const lastSpeaker = await runInitialAssistantTurnsByIntent(text, dispatchPlan);
 
   for (let i = 0; i < extraTurns; i++) {
-    await runTurn(getAlternatingSpeakerAfter(lastSpeaker, i));
+    await runTurn(getAlternatingSpeakerAfter(lastSpeaker, i, dispatchPlan));
   }
 }
 
@@ -2551,10 +2583,18 @@ async function sendUserMessageWithTurns(text, extraTurnsOverride) {
   userMessage.ts = Date.now();
   render();
   persistActiveDialog();
-  const lastSpeaker = await runInitialAssistantTurnsByIntent(text);
+  const dispatchPlan = buildRealisticDispatchPlan(text);
+  if (dispatchPlan.dispatchDelayMs > 0) {
+    const onlineName = dispatchPlan.singleSpeaker === "R" ? "Semii" : "Vivi";
+    const offlineName = dispatchPlan.singleSpeaker === "R" ? "Vivi" : "Semii";
+    setStatus(`${offlineName} offline. ${onlineName} ответит через пару секунд…`);
+    await waitWithAbort(dispatchPlan.dispatchDelayMs);
+  }
+
+  const lastSpeaker = await runInitialAssistantTurnsByIntent(text, dispatchPlan);
 
   for (let i = 0; i < extraTurnsOverride; i++) {
-    await runTurn(getAlternatingSpeakerAfter(lastSpeaker, i));
+    await runTurn(getAlternatingSpeakerAfter(lastSpeaker, i, dispatchPlan));
   }
 }
 
@@ -2692,10 +2732,8 @@ themeToggleEl?.addEventListener("change", () => {
 });
 liveChatModeEl?.addEventListener("change", () => {
   updateLiveChatModeDetails();
-  if (getLiveChatMode() !== "offline") {
-    setPresence("R", "online");
-    setPresence("S", "online");
-  }
+  setPresence("R", "online");
+  setPresence("S", "online");
   saveSettings(false);
 });
 
