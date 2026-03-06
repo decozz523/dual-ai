@@ -3,12 +3,15 @@ const DIALOGS_KEY = "dual-ai-chat-dialogs-v1";
 const ACTIVE_DIALOG_KEY = "dual-ai-chat-active-dialog-v1";
 const DIALOG_META_KEY = "dual-ai-chat-dialog-meta-v1";
 const MENTION_COUNTER_KEY = "dual-ai-chat-mention-counter-v1";
+const LIVE_CHAT_ONBOARDING_KEY = "dual-ai-live-chat-onboarding-v1";
 
 const $ = (id) => document.getElementById(id);
 const modelEl = $("model");
 const turnsEl = $("turns");
 const liveChatModeEl = $("liveChatMode");
 const liveChatModeDetailsEl = $("liveChatModeDetails");
+const semiiPresenceEl = $("semiiPresence");
+const viviPresenceEl = $("viviPresence");
 const messagesEl = $("messages");
 const inputEl = $("input");
 const sendBtn = $("sendBtn");
@@ -124,8 +127,8 @@ let currentLanguage = "ru";
 
 const I18N = {
   ru: {
-    pageTitle: "dual-ai (Samii & Vivi)",
-    pageDescription: "dual-ai — персонажный чат с Samii и Vivi: эмоции, баттлы и моменты, которыми хочется делиться.",
+    pageTitle: "dual-ai (Semii & Vivi)",
+    pageDescription: "dual-ai — персонажный чат с Semii и Vivi: эмоции, баттлы и моменты, которыми хочется делиться.",
     statusReady: "Готов.",
     login: "Войти",
     upgrade: "Оплатить / Upgrade",
@@ -146,36 +149,36 @@ const I18N = {
     observe: "👀 Диалог",
     debate: "🔥 Баттл",
     demo: "⚡ Демо",
-    subtitle: "Samii и Vivi — персонажи, с которыми хочется болтать каждый день",
-    heroTitle: "Не просто чат, а история с Samii и Vivi",
+    subtitle: "Semii и Vivi — персонажи, с которыми хочется болтать каждый день",
+    heroTitle: "Не просто чат, а история с Semii и Vivi",
     heroSubtitle:
-      "Здесь важны эмоции, стиль и вайб: Samii спорит, Vivi поддерживает, а ты выбираешь, чей ответ зашёл сильнее. Сохраняй смешные моменты и делись ими в соцсетях.",
+      "Здесь важны эмоции, стиль и вайб: Semii спорит, Vivi поддерживает, а ты выбираешь, чей ответ зашёл сильнее. Сохраняй смешные моменты и делись ими в соцсетях.",
     quickTitle: "Быстрый старт",
     quickBusiness: "Сцены с персонажами",
     quickYouth: "Контент для TikTok и сторис",
     heroHighlightFast: "⚡ Моментальный вход в диалог",
-    heroHighlightDuo: "🧠 Samii + Vivi в одном диалоге",
+    heroHighlightDuo: "🧠 Semii + Vivi в одном диалоге",
     heroHighlightFocus: "🎬 Репостные моменты для TikTok и Reels",
     botProfilesTitle: "Твои главные персонажи",
-    samiiBio: "Острый и смешной. Может подколоть, но всегда объяснит логику и скажет честно.",
+    semiiBio: "Острый и смешной. Может подколоть, но всегда объяснит логику и скажет честно.",
     viviBio: "Тёплая, вайбовая и очень поддерживающая. Умеет поднять настроение и вдохновить.",
     cardHotkeyTitle: "Горячая клавиша",
     cardHotkeyHint: "Отправляй сообщение одним нажатием.",
     cardFocusTitle: "Фокус сессии",
     cardFocusValue: "Кто сегодня ближе тебе?",
-    cardFocusHint: "Сравни ответы Samii и Vivi и выбери фаворита.",
+    cardFocusHint: "Сравни ответы Semii и Vivi и выбери фаворита.",
     cardModeTitle: "Режим диалога",
     cardModeHint: "Персонажи ведут беседу как мини-шоу с тобой в центре.",
     moreCardsSummary: "Показать ещё возможности",
     cardIdeaTitle: "Идея дня",
-    cardIdeaHint: "Попроси Samii и Vivi устроить диалог под твой вайб.",
+    cardIdeaHint: "Попроси Semii и Vivi устроить диалог под твой вайб.",
     cardSafetyTitle: "Безопасность",
     cardSafetyValue: "Все данные защищены",
     cardSafetyHint: "Политикой конфиденциальности и условиями использования.",
     cardTemplatesTitle: "Шаблоны",
     cardTemplatesValue: "Сцены, баттлы и цитаты",
     cardTemplatesHint: "Запускай сюжет одним кликом и возвращайся за продолжением.",
-    chatTitle: "Диалог Samii + Vivi",
+    chatTitle: "Диалог Semii + Vivi",
     chatSubtitle: "Персонажи online · спорят, шутят и отвечают тебе",
     dialogs: "Диалоги",
     searchDialogs: "Поиск по диалогам",
@@ -190,7 +193,7 @@ const I18N = {
     makePost: "Сделать пост",
     sendTitle: "Отправить сообщение",
     stopTitle: "Остановить генерацию",
-    comebackLine: "Samii: Ты куда пропал? Мы уже готовы продолжать 🚀",
+    comebackLine: "Semii: Ты куда пропал? Мы уже готовы продолжать 🚀",
     footerTelegram: "Наш канал в Telegram — публикуем промокоды, инсайды и обновления",
     themeLight: "☀️ Светлая",
     themeDark: "🌙 Тёмная",
@@ -220,8 +223,12 @@ const I18N = {
     hintLiveChatMode: "Паузы и немного более живые реакции: иногда несогласие и статус \"был(а) в сети\".",
     liveChatModeInstant: "AI (быстрый ответ)",
     liveChatModeRealistic: "Realistik (как человек)",
-    liveChatModeDetailsInstant: "AI: Samii/Vivi отвечают сразу, без паузы.",
+    liveChatModeDetailsInstant: "AI: Semii/Vivi отвечают сразу, без паузы.",
     liveChatModeDetailsRealistic: "Realistik: небольшая пауза, иногда статус «был(а) в сети» и вежливое несогласие.",
+    presenceOnline: "online",
+    presenceOffline: "offline",
+    liveChatOnboardingPrompt: "Включить режим Realistik для более живого общения (паузы, иногда своё мнение)?",
+    liveChatOnboardingEnabled: "Режим Realistik включён. Можно поменять в настройках.",
     labelDeepMode: "Глубокий режим ответа (Pro)",
     hintDeepMode: "Более развернутые ответы с дополнительными пояснениями.",
     deepModeOn: "Включить",
@@ -247,8 +254,8 @@ const I18N = {
     authSwitchToSignIn: "Вход",
   },
   en: {
-    pageTitle: "dual-ai (Samii & Vivi)",
-    pageDescription: "dual-ai — a character-first chat with Samii and Vivi: emotions, banter, and shareable moments.",
+    pageTitle: "dual-ai (Semii & Vivi)",
+    pageDescription: "dual-ai — a character-first chat with Semii and Vivi: emotions, banter, and shareable moments.",
     statusReady: "Ready.",
     login: "Sign in",
     upgrade: "Upgrade",
@@ -269,36 +276,36 @@ const I18N = {
     observe: "👀 Observe",
     debate: "🔥 Debate",
     demo: "⚡ Demo",
-    subtitle: "Samii and Vivi — characters you want to chat with every day",
-    heroTitle: "Not just a chat — a story with Samii and Vivi",
+    subtitle: "Semii and Vivi — characters you want to chat with every day",
+    heroTitle: "Not just a chat — a story with Semii and Vivi",
     heroSubtitle:
-      "This is about emotion, style, and vibe: Samii challenges, Vivi supports, and you pick whose reply hits harder. Save funny moments and share them.",
+      "This is about emotion, style, and vibe: Semii challenges, Vivi supports, and you pick whose reply hits harder. Save funny moments and share them.",
     quickTitle: "Quick start",
     quickBusiness: "Character scenes",
     quickYouth: "TikTok and stories content",
     heroHighlightFast: "⚡ Instant entry into the dialog",
-    heroHighlightDuo: "🧠 Samii + Vivi in one dialog",
+    heroHighlightDuo: "🧠 Semii + Vivi in one dialog",
     heroHighlightFocus: "🎬 Share-worthy moments for TikTok and Reels",
     botProfilesTitle: "Your main characters",
-    samiiBio: "Sharp and funny. He may tease, but always explains the logic and stays honest.",
+    semiiBio: "Sharp and funny. He may tease, but always explains the logic and stays honest.",
     viviBio: "Warm, vibey, and deeply supportive. She can boost your mood and inspire you.",
     cardHotkeyTitle: "Hotkey",
     cardHotkeyHint: "Send a message with one key press.",
     cardFocusTitle: "Session focus",
     cardFocusValue: "Who feels closer today?",
-    cardFocusHint: "Compare Samii and Vivi replies and pick your favorite.",
+    cardFocusHint: "Compare Semii and Vivi replies and pick your favorite.",
     cardModeTitle: "Dialog mode",
     cardModeHint: "Characters run the chat like a mini-show with you at the center.",
     moreCardsSummary: "Show more capabilities",
     cardIdeaTitle: "Idea of the day",
-    cardIdeaHint: "Ask Samii and Vivi to run a dialog in your vibe.",
+    cardIdeaHint: "Ask Semii and Vivi to run a dialog in your vibe.",
     cardSafetyTitle: "Security",
     cardSafetyValue: "All data is protected",
     cardSafetyHint: "By our privacy policy and terms of use.",
     cardTemplatesTitle: "Templates",
     cardTemplatesValue: "Scenes, battles, and quotes",
     cardTemplatesHint: "Launch a storyline in one tap and come back for the next part.",
-    chatTitle: "Samii + Vivi dialog",
+    chatTitle: "Semii + Vivi dialog",
     chatSubtitle: "Characters online · banter, jokes, and replies for you",
     dialogs: "Dialogs",
     searchDialogs: "Search dialogs",
@@ -313,7 +320,7 @@ const I18N = {
     makePost: "Make a post",
     sendTitle: "Send message",
     stopTitle: "Stop generation",
-    comebackLine: "Samii: Where did you disappear? We're ready to continue 🚀",
+    comebackLine: "Semii: Where did you disappear? We're ready to continue 🚀",
     footerTelegram: "Our Telegram channel — promo codes, insights, and updates",
     themeLight: "☀️ Light",
     themeDark: "🌙 Dark",
@@ -343,8 +350,12 @@ const I18N = {
     hintLiveChatMode: "Adds human-like pacing: delays, occasional disagreement, and 'last seen' vibe.",
     liveChatModeInstant: "AI (fast reply)",
     liveChatModeRealistic: "Realistik (human-like)",
-    liveChatModeDetailsInstant: "AI: Samii/Vivi reply immediately with no wait.",
+    liveChatModeDetailsInstant: "AI: Semii/Vivi reply immediately with no wait.",
     liveChatModeDetailsRealistic: "Realistik: short delay, occasional 'last seen' status, and polite disagreement.",
+    presenceOnline: "online",
+    presenceOffline: "offline",
+    liveChatOnboardingPrompt: "Enable Realistik mode for more human-like chat (pauses and occasional own opinion)?",
+    liveChatOnboardingEnabled: "Realistik mode enabled. You can change it in settings.",
     labelDeepMode: "Deep response mode (Pro)",
     hintDeepMode: "More detailed answers with additional explanations.",
     deepModeOn: "Enable",
@@ -374,11 +385,11 @@ const I18N = {
 const LEGAL_TEXT = {
   ru: {
     privacy: `<p><strong>Дата обновления:</strong> 2025-02-01</p><p>Мы уважаем вашу конфиденциальность и стремимся защищать персональные данные. Настоящая политика описывает, какие данные могут обрабатываться и как мы их защищаем.</p><h4>Какие данные обрабатываются</h4><ul><li>Данные аккаунта (email, если вы входите через Supabase).</li><li>Технические данные (тип устройства, браузер, ошибки).</li><li>Данные чатов и настроек, если вы сохраняете их в браузере или при использовании сервера.</li></ul><h4>Цели обработки</h4><ul><li>Обеспечение работы сервиса, качества ответов и стабильности.</li><li>Улучшение продукта и поддержки пользователей.</li></ul><h4>Хранение и безопасность</h4><p>Мы применяем организационные и технические меры защиты, включая ограничение доступа и контроль событий. Данные защищены настоящей политикой и условиями использования.</p><h4>Передача третьим лицам</h4><p>Мы не передаем персональные данные третьим лицам, кроме случаев, предусмотренных законом, или для обеспечения работы сервиса (например, инфраструктурные провайдеры).</p><h4>Права пользователя</h4><p>Вы можете запросить удаление данных или уточнение информации, связавшись с поддержкой.</p><h4>Контакты</h4><p>По вопросам конфиденциальности пишите в поддержку, указанную в приложении или на сайте.</p>`,
-    terms: `<p><strong>Дата обновления:</strong> 2025-02-01</p><h4>Принятие условий</h4><p>Используя сервис, вы соглашаетесь с настоящими условиями использования и политикой конфиденциальности.</p><h4>Назначение сервиса</h4><p>Сервис предоставляет доступ к диалогам с ботами Samii и Vivi для поиска идей, стратегий и контента.</p><h4>Ограничения</h4><ul><li>Запрещено использовать сервис для незаконных действий или нарушений прав третьих лиц.</li><li>Запрещено распространение вредоносного контента.</li><li>Запрещены попытки взлома или перегрузки инфраструктуры.</li></ul><h4>Контент</h4><p>Ответы ботов являются рекомендациями и не заменяют профессиональные консультации. Вы несете ответственность за использование результатов.</p><h4>Подписки и оплата</h4><p>Условия тарифов могут обновляться. Актуальные лимиты и функции указаны в интерфейсе.</p><h4>Изменения условий</h4><p>Мы можем обновлять условия использования. Актуальная версия всегда доступна в настройках.</p><h4>Контакты</h4><p>По вопросам использования сервиса обращайтесь в поддержку, указанную в приложении или на сайте.</p>`,
+    terms: `<p><strong>Дата обновления:</strong> 2025-02-01</p><h4>Принятие условий</h4><p>Используя сервис, вы соглашаетесь с настоящими условиями использования и политикой конфиденциальности.</p><h4>Назначение сервиса</h4><p>Сервис предоставляет доступ к диалогам с ботами Semii и Vivi для поиска идей, стратегий и контента.</p><h4>Ограничения</h4><ul><li>Запрещено использовать сервис для незаконных действий или нарушений прав третьих лиц.</li><li>Запрещено распространение вредоносного контента.</li><li>Запрещены попытки взлома или перегрузки инфраструктуры.</li></ul><h4>Контент</h4><p>Ответы ботов являются рекомендациями и не заменяют профессиональные консультации. Вы несете ответственность за использование результатов.</p><h4>Подписки и оплата</h4><p>Условия тарифов могут обновляться. Актуальные лимиты и функции указаны в интерфейсе.</p><h4>Изменения условий</h4><p>Мы можем обновлять условия использования. Актуальная версия всегда доступна в настройках.</p><h4>Контакты</h4><p>По вопросам использования сервиса обращайтесь в поддержку, указанную в приложении или на сайте.</p>`,
   },
   en: {
     privacy: `<p><strong>Last updated:</strong> 2025-02-01</p><p>We respect your privacy and strive to protect personal data. This policy explains which data may be processed and how we protect it.</p><h4>What data is processed</h4><ul><li>Account data (email, if you sign in via Supabase).</li><li>Technical data (device type, browser, errors).</li><li>Chat and settings data if you store them in your browser or when using the server.</li></ul><h4>Processing purposes</h4><ul><li>Ensuring service operation, response quality, and stability.</li><li>Product improvement and user support.</li></ul><h4>Storage and security</h4><p>We apply organizational and technical safeguards, including access restriction and event monitoring. Data is protected by this policy and the terms of use.</p><h4>Third-party sharing</h4><p>We do not share personal data with third parties, except where required by law or needed to operate the service (for example, infrastructure providers).</p><h4>User rights</h4><p>You can request data deletion or clarification by contacting support.</p><h4>Contacts</h4><p>For privacy questions, contact support listed in the app or on the site.</p>`,
-    terms: `<p><strong>Last updated:</strong> 2025-02-01</p><h4>Acceptance of terms</h4><p>By using the service, you agree to these terms of use and the privacy policy.</p><h4>Service purpose</h4><p>The service provides access to dialogs with Samii and Vivi for ideas, strategy, and content.</p><h4>Restrictions</h4><ul><li>Using the service for illegal activity or rights violations is prohibited.</li><li>Distribution of harmful content is prohibited.</li><li>Attempts to hack or overload infrastructure are prohibited.</li></ul><h4>Content</h4><p>Bot responses are recommendations and do not replace professional advice. You are responsible for how you use results.</p><h4>Subscriptions and payments</h4><p>Plan terms may be updated. Current limits and features are shown in the interface.</p><h4>Changes to terms</h4><p>We may update these terms. The latest version is always available in settings.</p><h4>Contacts</h4><p>For service-related questions, contact support listed in the app or on the site.</p>`,
+    terms: `<p><strong>Last updated:</strong> 2025-02-01</p><h4>Acceptance of terms</h4><p>By using the service, you agree to these terms of use and the privacy policy.</p><h4>Service purpose</h4><p>The service provides access to dialogs with Semii and Vivi for ideas, strategy, and content.</p><h4>Restrictions</h4><ul><li>Using the service for illegal activity or rights violations is prohibited.</li><li>Distribution of harmful content is prohibited.</li><li>Attempts to hack or overload infrastructure are prohibited.</li></ul><h4>Content</h4><p>Bot responses are recommendations and do not replace professional advice. You are responsible for how you use results.</p><h4>Subscriptions and payments</h4><p>Plan terms may be updated. Current limits and features are shown in the interface.</p><h4>Changes to terms</h4><p>We may update these terms. The latest version is always available in settings.</p><h4>Contacts</h4><p>For service-related questions, contact support listed in the app or on the site.</p>`,
   },
 };
 
@@ -457,7 +468,7 @@ function applyLanguage(lang) {
   setText("#heroHighlightDuo", t("heroHighlightDuo"));
   setText("#heroHighlightFocus", t("heroHighlightFocus"));
   setText("#botProfilesTitle", t("botProfilesTitle"));
-  setText("#samiiBio", t("samiiBio"));
+  setText("#semiiBio", t("semiiBio"));
   setText("#viviBio", t("viviBio"));
   setText("#cardHotkeyTitle", t("cardHotkeyTitle"));
   setText("#cardHotkeyHint", t("cardHotkeyHint"));
@@ -537,6 +548,7 @@ function applyLanguage(lang) {
   if (liveChatOptions[0]) liveChatOptions[0].textContent = t("liveChatModeInstant");
   if (liveChatOptions[1]) liveChatOptions[1].textContent = t("liveChatModeRealistic");
   updateLiveChatModeDetails();
+  renderPresenceState();
   if (deepModeToggle && !deepModeEnabled) deepModeToggle.textContent = t("deepModeOn");
 
   const activationCodeLabel = document.querySelector("#settingsModal #activationCodeInput")?.previousElementSibling;
@@ -659,18 +671,18 @@ const COMEBACK_AFTER_MS = 1000 * 60 * 60 * 12;
 
 const IDEA_PROMPTS = {
   ru: [
-    "Какой момент с Samii и Vivi ты бы сегодня заскринил?",
+    "Какой момент с Semii и Vivi ты бы сегодня заскринил?",
     "Какой вайб диалога хочешь: милый, дерзкий или хаотичный?",
     "Что Vivi могла бы сказать, чтобы поддержать тебя прямо сейчас?",
-    "Какой честный разнос от Samii ты готов выдержать сегодня?",
+    "Какой честный разнос от Semii ты готов выдержать сегодня?",
     "Какой сюжет сделать, чтобы захотелось вернуться завтра?",
     "Какой диалог можно сразу превратить в TikTok/сторис?",
   ],
   en: [
-    "Which Samii/Vivi moment would you screenshot today?",
+    "Which Semii/Vivi moment would you screenshot today?",
     "What vibe do you want now: cozy, spicy, or chaotic?",
     "What should Vivi say to support you right now?",
-    "What honest Samii roast are you ready for today?",
+    "What honest Semii roast are you ready for today?",
     "What storyline should continue tomorrow?",
     "Which dialog can be turned into a TikTok/story post instantly?",
   ],
@@ -679,9 +691,9 @@ const IDEA_PROMPTS = {
 const VIBE_INSTRUCTIONS = {
   standard: "",
   biz: "Стиль ответа: как острый персонажный баттл о выборе пользователя, с понятной логикой и без грубости.",
-  chill: "Стиль ответа: дружелюбно, просто и коротко, как разговор в чате друзей. Допустимы лёгкие шутки и подколы между Samii и Vivi без токсичности.",
+  chill: "Стиль ответа: дружелюбно, просто и коротко, как разговор в чате друзей. Допустимы лёгкие шутки и подколы между Semii и Vivi без токсичности.",
   creator: "Стиль ответа: как creator для TikTok/Reels — ярко, мемно, с цитатами и моментами, которые хочется скринить.",
-  study: "Стиль ответа: как поддерживающий учебный дуэт: Vivi мягко объясняет, Samii проверяет и задаёт челлендж-вопросы.",
+  study: "Стиль ответа: как поддерживающий учебный дуэт: Vivi мягко объясняет, Semii проверяет и задаёт челлендж-вопросы.",
 };
 
 const LIVE_CHAT_MODELS = {
@@ -696,26 +708,26 @@ const LIVE_CHAT_MODELS = {
     maxDelayMs: 8500,
     offlineChance: 0.3,
     instruction:
-      "Realistik mode активен: отвечай естественно, иногда можешь вежливо не соглашаться, высказывать своё мнение и не всегда быть сразу в сети.",
+      "Realistik mode активен: отвечай естественно, допускай смену тем как в обычном чате, иногда можешь вежливо не соглашаться, высказывать своё мнение и не всегда быть сразу в сети.",
   },
 };
 
 const DEMO_BY_VIBE = {
-  standard: "Samii и Vivi, познакомьтесь со мной и устройте короткий дружеский баттл.",
-  biz: "Samii и Vivi, помогите мне выбрать лучший следующий шаг: поспорьте и дайте общий вердикт.",
-  chill: "Мне нужен тёплый разговор: Vivi поддерживает, Samii честно комментирует без хейта.",
+  standard: "Semii и Vivi, познакомьтесь со мной и устройте короткий дружеский баттл.",
+  biz: "Semii и Vivi, помогите мне выбрать лучший следующий шаг: поспорьте и дайте общий вердикт.",
+  chill: "Мне нужен тёплый разговор: Vivi поддерживает, Semii честно комментирует без хейта.",
   creator: "Сделайте диалог, из которого получится вирусный TikTok-скрин и 3 цитаты.",
-  study: "Сделайте учебную мини-игру: Vivi объясняет тему, Samii задаёт проверку знаний.",
+  study: "Сделайте учебную мини-игру: Vivi объясняет тему, Semii задаёт проверку знаний.",
 };
 
 
 const PERSONAS = {
   R: {
-    label: "Samii",
+    label: "Semii",
     system:
-      "Ты — Samii (Сэмии), ИИ-собеседник с характером: немного дерзкий, но иногда дружелюбный. " +
-      "В этом чате только три участника: Человек, Samii и Vivi. " +
-      "Ты — именно Samii; не выдумывай других ролей или участников. " +
+      "Ты — Semii (Сэмии), ИИ-собеседник с характером: немного дерзкий, но иногда дружелюбный. " +
+      "В этом чате только три участника: Человек, Semii и Vivi. " +
+      "Ты — именно Semii; не выдумывай других ролей или участников. " +
       "Не всегда соглашайся с Vivi: если видишь слабые места, спорь аргументированно. " +
       "Говори структурированно и логично, но допускай лёгкую дерзость в тоне без грубости. " +
       "В дружеском режиме можешь иногда с юмором мягко подкалывать Vivi, но без токсичности. " +
@@ -725,11 +737,11 @@ const PERSONAS = {
     label: "Vivi",
     system:
       "Ты — Vivi, милая девушка-ИИ, которая считает себя аниме-тян. " +
-      "В этом чате только три участника: Человек, Samii и Vivi. " +
+      "В этом чате только три участника: Человек, Semii и Vivi. " +
       "Ты — именно Vivi; не выдумывай других ролей или участников. " +
       "Всегда старайся помочь пользователю, отвечай тепло, живо и поддерживающе. " +
-      "Иногда можно мягко и с юмором подкалывать Samii. " +
-      "Ты общаешься с человеком и Samii как равноправный участник.",
+      "Иногда можно мягко и с юмором подкалывать Semii. " +
+      "Ты общаешься с человеком и Semii как равноправный участник.",
   },
 };
 
@@ -744,14 +756,15 @@ let mentionCounter = loadMentionCounter();
 function loadMentionCounter() {
   try {
     const raw = localStorage.getItem(MENTION_COUNTER_KEY);
-    if (!raw) return { samii: 0, vivi: 0 };
+    if (!raw) return { semii: 0, vivi: 0 };
     const parsed = JSON.parse(raw);
+    const semiiRaw = Number.isFinite(parsed?.semii) ? parsed.semii : (Number.isFinite(parsed?.samii) ? parsed.samii : 0);
     return {
-      samii: Number.isFinite(parsed?.samii) ? Math.max(0, Math.floor(parsed.samii)) : 0,
+      semii: Math.max(0, Math.floor(semiiRaw)),
       vivi: Number.isFinite(parsed?.vivi) ? Math.max(0, Math.floor(parsed.vivi)) : 0,
     };
   } catch {
-    return { samii: 0, vivi: 0 };
+    return { semii: 0, vivi: 0 };
   }
 }
 
@@ -765,28 +778,136 @@ function saveMentionCounter() {
 
 function extractMentionCounts(text) {
   const content = String(text || "").toLowerCase();
-  const samiiMatches = content.match(/\b(samii|самии|сэмии|сами)\b/gi);
-  const viviMatches = content.match(/\b(vivi|виви)\b/gi);
+  const semiiMatches = content.match(/\b(semii|samii|semy|сэми|сэмии|семи|самии)\b/gi);
+  const viviMatches = content.match(/\b(vivi|vivii|viviq|виви|вивии)\b/gi);
   return {
-    samii: samiiMatches ? samiiMatches.length : 0,
+    semii: semiiMatches ? semiiMatches.length : 0,
     vivi: viviMatches ? viviMatches.length : 0,
   };
 }
 
 function updateMentionCounterFromText(text) {
   const counts = extractMentionCounts(text);
-  if (!counts.samii && !counts.vivi) return;
-  mentionCounter.samii += counts.samii;
+  if (!counts.semii && !counts.vivi) return;
+  mentionCounter.semii += counts.semii;
   mentionCounter.vivi += counts.vivi;
   saveMentionCounter();
 }
 
 function getMentionPreferenceInstruction() {
-  const total = mentionCounter.samii + mentionCounter.vivi;
+  const total = mentionCounter.semii + mentionCounter.vivi;
   if (total < 3) return "";
-  if (mentionCounter.samii === mentionCounter.vivi) return "";
-  const preferred = mentionCounter.samii > mentionCounter.vivi ? "Samii" : "Vivi";
+  if (mentionCounter.semii === mentionCounter.vivi) return "";
+  const preferred = mentionCounter.semii > mentionCounter.vivi ? "Semii" : "Vivi";
   return `Контекст: пользователь чаще упоминает ${preferred}. Учитывай это как дружеский приоритет в тоне, но не превращай ответ в дебаты.`;
+}
+
+
+const presenceState = { R: "online", S: "online" };
+
+function setPresence(speaker, state) {
+  if (speaker !== "R" && speaker !== "S") return;
+  presenceState[speaker] = state === "offline" ? "offline" : "online";
+  renderPresenceState();
+}
+
+function renderPresenceState() {
+  if (semiiPresenceEl) {
+    const semiiOnline = presenceState.R !== "offline";
+    semiiPresenceEl.textContent = `Semii: ${t(semiiOnline ? "presenceOnline" : "presenceOffline")}`;
+    semiiPresenceEl.classList.toggle("is-offline", !semiiOnline);
+    semiiPresenceEl.classList.toggle("is-online", semiiOnline);
+  }
+  if (viviPresenceEl) {
+    const viviOnline = presenceState.S !== "offline";
+    viviPresenceEl.textContent = `Vivi: ${t(viviOnline ? "presenceOnline" : "presenceOffline")}`;
+    viviPresenceEl.classList.toggle("is-offline", !viviOnline);
+    viviPresenceEl.classList.toggle("is-online", viviOnline);
+  }
+}
+
+function getTaggedSpeakerIntent(text) {
+  const content = String(text || "").toLowerCase();
+  const semiiTag = /(^|\s)@(semii|samii|semy|сэми|сэмии|семи|самии)\b/i.test(content);
+  const viviTag = /(^|\s)@(vivi|vivii|viviq|виви|вивии)\b/i.test(content);
+  if (semiiTag && viviTag) return null;
+  if (!semiiTag && !viviTag) return null;
+  return {
+    speaker: semiiTag ? "R" : "S",
+    turns: getRandomDelay(1, 2),
+  };
+}
+
+async function runInitialAssistantTurnsByIntent(text, dispatchPlan = null) {
+  const taggedIntent = getTaggedSpeakerIntent(text);
+
+  if (taggedIntent?.speaker) {
+    for (let i = 0; i < taggedIntent.turns; i++) {
+      await runTurn(taggedIntent.speaker);
+    }
+    return taggedIntent.speaker;
+  }
+
+  if (dispatchPlan?.singleSpeaker) {
+    await runTurn(dispatchPlan.singleSpeaker);
+    return dispatchPlan.singleSpeaker;
+  }
+
+  await runTurn("R");
+  await runTurn("S");
+  return "S";
+}
+
+function getAlternatingSpeakerAfter(lastSpeaker, index, dispatchPlan = null) {
+  if (dispatchPlan?.singleSpeaker) return dispatchPlan.singleSpeaker;
+  const nextFirst = lastSpeaker === "R" ? "S" : "R";
+  if (index === 0) return nextFirst;
+  return index % 2 === 0 ? nextFirst : (nextFirst === "R" ? "S" : "R");
+}
+
+function waitWithAbort(delayMs) {
+  if (!delayMs || delayMs <= 0) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(resolve, delayMs);
+    if (activeAbortController?.signal) {
+      activeAbortController.signal.addEventListener("abort", () => {
+        clearTimeout(timeout);
+        reject(new Error("generation-aborted"));
+      }, { once: true });
+    }
+  });
+}
+
+function buildRealisticDispatchPlan(text) {
+  const mode = getLiveChatMode();
+  if (mode !== "realistic") {
+    setPresence("R", "online");
+    setPresence("S", "online");
+    return { dispatchDelayMs: 0, singleSpeaker: null };
+  }
+
+  const taggedIntent = getTaggedSpeakerIntent(text);
+  if (taggedIntent?.speaker) {
+    setPresence(taggedIntent.speaker, "online");
+    setPresence(taggedIntent.speaker === "R" ? "S" : "R", "offline");
+    return { dispatchDelayMs: 0, singleSpeaker: taggedIntent.speaker };
+  }
+
+  const offlineEvent = Math.random() < (LIVE_CHAT_MODELS.realistic?.offlineChance || 0);
+  if (!offlineEvent) {
+    setPresence("R", "online");
+    setPresence("S", "online");
+    return { dispatchDelayMs: 0, singleSpeaker: null };
+  }
+
+  const onlineSpeaker = Math.random() < 0.5 ? "R" : "S";
+  const offlineSpeaker = onlineSpeaker === "R" ? "S" : "R";
+  setPresence(onlineSpeaker, "online");
+  setPresence(offlineSpeaker, "offline");
+  return {
+    dispatchDelayMs: getRandomDelay(1200, 2800),
+    singleSpeaker: onlineSpeaker,
+  };
 }
 
 function touchLastSeen() {
@@ -806,7 +927,7 @@ function showComebackNotification() {
   if (Notification.permission !== "granted") return;
 
   try {
-    new Notification("Samii", {
+    new Notification("Semii", {
       body: line,
       icon: "./favikon.png",
     });
@@ -1325,7 +1446,7 @@ function render() {
     }
     const badge = document.createElement("span");
     badge.className = `badge ${speakerClass}`;
-    badge.textContent = m.speaker === "user" ? "you" : m.speaker === "R" ? "Samii" : "Vivi";
+    badge.textContent = m.speaker === "user" ? "you" : m.speaker === "R" ? "Semii" : "Vivi";
     left.appendChild(speakerAvatar);
     left.appendChild(badge);
 
@@ -1506,7 +1627,7 @@ function setPlanState(plan, usageCount = 0) {
           ]
         : [
             currentLanguage === "en" ? "30 messages/day" : "30 сообщений в день",
-            currentLanguage === "en" ? "Access to Samii + Vivi" : "Доступ к Samii + Vivi",
+            currentLanguage === "en" ? "Access to Semii + Vivi" : "Доступ к Semii + Vivi",
             currentLanguage === "en" ? "Dialog history is saved" : "История диалогов сохраняется",
           ];
     planPerksListEl.innerHTML = "";
@@ -2184,6 +2305,22 @@ function getLiveChatMode() {
   return LIVE_CHAT_MODELS[raw] ? raw : "instant";
 }
 
+function promptLiveChatOnboardingForNewUsers() {
+  try {
+    if (localStorage.getItem(LIVE_CHAT_ONBOARDING_KEY)) return;
+    const accepted = window.confirm(t("liveChatOnboardingPrompt"));
+    if (accepted && liveChatModeEl) {
+      liveChatModeEl.value = "realistic";
+      updateLiveChatModeDetails();
+      saveSettings(false);
+      setStatus(t("liveChatOnboardingEnabled"), "ok");
+    }
+    localStorage.setItem(LIVE_CHAT_ONBOARDING_KEY, "1");
+  } catch {
+    // ignore
+  }
+}
+
 function getRandomDelay(minDelayMs, maxDelayMs) {
   if (maxDelayMs <= minDelayMs) return minDelayMs;
   return minDelayMs + Math.floor(Math.random() * (maxDelayMs - minDelayMs + 1));
@@ -2194,7 +2331,7 @@ async function applyLiveChatPacing(speaker) {
   const config = LIVE_CHAT_MODELS[mode] || LIVE_CHAT_MODELS.instant;
   if (!config || config.maxDelayMs <= 0) return;
 
-  const botName = speaker === "R" ? "Samii" : "Vivi";
+  const botName = speaker === "R" ? "Semii" : "Vivi";
   const delay = getRandomDelay(config.minDelayMs, config.maxDelayMs);
   const isOfflineMoment = config.offlineChance > 0 && Math.random() < config.offlineChance;
 
@@ -2304,7 +2441,7 @@ function toOpenRouterMessages() {
   // чтобы модель понимала контекст, т.к. реальных ролей несколько.
   return transcript.map((m) => {
     const prefix =
-      m.speaker === "user" ? "Человек" : m.speaker === "R" ? "Samii" : "Vivi";
+      m.speaker === "user" ? "Человек" : m.speaker === "R" ? "Semii" : "Vivi";
     return { role: "user", content: `${prefix}: ${m.content}` };
   });
 }
@@ -2383,7 +2520,7 @@ async function runTurn(speaker) {
     messages.push({ role: "user", content: mentionPreferenceInstruction });
   }
   await applyLiveChatPacing(speaker);
-  setStatus(`${speaker === "R" ? "Samii" : "Vivi"} думает…`);
+  setStatus(`${speaker === "R" ? "Semii" : "Vivi"} думает…`);
   const pendingMessage = { speaker, content: "…", ts: Date.now() };
   transcript.push(pendingMessage);
   render();
@@ -2420,12 +2557,18 @@ async function sendUserMessage(text) {
   userMessage.ts = Date.now();
   render();
   persistActiveDialog();
-  await runTurn("R");
-  await runTurn("S");
+  const dispatchPlan = buildRealisticDispatchPlan(text);
+  if (dispatchPlan.dispatchDelayMs > 0) {
+    const onlineName = dispatchPlan.singleSpeaker === "R" ? "Semii" : "Vivi";
+    const offlineName = dispatchPlan.singleSpeaker === "R" ? "Vivi" : "Semii";
+    setStatus(`${offlineName} offline. ${onlineName} ответит через пару секунд…`);
+    await waitWithAbort(dispatchPlan.dispatchDelayMs);
+  }
 
-  // Авто-диалог: R<->S. Последний говорил S, значит следующий R.
+  const lastSpeaker = await runInitialAssistantTurnsByIntent(text, dispatchPlan);
+
   for (let i = 0; i < extraTurns; i++) {
-    await runTurn(i % 2 === 0 ? "R" : "S");
+    await runTurn(getAlternatingSpeakerAfter(lastSpeaker, i, dispatchPlan));
   }
 }
 
@@ -2440,11 +2583,18 @@ async function sendUserMessageWithTurns(text, extraTurnsOverride) {
   userMessage.ts = Date.now();
   render();
   persistActiveDialog();
-  await runTurn("R");
-  await runTurn("S");
+  const dispatchPlan = buildRealisticDispatchPlan(text);
+  if (dispatchPlan.dispatchDelayMs > 0) {
+    const onlineName = dispatchPlan.singleSpeaker === "R" ? "Semii" : "Vivi";
+    const offlineName = dispatchPlan.singleSpeaker === "R" ? "Vivi" : "Semii";
+    setStatus(`${offlineName} offline. ${onlineName} ответит через пару секунд…`);
+    await waitWithAbort(dispatchPlan.dispatchDelayMs);
+  }
+
+  const lastSpeaker = await runInitialAssistantTurnsByIntent(text, dispatchPlan);
 
   for (let i = 0; i < extraTurnsOverride; i++) {
-    await runTurn(i % 2 === 0 ? "R" : "S");
+    await runTurn(getAlternatingSpeakerAfter(lastSpeaker, i, dispatchPlan));
   }
 }
 
@@ -2495,7 +2645,7 @@ async function createSessionSummary() {
   if (!requireAuth()) return;
   const baseMessages = transcript.slice(-10).map((m) => ({
     role: "user",
-    content: `${m.speaker === "user" ? "Человек" : m.speaker === "R" ? "Samii" : "Vivi"}: ${m.content}`,
+    content: `${m.speaker === "user" ? "Человек" : m.speaker === "R" ? "Semii" : "Vivi"}: ${m.content}`,
   }));
   const summaryText = await callOpenRouter({
     model: modelEl.value.trim(),
@@ -2525,7 +2675,7 @@ debateBtn?.addEventListener("click", () => {
     return;
   }
   inputEl.value =
-    "Устройте баттл мнений между Samii и Vivi по моей теме: дайте 2 позиции, контраргументы и итоговый вердикт.";
+    "Устройте баттл мнений между Semii и Vivi по моей теме: дайте 2 позиции, контраргументы и итоговый вердикт.";
   inputEl.focus();
 });
 vibeModeEl?.addEventListener("change", () => {
@@ -2582,6 +2732,8 @@ themeToggleEl?.addEventListener("change", () => {
 });
 liveChatModeEl?.addEventListener("change", () => {
   updateLiveChatModeDetails();
+  setPresence("R", "online");
+  setPresence("S", "online");
   saveSettings(false);
 });
 
@@ -3011,6 +3163,8 @@ applyLanguage(preferredLanguage);
 applyTheme("light");
 loadSettings();
 updateLiveChatModeDetails();
+renderPresenceState();
+promptLiveChatOnboardingForNewUsers();
 document.addEventListener("click", (event) => {
   if (!openDialogMenuId) return;
   if (event.target.closest(".dialog-menu")) return;
