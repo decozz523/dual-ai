@@ -1676,9 +1676,30 @@ body.theme-dark .msg-s {
     grid-column: auto;
   }
   .app { padding: 18px 14px 36px; }
-  .hero { padding: 16px; }
-  .hero-title { font-size: 22px; }
-  .hero-subtitle { font-size: 13px; }
+  .hero {
+    padding: 14px;
+    gap: 12px;
+  }
+  .hero-title { font-size: 20px; }
+  .hero-subtitle {
+    font-size: 13px;
+    margin: 0;
+  }
+  .quick-start,
+  .hero-highlights,
+  .hero-cards,
+  .more-cards,
+  .bot-profiles {
+    display: none;
+  }
+  .hero-actions {
+    margin-top: 8px;
+    gap: 8px;
+  }
+  #openSettingsHeroBtn,
+  #ideaBtn {
+    display: none;
+  }
   .topbar {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
@@ -1715,9 +1736,14 @@ body.theme-dark .msg-s {
     gap: 8px;
   }
   .mobile-home-btn {
-    display: inline-flex;
-    width: 100%;
-    justify-content: center;
+    display: none;
+  }
+  #supportBtn,
+  #upgradeBtn {
+    display: none;
+  }
+  .topbar-left {
+    grid-template-columns: 1fr;
   }
   .topbar .btn,
   .topbar .icon-btn {
@@ -1755,17 +1781,28 @@ body.theme-dark .msg-s {
   .mode-chat .app {
     min-height: calc(100dvh - 130px);
     height: calc(100dvh - 130px);
-    padding-bottom: 152px;
+    padding-bottom: 118px;
   }
   .mode-chat .composer {
     width: calc(100% - 16px);
     bottom: 8px;
-    padding: 8px;
-    border-radius: 20px;
+    padding: 6px;
+    border-radius: 16px;
+  }
+  .insta-tools {
+    display: none;
+  }
+  .insta-input-wrap {
+    gap: 6px;
+  }
+  .insta-input-wrap textarea {
+    border-radius: 14px;
+    max-height: 120px;
+    min-height: 40px;
   }
   .mode-chat .messages {
     max-height: none;
-    padding-bottom: 16px;
+    padding-bottom: 10px;
   }
   .msg {
     max-width: 88%;
